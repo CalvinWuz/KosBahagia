@@ -16,6 +16,8 @@ export type SheetProps = {
   title: string;
   /** Sticky actions row under the scrollable body, e.g. "Lihat 84 kos". */
   footer?: ReactNode;
+  /** Full-screen on mobile (search, pickers). Still a side panel on desktop. */
+  penuh?: boolean;
   children: ReactNode;
   className?: string;
 };
@@ -28,6 +30,7 @@ export function Sheet({
   onClose,
   title,
   footer,
+  penuh = false,
   children,
   className,
 }: SheetProps) {
@@ -41,15 +44,18 @@ export function Sheet({
         <DialogPanel
           transition
           className={cn(
-            "flex max-h-[85dvh] w-full flex-col rounded-t-2xl bg-putih shadow-2xl transition-transform duration-250 ease-out data-closed:translate-y-full",
+            "flex w-full flex-col bg-putih shadow-2xl transition-transform duration-250 ease-out data-closed:translate-y-full",
+            penuh ? "h-dvh" : "max-h-[85dvh] rounded-t-2xl",
             "md:h-full md:max-h-none md:w-105 md:max-w-full md:rounded-none md:data-closed:translate-x-full md:data-closed:translate-y-0",
             className,
           )}
         >
-          <div
-            className="mx-auto mt-2 h-1.5 w-10 shrink-0 rounded-full bg-biru-100 md:hidden"
-            aria-hidden="true"
-          />
+          {!penuh && (
+            <div
+              className="mx-auto mt-2 h-1.5 w-10 shrink-0 rounded-full bg-biru-100 md:hidden"
+              aria-hidden="true"
+            />
+          )}
           <header className="flex shrink-0 items-center justify-between gap-4 border-b border-biru-100 px-4 py-3">
             <DialogTitle className="text-h2 text-arang-900">{title}</DialogTitle>
             <button

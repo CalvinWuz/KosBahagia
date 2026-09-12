@@ -61,6 +61,9 @@
   /* Motion */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --animate-shimmer: shimmer 1.6s linear infinite;
+  /* Homepage hero sketch: the route draws itself once, landmarks pop in. */
+  --animate-gambar: gambar 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-muncul: muncul 200ms ease-out both;
 
   @keyframes shimmer {
     from {
@@ -68,6 +71,24 @@
     }
     to {
       background-position: -200% 0;
+    }
+  }
+  @keyframes gambar {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes muncul {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
     }
   }
 }
@@ -105,6 +126,7 @@
     ::before,
     ::after {
       animation-duration: 0.01ms !important;
+      animation-delay: 0ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
     }

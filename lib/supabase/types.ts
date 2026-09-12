@@ -76,6 +76,13 @@ export type Database = {
             foreignKeyName: "catatan_surveyor_kos_id_fkey"
             columns: ["kos_id"]
             isOneToOne: true
+            referencedRelation: "kos_kartu"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catatan_surveyor_kos_id_fkey"
+            columns: ["kos_id"]
+            isOneToOne: true
             referencedRelation: "kos_skor"
             referencedColumns: ["kos_id"]
           },
@@ -136,6 +143,13 @@ export type Database = {
             columns: ["kos_id"]
             isOneToOne: false
             referencedRelation: "kos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "klik_wa_kos_id_fkey"
+            columns: ["kos_id"]
+            isOneToOne: false
+            referencedRelation: "kos_kartu"
             referencedColumns: ["id"]
           },
           {
@@ -292,6 +306,13 @@ export type Database = {
             foreignKeyName: "kos_aturan_kos_id_fkey"
             columns: ["kos_id"]
             isOneToOne: true
+            referencedRelation: "kos_kartu"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kos_aturan_kos_id_fkey"
+            columns: ["kos_id"]
+            isOneToOne: true
             referencedRelation: "kos_skor"
             referencedColumns: ["kos_id"]
           },
@@ -323,6 +344,13 @@ export type Database = {
             columns: ["kos_id"]
             isOneToOne: false
             referencedRelation: "kos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kos_fasilitas_kos_id_fkey"
+            columns: ["kos_id"]
+            isOneToOne: false
+            referencedRelation: "kos_kartu"
             referencedColumns: ["id"]
           },
           {
@@ -374,6 +402,13 @@ export type Database = {
             columns: ["kos_id"]
             isOneToOne: false
             referencedRelation: "kos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kos_media_kos_id_fkey"
+            columns: ["kos_id"]
+            isOneToOne: false
+            referencedRelation: "kos_kartu"
             referencedColumns: ["id"]
           },
           {
@@ -443,6 +478,13 @@ export type Database = {
             foreignKeyName: "kos_penilaian_kos_id_fkey"
             columns: ["kos_id"]
             isOneToOne: true
+            referencedRelation: "kos_kartu"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kos_penilaian_kos_id_fkey"
+            columns: ["kos_id"]
+            isOneToOne: true
             referencedRelation: "kos_skor"
             referencedColumns: ["kos_id"]
           },
@@ -503,6 +545,13 @@ export type Database = {
             foreignKeyName: "kos_sekitar_kos_id_fkey"
             columns: ["kos_id"]
             isOneToOne: true
+            referencedRelation: "kos_kartu"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kos_sekitar_kos_id_fkey"
+            columns: ["kos_id"]
+            isOneToOne: true
             referencedRelation: "kos_skor"
             referencedColumns: ["kos_id"]
           },
@@ -536,6 +585,13 @@ export type Database = {
             columns: ["kos_id"]
             isOneToOne: false
             referencedRelation: "kos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laporan_user_kos_id_fkey"
+            columns: ["kos_id"]
+            isOneToOne: false
+            referencedRelation: "kos_kartu"
             referencedColumns: ["id"]
           },
           {
@@ -578,6 +634,13 @@ export type Database = {
             columns: ["kos_id"]
             isOneToOne: false
             referencedRelation: "kos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "log_ketersediaan_kos_id_fkey"
+            columns: ["kos_id"]
+            isOneToOne: false
+            referencedRelation: "kos_kartu"
             referencedColumns: ["id"]
           },
           {
@@ -714,6 +777,13 @@ export type Database = {
             foreignKeyName: "tipe_kamar_kos_id_fkey"
             columns: ["kos_id"]
             isOneToOne: false
+            referencedRelation: "kos_kartu"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tipe_kamar_kos_id_fkey"
+            columns: ["kos_id"]
+            isOneToOne: false
             referencedRelation: "kos_skor"
             referencedColumns: ["kos_id"]
           },
@@ -721,6 +791,38 @@ export type Database = {
       }
     }
     Views: {
+      kos_kartu: {
+        Row: {
+          area_nama: string | null
+          area_slug: string | null
+          disurvei_pada: string | null
+          foto_blurhash: string | null
+          foto_lebar: number | null
+          foto_tinggi: number | null
+          foto_url: string | null
+          harga_bulanan: number | null
+          id: string | null
+          jumlah_red_flags: number | null
+          kamar_tersedia: number | null
+          ketersediaan_dikonfirmasi_pada: string | null
+          landmark_menit_jalan: number | null
+          landmark_nama: string | null
+          lat: number | null
+          lng: number | null
+          nama: string | null
+          perlu_dikonfirmasi: boolean | null
+          rincian: Json | null
+          skor: number | null
+          skor_kebersihan: number | null
+          skor_kedap: number | null
+          slug: string | null
+          status: Database["public"]["Enums"]["status_kos"] | null
+          tier: Database["public"]["Enums"]["tier_kos"] | null
+          tipe: Database["public"]["Enums"]["tipe_kos"] | null
+          total_bulanan: number | null
+        }
+        Relationships: []
+      }
       kos_skor: {
         Row: {
           fasilitas: number | null
@@ -776,6 +878,15 @@ export type Database = {
           tipe: Database["public"]["Enums"]["tipe_kos"]
           total_bulanan: number
           total_count: number
+        }[]
+      }
+      cari_saran: {
+        Args: { p_limit?: number; q: string }
+        Returns: {
+          jenis: string
+          keterangan: string
+          nama: string
+          slug: string
         }[]
       }
       kos_tayang: { Args: { p_kos_id: string }; Returns: boolean }

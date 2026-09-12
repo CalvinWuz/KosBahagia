@@ -45,3 +45,21 @@ export function formatWaktuRelatif(
 
   return `${Math.floor(hari / 365)} tahun lalu`;
 }
+
+const angkaTepatSatuDesimal = new Intl.NumberFormat("id-ID", {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+
+/** Skor Bahagia 0–10 → "8,4" (always one decimal); null → "Belum dinilai". */
+export function formatSkor(skor: number | null | undefined): string {
+  if (skor == null) return "Belum dinilai";
+  return angkaTepatSatuDesimal.format(skor);
+}
+
+/** Long rupiah for tight spaces: 1.200.000 → "Rp1,2 jt", 850.000 → "Rp850 rb". */
+export function formatRupiahRingkas(rupiah: number): string {
+  if (rupiah >= 1_000_000) return `Rp${angkaSatuDesimal.format(rupiah / 1_000_000)} jt`;
+  if (rupiah >= 1_000) return `Rp${angkaBulat.format(rupiah / 1_000)} rb`;
+  return formatRupiah(rupiah);
+}
