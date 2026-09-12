@@ -1,0 +1,76 @@
+"use client";
+
+import type { ReactNode } from "react";
+import {
+  Dialog,
+  DialogBackdrop,
+  DialogPanel,
+  DialogTitle,
+} from "@headlessui/react";
+import { cn } from "@/lib/cn";
+import { IconClose } from "./Icon";
+
+export type SheetProps = {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  /** Sticky actions row under the scrollable body, e.g. "Lihat 84 kos". */
+  footer?: ReactNode;
+  children: ReactNode;
+  className?: string;
+};
+
+// Bottom sheet below 768px, right-hand side panel above. Headless UI Dialog
+// supplies the focus trap, Escape/backdrop close, scroll lock and focus
+// restore; everything visible is ours.
+export function Sheet({
+  open,
+  onClose,
+  title,
+  footer,
+  children,
+  className,
+}: SheetProps) {
+  return (
+    <Dialog open={open} onClose={onClose} className="relative z-50">
+      <DialogBackdrop
+        transition
+        className="fixed inset-0 bg-arang-900/50 transition-opacity duration-200 ease-out data-closed:opacity-0"
+      />
+      <div className="fixed inset-0 flex items-end md:items-stretch md:justify-end">
+        <DialogPanel
+          transition
+          className={cn(
+            "flex max-h-[85dvh] w-full flex-col rounded-t-2xl bg-putih shadow-2xl transition-transform duration-250 ease-out data-closed:translate-y-full",
+            "md:h-full md:max-h-none md:w-105 md:max-w-full md:rounded-none md:data-closed:translate-x-full md:data-closed:translate-y-0",
+            className,
+          )}
+        >
+          <div
+            className="mx-auto mt-2 h-1.5 w-10 shrink-0 rounded-full bg-biru-100 md:hidden"
+            aria-hidden="true"
+          />
+          <header className="flex shrink-0 items-center justify-between gap-4 border-b border-biru-100 px-4 py-3">
+            <DialogTitle className="text-h2 text-arang-900">{title}</DialogTitle>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Tutup"
+              className="grid size-10 shrink-0 place-items-center rounded-full text-arang-500 transition-colors duration-150 ease-out hover:bg-biru-100 hover:text-biru-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-biru-500"
+            >
+              <IconClose />
+            </button>
+          </header>
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+            {children}
+          </div>
+          {footer && (
+            <footer className="shrink-0 border-t border-biru-100 bg-putih px-4 py-3">
+              {footer}
+            </footer>
+          )}
+        </DialogPanel>
+      </div>
+    </Dialog>
+  );
+}

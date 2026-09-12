@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens — the ONLY place a raw colour or font size may appear.
+ * Source of truth: CLAUDE.md §5. Tailwind v4 generates utilities from this
+ * block, so `bg-biru-500`, `text-price`, `border-arang-500/30` etc. all
+ * resolve here. Components must never use a hex value or a px font size.
+ */
+@theme {
+  /* Wipe Tailwind's stock palette and type scale so only project tokens exist. */
+  --color-*: initial;
+  --text-*: initial;
+
+  /* Colour */
+  --color-biru-600: #1256b8; /* pressed / dark text on tint */
+  --color-biru-500: #1d6fe0; /* primary brand */
+  --color-biru-100: #dceafd; /* tints, chips, skeletons */
+  --color-jingga-500: #ff7a1a; /* ONLY the primary action (WhatsApp CTA, main search) */
+  --color-daun-500: #0e9f6e; /* good / verified / available */
+  --color-merah-500: #dc2626; /* red flags, full rooms, errors */
+  --color-arang-900: #16202e; /* body text */
+  --color-arang-500: #5a6b80; /* secondary text */
+  --color-kertas-50: #f7f9fc; /* page background */
+  --color-putih: #ffffff; /* cards */
+
+  /*
+   * Derived tints/shades — not listed in CLAUDE.md §5. Added because daun-500
+   * and merah-500 text on a light tint fall below the 4.5:1 contrast floor.
+   * Use -100 for panel/badge backgrounds and -700 for text on those tints.
+   */
+  --color-daun-100: #d8f3e8;
+  --color-daun-700: #087a54;
+  --color-merah-100: #fde2e2;
+  --color-merah-700: #b91c1c;
+
+  /* Type — one family; personality comes from weight/size contrast only. */
+  --font-sans: var(--font-jakarta), "Plus Jakarta Sans", system-ui, sans-serif;
+
+  --text-display: 2rem;
+  --text-display--line-height: 2.375rem;
+  --text-display--font-weight: 800;
+  --text-h1: 1.5rem;
+  --text-h1--line-height: 1.875rem;
+  --text-h1--font-weight: 700;
+  --text-h2: 1.25rem;
+  --text-h2--line-height: 1.625rem;
+  --text-h2--font-weight: 700;
+  --text-body: 1rem;
+  --text-body--line-height: 1.625rem;
+  --text-body--font-weight: 400;
+  --text-small: 0.875rem;
+  --text-small--line-height: 1.25rem;
+  --text-small--font-weight: 400;
+  --text-micro: 0.75rem;
+  --text-micro--line-height: 1rem;
+  --text-micro--font-weight: 500;
+  --text-price: 1.75rem;
+  --text-price--line-height: 2rem;
+  --text-price--font-weight: 800;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-shimmer: shimmer 1.6s linear infinite;
+
+  @keyframes shimmer {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-kertas-50 font-sans text-body text-arang-900 antialiased;
+  }
+
+  /* Every interactive element gets the same visible focus ring. The colour
+     is set on all elements so `transition-colors` never fades the ring in
+     from currentColor. */
+  *,
+  ::before,
+  ::after {
+    outline-color: var(--color-biru-500);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-biru-500);
+    outline-offset: 2px;
+  }
+
+  /* Reduced motion removes every non-essential animation and transition. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
