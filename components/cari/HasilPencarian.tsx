@@ -8,13 +8,16 @@ import { Button, buttonClasses } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
 import { IconClose, IconDaftar, IconFilter, IconKembali, IconPeta, IconPutar } from "@/components/ui/Icon";
 import { KosCard, KosCardSkeleton } from "@/components/kos/KosCard";
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { restKlien } from "@/lib/supabase/rest";
 import { bacaCariParams, hrefCari, jumlahFilterAktif, tanpaFilter, type CariParams, type UrutCari } from "@/lib/cari-params";
 import { ambilHasil, type HasilKos } from "@/lib/cari/ambil";
 import { saranLonggar, terdekatDiLuar, type SaranLonggar, type Terdekat } from "@/lib/cari/longgar";
 import { tentukanPusat, type AreaPublik } from "@/lib/cari/pusat";
 import { cn } from "@/lib/cn";
-import { FilterSheet, type FasilitasFilter } from "./FilterSheet";
+import type { FasilitasFilter } from "./FilterSheet";
+
+// Headless UI rides in with the sheet; keep it out of the first paint.
+const FilterSheet = dynamic(() => import("./FilterSheet").then((m) => m.FilterSheet));
 
 // The map bundle only loads when the map is first shown.
 const PetaHasil = dynamic(() => import("./PetaHasil"), {
@@ -61,6 +64,7 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
   const [data, setData] = useState<DataHasil>(awal);
   const [memuatLagi, setMemuatLagi] = useState(false);
   const [bukaFilter, setBukaFilter] = useState(false);
+  const [pernahBukaFilter, setPernahBukaFilter] = useState(false);
   const [peta, setPeta] = useState(false);
   const [terpilih, setTerpilih] = useState<string | null>(null);
   const [saran, setSaran] = useState<{ kunci: string; longgar: SaranLonggar | null; terdekat: Terdekat } | null>(null);
@@ -74,7 +78,7 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
   useEffect(() => {
     if (data.kunci === kunci) return;
     let batal = false;
-    ambilHasil(supabaseBrowser(), params, pusat)
+    ambilHasil(restKlien, params, pusat)
       .then((r) => !batal && setData({ kunci, ...r }))
       .catch((e: unknown) => !batal && setData({ kunci, hasil: [], total: 0, error: e instanceof Error ? e.message : String(e) }));
     return () => {
@@ -86,8 +90,7 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
   useEffect(() => {
     if (memuat || data.error || total > 0 || saran?.kunci === kunci) return;
     let batal = false;
-    const db = supabaseBrowser();
-    Promise.all([saranLonggar(db, params, pusat), terdekatDiLuar(db, params, pusat)])
+    Promise.all([saranLonggar(restKlien, params, pusat), terdekatDiLuar(restKlien, params, pusat)])
       .then(([longgar, terdekat]) => !batal && setSaran({ kunci, longgar, terdekat }))
       .catch(() => !batal && setSaran({ kunci, longgar: null, terdekat: { hasil: [], tanpaFilter: true } }));
     return () => {
@@ -110,7 +113,7 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
     if (memuat || memuatLagi || !adaLagi) return;
     setMemuatLagi(true);
     try {
-      const r = await ambilHasil(supabaseBrowser(), params, pusat, { offset: hasil.length });
+      const r = await ambilHasil(restKlien, params, pusat, { offset: hasil.length });
       setData((d) => (d.kunci === kunci ? { ...d, hasil: [...d.hasil, ...r.hasil], total: r.total } : d));
     } catch {
       // Button stays visible; the user can try again.
@@ -195,7 +198,10 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
             <li className="shrink-0">
               <button
                 type="button"
-                onClick={() => setBukaFilter(true)}
+                onClick={() => {
+                  setPernahBukaFilter(true);
+                  setBukaFilter(true);
+                }}
                 className={cn(
                   "inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-small font-bold whitespace-nowrap transition-colors duration-150 ease-out",
                   jumlahFilter > 0 ? "border-biru-500 bg-biru-100 text-biru-600" : "border-arang-500/30 bg-putih text-arang-900 hover:border-biru-500",
@@ -273,15 +279,17 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
 
       <aside className="hidden lg:block lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)]">{desktop && petaBlok}</aside>
 
-      <FilterSheet
-        open={bukaFilter}
-        onClose={() => setBukaFilter(false)}
-        params={params}
-        total={total}
-        memuat={memuat}
-        fasilitas={fasilitas}
-        terapkan={terapkan}
-      />
+      {pernahBukaFilter && (
+        <FilterSheet
+          open={bukaFilter}
+          onClose={() => setBukaFilter(false)}
+          params={params}
+          total={total}
+          memuat={memuat}
+          fasilitas={fasilitas}
+          terapkan={terapkan}
+        />
+      )}
     </div>
   );
 }

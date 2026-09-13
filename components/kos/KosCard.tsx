@@ -1,15 +1,17 @@
 "use client";
 
 import type { ReactElement } from "react";
-import Image from "next/image";
+import { FotoBlur } from "@/components/ui/FotoBlur";
 import Link from "next/link";
 import type { Database } from "@/lib/supabase/types";
 import { cn } from "@/lib/cn";
 import { formatRupiah, formatRupiahRingkas, formatWaktuRelatif } from "@/lib/format";
 import { gantiBanding, hapusBanding, tambahBanding, toggleSimpan, useBanding, useSimpanan, type RingkasanKos } from "@/lib/simpan";
-import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
 import { useState } from "react";
+import dynamic from "next/dynamic";
+
+const Sheet = dynamic(() => import("@/components/ui/Sheet").then((m) => m.Sheet));
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { IconBanding, IconDaun, IconHati, IconSuara } from "@/components/ui/Icon";
@@ -22,7 +24,7 @@ export type KosRingkas = Pick<
   KosKartu,
   | "id" | "slug" | "nama" | "tipe" | "tier" | "harga_bulanan" | "total_bulanan" | "rincian"
   | "kamar_tersedia" | "skor" | "skor_kebersihan" | "skor_kedap" | "jumlah_red_flags"
-  | "foto_url" | "ketersediaan_dikonfirmasi_pada" | "perlu_dikonfirmasi"
+  | "foto_url" | "foto_blurhash" | "ketersediaan_dikonfirmasi_pada" | "perlu_dikonfirmasi"
   | "landmark_nama" | "landmark_menit_jalan" | "ada_360"
 >;
 
@@ -75,9 +77,10 @@ export function KosCard({
     >
       <div className={cn("relative shrink-0 bg-biru-100", ringkas ? "w-32 self-stretch" : "aspect-[4/3] w-full")}>
         {kos.foto_url && (
-          <Image
+          <FotoBlur
             src={kos.foto_url}
             alt={`Foto ${kos.nama}`}
+            blurhash={kos.foto_blurhash}
             fill
             sizes={ringkas ? "128px" : "(min-width: 1024px) 340px, (min-width: 640px) 50vw, 90vw"}
             className="object-cover"
@@ -207,6 +210,7 @@ export function AksiKartu({ kos }: { kos: RingkasanKos }) {
         <IconBanding className="size-4" />
       </button>
 
+      {tanyaGanti && (
       <Sheet open={tanyaGanti} onClose={() => setTanyaGanti(false)} title="Sudah 3 kos dibandingkan">
         <p className="text-body text-arang-900">Ganti yang mana dengan {kos.nama}?</p>
         <ul className="mt-3 flex flex-col gap-2">
@@ -227,6 +231,7 @@ export function AksiKartu({ kos }: { kos: RingkasanKos }) {
           ))}
         </ul>
       </Sheet>
+      )}
     </div>
   );
 }

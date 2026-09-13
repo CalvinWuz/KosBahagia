@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { KosCard, KosCardSkeleton, type KosKartu } from "@/components/kos/KosCard";
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { restSelect } from "@/lib/supabase/rest";
 import { formatRupiah } from "@/lib/format";
 import { hapusSimpan, segarkanSimpan, setBanding, useSimpanan, type Simpanan } from "@/lib/simpan";
 
@@ -24,11 +24,7 @@ export function DaftarSimpanan() {
   useEffect(() => {
     if (!kunci) return;
     let batal = false;
-    supabaseBrowser()
-      .from("kos_kartu")
-      .select("*")
-      .in("id", kunci.split(","))
-      .then(({ data }) => !batal && setData({ kunci, kos: data ?? [] }));
+    restSelect("kos_kartu", { select: "*", id: `in.(${kunci})` }).then(({ data }) => !batal && setData({ kunci, kos: data ?? [] }));
     return () => {
       batal = true;
     };

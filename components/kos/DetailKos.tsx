@@ -81,6 +81,12 @@ export function DetailKos({ data, sekarang }: { data: DetailKosData; sekarang: s
               {sekitar.landmark_menit_jalan != null && `, ${sekitar.landmark_menit_jalan} menit jalan kaki`}
             </p>
           )}
+          {kos.disurvei_pada && kos.surveyor && (
+            <p className="text-small text-arang-500">
+              Disurvei {new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "long", year: "numeric" }).format(new Date(kos.disurvei_pada))} oleh {kos.surveyor}.{" "}
+              <Link href="/cara-kami-menilai" className="font-bold text-biru-600 hover:underline">Cara kami menilai</Link>
+            </p>
+          )}
         </header>
 
         {/* 3 */}

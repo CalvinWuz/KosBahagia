@@ -96,7 +96,7 @@ export function TabelBanding({ kos, url }: { kos: KosBanding[]; url: string }) {
           </colgroup>
           <thead>
             <tr>
-              <th scope="col" className="sticky left-0 z-10 bg-putih px-3 py-3 text-left align-bottom text-micro font-bold text-arang-500 uppercase">Kos</th>
+              <th scope="col" className="sticky left-0 z-10 bg-putih px-3 py-3 text-left align-bottom text-micro font-bold text-arang-500">Kos</th>
               {kos.map((k) => (
                 <th key={k.kartu.id} scope="col" className="px-3 py-3 text-left align-top">
                   <Link href={`/kos/${k.kartu.slug}`} className="flex flex-col gap-2 rounded-sm">

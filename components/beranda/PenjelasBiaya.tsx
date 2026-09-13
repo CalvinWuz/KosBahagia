@@ -25,13 +25,13 @@ export function PenjelasBiaya() {
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <div className="rounded-2xl border border-dashed border-arang-500/40 bg-kertas-50 p-5">
-          <p className="text-micro font-bold text-arang-500 uppercase">Di situs lain</p>
+          <p className="text-micro font-bold text-arang-500">Di situs lain</p>
           <p className="mt-2 text-price text-arang-500 tabular-nums">{formatRupiah(CONTOH.sewa)}</p>
           <p className="text-small text-arang-500">sewa saja, sisanya ketahuan setelah masuk</p>
         </div>
 
         <div className="rounded-2xl border-2 border-biru-500 bg-putih p-5">
-          <p className="text-micro font-bold text-biru-600 uppercase">Di Kos Bahagia</p>
+          <p className="text-micro font-bold text-biru-600">Di Kos Bahagia</p>
           <p className="mt-2 text-price text-arang-900 tabular-nums">{formatRupiah(TOTAL)}</p>
           <p className="text-small text-arang-500">total per bulan, kamar yang sama</p>
           <dl className="mt-3 grid grid-cols-[1fr_auto] gap-y-1 border-t border-biru-100 pt-3 text-small">

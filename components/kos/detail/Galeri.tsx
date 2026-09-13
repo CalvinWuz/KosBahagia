@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Image from "next/image";
+import { FotoBlur } from "@/components/ui/FotoBlur";
 import { IconChevronDown } from "@/components/ui/Icon";
 import { Badge } from "@/components/ui/Badge";
 import type { Media } from "@/lib/kos/detail";
@@ -38,15 +38,23 @@ export function Galeri({ foto, nama, ada360 }: { foto: Media[]; nama: string; ad
       <ul
         ref={rel}
         onScroll={onScroll}
-        className="flex aspect-[4/3] w-full snap-x snap-mandatory overflow-x-auto rounded-2xl bg-biru-100 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        aria-label={`Foto ${nama}`}
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowRight") geser(1);
+          else if (e.key === "ArrowLeft") geser(-1);
+          else return;
+          e.preventDefault();
+        }}
+        className="flex aspect-[4/3] w-full snap-x snap-mandatory overflow-x-auto rounded-2xl bg-biru-100 [scrollbar-width:none] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-biru-500 [&::-webkit-scrollbar]:hidden"
+        aria-label={`Foto ${nama}. Panah kiri dan kanan untuk berpindah foto.`}
         aria-roledescription="galeri"
       >
         {foto.map((f, i) => (
           <li key={f.id} className="relative h-full w-full shrink-0 snap-start" aria-label={`Foto ${i + 1} dari ${foto.length}`}>
-            <Image
+            <FotoBlur
               src={f.url}
               alt={f.keterangan ? `${f.keterangan}, ${nama}` : `Foto ${i + 1} ${nama}`}
+              blurhash={f.blurhash}
               fill
               sizes="(min-width: 1024px) 720px, 100vw"
               className="object-cover"

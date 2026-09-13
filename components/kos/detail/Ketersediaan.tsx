@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { restInsert, restSelect } from "@/lib/supabase/rest";
 import { formatWaktuRelatif } from "@/lib/format";
 import type { TipeKamar } from "@/lib/kos/detail";
 import { cn } from "@/lib/cn";
@@ -19,14 +19,13 @@ export function useKetersediaan(kosId: string, awal: KetersediaanKos): Ketersedi
   const [segar, setSegar] = useState<KetersediaanKos | null>(null);
   useEffect(() => {
     let batal = false;
-    const db = supabaseBrowser();
     Promise.all([
-      db.from("tipe_kamar").select("id, nama, kamar_tersedia, total_kamar").eq("kos_id", kosId).order("total_bulanan"),
-      db.from("kos").select("ketersediaan_dikonfirmasi_pada").eq("id", kosId).maybeSingle(),
+      restSelect("tipe_kamar", { select: "id,nama,kamar_tersedia,total_kamar", kos_id: `eq.${kosId}`, order: "total_bulanan.asc" }),
+      restSelect("kos", { select: "ketersediaan_dikonfirmasi_pada", id: `eq.${kosId}` }),
     ])
       .then(([kamar, kos]) => {
         if (batal || !kamar.data) return;
-        setSegar({ kamar: kamar.data, dikonfirmasiPada: kos.data?.ketersediaan_dikonfirmasi_pada ?? null });
+        setSegar({ kamar: kamar.data, dikonfirmasiPada: kos.data?.[0]?.ketersediaan_dikonfirmasi_pada ?? null });
       })
       .catch(() => {
         // Keep the server values.
@@ -46,7 +45,7 @@ export function Ketersediaan({ kosId, data, sekarang }: { kosId: string; data: K
 
   const lapor = async () => {
     setStatus("mengirim");
-    const { error } = await supabaseBrowser().from("laporan_user").insert({ kos_id: kosId, jenis: "penuh" });
+    const { error } = await restInsert("laporan_user", { kos_id: kosId, jenis: "penuh" });
     setStatus(error ? "gagal" : "terkirim");
   };
 

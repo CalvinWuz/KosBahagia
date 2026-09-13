@@ -1,11 +1,9 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/lib/supabase/types";
 import { formatRupiah } from "@/lib/format";
 import { KUNCI_FILTER, type CariParams } from "@/lib/cari-params";
-import { ambilHasil, hitungHasil, type HasilKos } from "./ambil";
+import { ambilHasil, hitungHasil, type HasilKos, type KlienCari } from "./ambil";
 import type { Pusat } from "./pusat";
 
-type Klien = SupabaseClient<Database>;
+type Klien = KlienCari;
 
 export type SaranLonggar = {
   /** "Longgarkan harga ke Rp1.800.000" */

@@ -89,3 +89,17 @@ npm test           # node:test — lib/**/*.test.ts
 |---|---|---|
 | Renter | `app/(user)/` | kosbahagia.com |
 | Owner (mitra) | `app/(mitra)/` | mitra.kosbahagia.com (`NEXT_PUBLIC_MITRA_URL`) |
+
+## Rilis
+
+Anggaran performa (`/cari`, Fast 3G): LCP ≤ 2,5 s, JS awal ≤ 180 KB gzip; `/kos/[slug]` ≤ 200 KB
+gzip di luar viewer 360°; CLS ≤ 0,05; foto terbesar ke layar 360 px ≤ 120 KB.
+
+Sebelum mengumumkan:
+
+1. `npm run cek:rilis` terhadap basis data produksi harus lolos (≥ 30 kos tayang bersurveyor,
+   tanpa foto placeholder, semua area berdeskripsi).
+2. Isi `NEXT_PUBLIC_PLAUSIBLE_DOMAIN` (analitik tanpa cookie) dan `ERROR_WEBHOOK_URL`
+   (laporan galat server + klien); daftarkan `/api/sehat` di pemantau uptime.
+3. Ikuti `docs/uji-manusia.md`: lima orang, satu tugas, perbaiki tiga hal, ulangi sekali.
+4. Fitur baru masuk `docs/backlog.md`, bukan ke rilis ini.

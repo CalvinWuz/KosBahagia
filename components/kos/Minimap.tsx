@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Lightbox } from "@/components/ui/Lightbox";
+import dynamic from "next/dynamic";
+
+const Lightbox = dynamic(() => import("@/components/ui/Lightbox").then((m) => m.Lightbox));
 import { teksRute, type IkonLandmark, type IkonLangkah, type Rute } from "@/lib/kos/rute";
 import { cn } from "@/lib/cn";
 

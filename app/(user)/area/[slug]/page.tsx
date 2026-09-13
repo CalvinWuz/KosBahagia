@@ -85,7 +85,7 @@ export default async function HalamanArea({ params }: Params) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       <header className="flex flex-col gap-3">
-        <p className="text-micro font-bold text-arang-500 uppercase">{TIPE[area.tipe ?? ""] ?? "Area"}</p>
+        <p className="text-micro font-bold text-arang-500">{TIPE[area.tipe ?? ""] ?? "Area"}</p>
         <h1 className="text-display text-arang-900">{area.seo_judul ?? `Kos di ${nama}`}</h1>
         {area.deskripsi && <p className="max-w-2xl text-body text-arang-900">{area.deskripsi}</p>}
         <div className="flex flex-wrap gap-3">

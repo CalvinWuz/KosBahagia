@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
 import { IconJam, IconPin, IconSearch } from "@/components/ui/Icon";
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { restRpc } from "@/lib/supabase/rest";
 import { hrefCari } from "@/lib/cari-params";
 import { cn } from "@/lib/cn";
 
@@ -71,7 +71,7 @@ export function PencarianHero({ areaPopuler }: { areaPopuler: AreaRingkas[] }) {
     setMemuat(true);
     const nomor = ++permintaan.current;
     timer.current = window.setTimeout(async () => {
-      const { data } = await supabaseBrowser().rpc("cari_saran", { q: kata, p_limit: 8 });
+      const { data } = await restRpc("cari_saran", { q: kata, p_limit: 8 });
       if (nomor !== permintaan.current) return;
       setSaran((data as Saran[] | null) ?? []);
       setMemuat(false);
@@ -321,7 +321,7 @@ function Kelompok({ judul, aksi, children }: { judul: string; aksi?: ReactNode; 
   return (
     <div>
       <div className="flex items-center justify-between px-2 pb-1">
-        <h3 className="text-micro font-bold text-arang-500 uppercase">{judul}</h3>
+        <h3 className="text-micro font-bold text-arang-500">{judul}</h3>
         {aksi}
       </div>
       <ul className="flex flex-col">{children}</ul>

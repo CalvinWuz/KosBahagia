@@ -1,11 +1,15 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import type { CariParams } from "@/lib/cari-params";
 import type { Pusat } from "./pusat";
 
 export type HasilKos = Database["public"]["Functions"]["cari_kos"]["Returns"][number];
 type Argumen = Database["public"]["Functions"]["cari_kos"]["Args"];
-type Klien = SupabaseClient<Database>;
+
+/** Anything that can call cari_kos: supabase-js on the server, the tiny REST client in the browser. */
+export type KlienCari = {
+  rpc(fn: "cari_kos", args: Argumen): PromiseLike<{ data: HasilKos[] | null; error: { message: string } | null }>;
+};
+type Klien = KlienCari;
 
 export const UKURAN_HALAMAN = 20;
 

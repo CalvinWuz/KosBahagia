@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { restInsert } from "@/lib/supabase/rest";
 
 // One row per kos per browser session; feeds the owner's "dilihat bulan ini".
 export function CatatKunjungan({ kosId }: { kosId: string }) {
@@ -13,7 +13,7 @@ export function CatatKunjungan({ kosId }: { kosId: string }) {
     } catch {
       // No storage: still count the view.
     }
-    void supabaseBrowser().from("kunjungan_kos").insert({ kos_id: kosId }).then(() => undefined);
+    void restInsert("kunjungan_kos", { kos_id: kosId });
   }, [kosId]);
   return null;
 }

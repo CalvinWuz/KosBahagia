@@ -46,6 +46,8 @@ export async function proxy(req: NextRequest) {
 
   const internal = url.pathname; // path as the app sees it
   let res = diMitra ? NextResponse.rewrite(url, { request: req }) : NextResponse.next({ request: req });
+  // The owner surface is never indexed, whatever robots.txt says for the main host.
+  if (diMitra) res.headers.set("X-Robots-Tag", "noindex, nofollow");
 
   // Session refresh + gate for the dashboard. Cookies are host-scoped, so
   // the renter surface never carries them.
@@ -60,6 +62,7 @@ export async function proxy(req: NextRequest) {
           setAll: (semua) => {
             semua.forEach(({ name, value }) => req.cookies.set(name, value));
             res = diMitra ? NextResponse.rewrite(url, { request: req }) : NextResponse.next({ request: req });
+            if (diMitra) res.headers.set("X-Robots-Tag", "noindex, nofollow");
             semua.forEach(({ name, value, options }) => res.cookies.set(name, value, options));
           },
         },

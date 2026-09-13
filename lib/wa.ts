@@ -1,4 +1,4 @@
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { restInsert } from "@/lib/supabase/rest";
 import { formatRupiah } from "@/lib/format";
 import type { Database } from "@/lib/supabase/types";
 
@@ -26,12 +26,9 @@ export function linkWa(whatsapp: string, pesan: string): string {
  */
 export function catatKlikWa(kosId: string, sumber: SumberKlik) {
   try {
-    void supabaseBrowser()
-      .from("klik_wa")
-      .insert({ kos_id: kosId, sumber, referrer: document.referrer || null })
-      .then(({ error }) => {
-        if (error) console.warn("klik_wa gagal dicatat:", error.message);
-      });
+    void restInsert("klik_wa", { kos_id: kosId, sumber, referrer: document.referrer || null }).then(({ error }) => {
+      if (error) console.warn("klik_wa gagal dicatat:", error.message);
+    });
   } catch (e) {
     console.warn("klik_wa gagal dicatat:", e);
   }

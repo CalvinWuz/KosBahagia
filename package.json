@@ -15,7 +15,8 @@
     "cek:skor-db": "node scripts/cek-skor-db.ts",
     "predev": "node scripts/salin-maplibre.mjs",
     "prebuild": "node scripts/salin-maplibre.mjs",
-    "proses:360": "node scripts/proses-360.mjs"
+    "proses:360": "node scripts/proses-360.mjs",
+    "cek:rilis": "node --env-file-if-exists=.env.local scripts/cek-rilis.ts"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.10",

@@ -4,6 +4,10 @@ import "../globals.css";
 import { plusJakarta } from "@/lib/fonts";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import Script from "next/script";
+
+// Privacy-respecting analytics: cookieless, no personal data, off unless configured.
+const PLAUSIBLE = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
 
 export const metadata: Metadata = {
   // Absolute URLs for canonical/OpenGraph. Override per environment.
@@ -32,6 +36,7 @@ export default function UserLayout({ children }: { children: ReactNode }) {
           {children}
         </main>
         <Footer />
+        {PLAUSIBLE && <Script defer data-domain={PLAUSIBLE} src={process.env.NEXT_PUBLIC_PLAUSIBLE_SRC ?? "https://plausible.io/js/script.js"} strategy="afterInteractive" />}
       </body>
     </html>
   );

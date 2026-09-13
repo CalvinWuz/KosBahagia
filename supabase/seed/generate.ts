@@ -209,7 +209,7 @@ const PROFIL: Profil[] = [
   { nama: "Kost Bu Haji Rohmah", jalan: "Jl. Rawa Belong Gg. Haji Sennin", kel: "Kemanggisan", tipe: "campur", sewa: 900000, listrik: "termasuk", dapur: true, redFlags: [0] },
   { nama: "Wisma Anggrek Dua", jalan: "Jl. Anggrek Cakra", kel: "Kemanggisan", tipe: "putra", sewa: 1500000, listrik: "flat", tier: "premium", ac: true },
   { nama: "Kos Pak Darto", jalan: "Jl. Kemanggisan Raya Gg. Mawar", kel: "Kemanggisan", tipe: "putra", sewa: 750000, listrik: "meteran", dapur: true },
-  { nama: "Griya Kemanggisan", jalan: "Jl. Keluarga", kel: "Kemanggisan", tipe: "campur", sewa: 1800000, listrik: "token", tier: "premium", ac: true, kmDalam: true },
+  { nama: "Griya Kemanggisan", jalan: "Jl. Keluarga", kel: "Kemanggisan", tipe: "campur", sewa: 1800000, listrik: "token", tier: "premium", ac: true, kmDalam: true, redFlags: [2] },
   { nama: "Slipi Residence Kost", jalan: "Jl. Anggrek Neli Murni", kel: "Slipi", tipe: "campur", sewa: 2400000, listrik: "termasuk", tier: "spotlight", ac: true, kmDalam: true, lift: true },
   { nama: "Kos Bunda Ratna", jalan: "Jl. Palmerah Barat Gg. II", kel: "Palmerah", tipe: "putri", sewa: 1000000, listrik: "token", dapur: true, peneranganNull: true },
   { nama: "Rumah Kos Cendana", jalan: "Jl. Kota Bambu Selatan", kel: "Kota Bambu Selatan", tipe: "campur", sewa: 850000, listrik: "flat", redFlags: [1, 2] },
