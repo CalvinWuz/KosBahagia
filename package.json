@@ -14,7 +14,8 @@
     "db:types": "supabase gen types typescript --local --schema public > lib/supabase/types.ts",
     "cek:skor-db": "node scripts/cek-skor-db.ts",
     "predev": "node scripts/salin-maplibre.mjs",
-    "prebuild": "node scripts/salin-maplibre.mjs"
+    "prebuild": "node scripts/salin-maplibre.mjs",
+    "proses:360": "node scripts/proses-360.mjs"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.10",
@@ -31,6 +32,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
+    "sharp": "^0.35.4",
     "supabase": "^2.117.0",
     "tailwindcss": "^4",
     "typescript": "^5"

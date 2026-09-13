@@ -38,6 +38,16 @@ worker as a separate module, so `scripts/salin-maplibre.mjs` copies it into
 `public/maplibre/` before `dev` and `build` (gitignored). The map bundle is
 loaded with `next/dynamic` only when the map is shown.
 
+## Minimap and 360° tour (detail page)
+
+- **Minimap** (`components/kos/Minimap.tsx`) is pure SVG driven by `kos_sekitar.rute`
+  (format in `prompts/06`, parser in `lib/kos/rute.ts`). No per-kos illustrations.
+- **360° tour** (`components/kos/tur360/`) is a raw-WebGL equirectangular viewer with
+  no library. It loads only after "Lihat 360°" is tapped, preview (2048 px) first,
+  then the full file; WebGL missing → flat photos. Gyroscope is behind a toggle.
+- Pipeline: `npm run proses:360 -- ./kamar.jpg --titik kamar --slug <kos>` makes the
+  2048/6144 px files and prints the `kos_media` row; push the files to R2 with wrangler.
+
 ## Check
 
 ```bash

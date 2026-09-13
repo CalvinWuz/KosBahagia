@@ -8,8 +8,8 @@ import type { Media } from "@/lib/kos/detail";
 import { cn } from "@/lib/cn";
 
 // Swipeable 4:3 gallery with a counter. Scroll-snap does the swiping; the
-// arrows exist for keyboards and pointers. No 360° here — task 06 links to
-// the tour from block 8; the pill is only the entry point.
+// arrows exist for keyboards and pointers. The 360° pill only points at the
+// trigger below the gallery; nothing 360-related loads from here.
 export function Galeri({ foto, nama, ada360 }: { foto: Media[]; nama: string; ada360: boolean }) {
   const rel = useRef<HTMLUListElement>(null);
   const [aktif, setAktif] = useState(0);
@@ -62,7 +62,7 @@ export function Galeri({ foto, nama, ada360 }: { foto: Media[]; nama: string; ad
           {aktif + 1}/{foto.length}
         </span>
         {ada360 && (
-          <a href="#cara-ke-sini" className="pointer-events-auto">
+          <a href="#tur-360" className="pointer-events-auto">
             <Badge tone="netral" className="bg-putih shadow">Tur 360° tersedia</Badge>
           </a>
         )}

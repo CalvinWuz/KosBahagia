@@ -378,6 +378,7 @@ export type Database = {
           kos_id: string
           lebar: number
           tinggi: number
+          tur: Json | null
           url: string
           urutan: number
         }
@@ -389,6 +390,7 @@ export type Database = {
           kos_id: string
           lebar: number
           tinggi: number
+          tur?: Json | null
           url: string
           urutan?: number
         }
@@ -400,6 +402,7 @@ export type Database = {
           kos_id?: string
           lebar?: number
           tinggi?: number
+          tur?: Json | null
           url?: string
           urutan?: number
         }

@@ -63,3 +63,10 @@ export function formatRupiahRingkas(rupiah: number): string {
   if (rupiah >= 1_000) return `Rp${angkaBulat.format(rupiah / 1_000)} rb`;
   return formatRupiah(rupiah);
 }
+
+/** Bytes → "4 MB" / "850 KB", id-ID separators. */
+export function formatUkuran(bytes: number): string {
+  if (bytes >= 1_000_000) return `${angkaSatuDesimal.format(Math.round((bytes / 1_000_000) * 10) / 10)} MB`;
+  if (bytes >= 1_000) return `${angkaBulat.format(bytes / 1_000)} KB`;
+  return `${angkaBulat.format(bytes)} B`;
+}

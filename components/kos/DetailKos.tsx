@@ -18,6 +18,8 @@ import { CatatanSurveyor } from "./detail/CatatanSurveyor";
 import { Ketersediaan, useKetersediaan } from "./detail/Ketersediaan";
 import { BarAksi } from "./detail/BarAksi";
 import { Blok } from "./detail/bagian";
+import { Tur360Pemicu } from "./tur360/Tur360Pemicu";
+import { bacaTitik, type TitikTur } from "./tur360/jenis";
 
 const TIPE_LABEL: Record<string, string> = { putra: "Kos putra", putri: "Kos putri", campur: "Kos campur" };
 
@@ -36,13 +38,19 @@ export function DetailKos({ data, sekarang }: { data: DetailKosData; sekarang: s
 
   const foto = media.filter((m) => m.jenis === "foto");
   const patokan = media.filter((m) => m.jenis === "patokan");
+  const titikTur = media.filter((m) => m.jenis === "foto360").map(bacaTitik).filter((t): t is TitikTur => t !== null);
   const nFasilitas = semuaFasilitas.filter((f) => f.bisa_difilter && fasilitasKos.includes(f.slug)).length;
 
   return (
     <div className="mx-auto max-w-6xl px-4 pt-4 pb-28 lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8 lg:pb-16">
       <div className="flex flex-col gap-10">
         {/* 1 */}
-        <Galeri foto={foto} nama={kos.nama} ada360={Boolean(kartu.ada_360)} />
+        <div className="flex flex-col gap-3">
+          <Galeri foto={foto} nama={kos.nama} ada360={titikTur.length > 0} />
+          {titikTur.length > 0 && (
+            <Tur360Pemicu titik={titikTur} fotoCadangan={foto.map((f) => ({ url: f.url, keterangan: f.keterangan }))} />
+          )}
+        </div>
 
         {/* 2 */}
         <header className="flex flex-col gap-2">

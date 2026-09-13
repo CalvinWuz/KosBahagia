@@ -392,37 +392,66 @@ for (const p of PROFIL) {
   const pasangan = p.tipe === "campur" ? pilih(["boleh", "surat_nikah", "surat_nikah", "tidak"]) : "tidak";
   aturanRows.push(`  (${q(id)}, ${q(jamMalam)}, ${q(pilih(["boleh", "ruang_tamu", "ruang_tamu", "tidak"]))}, ${q(p.tipe === "campur" ? pilih(["ruang_tamu", "boleh"]) : pilih(["ruang_tamu", "tidak", "tidak"]))}, ${q(pasangan)}, ${b(pasangan === "boleh" && peluang(0.5))}, ${b(peluang(0.1))}, ${b(peluang(0.35))}, ${q(pilih(["luar", "luar", "dilarang", "kamar"]))}, ${q(jakarta ? pilih(["mahasiswa", "mahasiswa", "karyawan", "campur"]) : pilih(["mahasiswa", "mahasiswa", "campur"]))}, ${q(pilih(["tenang", "tenang", "biasa", "ramai"]))})`);
 
+  // ---- media (placeholders with real dimensions; ids are explicit so the
+  // route and the tour can reference them)
+  const keterangan = ["Tampak depan", "Kamar tipe " + kamar[0].nama, "Kamar mandi", "Koridor", "Dapur bersama", "Area parkir", "Ruang tamu", "Jemuran"];
+  const jumlahFoto = tier === "free" ? antara(4, 6) : antara(6, 8);
+  for (let i = 0; i < jumlahFoto; i++) {
+    mediaRows.push(`  (${q(uuid())}, ${q(id)}, 'foto', ${q(`https://picsum.photos/seed/${slug}-${i + 1}/1600/1200`)}, ${q(keterangan[i] ?? `Foto ${i + 1}`)}, ${i}, 1600, 1200, ${q(pilih(BLURHASH))}, null)`);
+  }
+  const patokanId: string[] = [];
+  if (tier !== "free") {
+    // 360° points: one for premium, three linked by hotspots for spotlight.
+    const titik = tier === "spotlight" ? ["kamar", "koridor", "dapur"] : ["kamar"];
+    const idTitik = titik.map(() => uuid());
+    titik.forEach((t, i) => {
+      const hotspot = titik
+        .map((lain, j) => (j === i ? null : { ke: idTitik[j], yaw: (j - i) * 120 + 60, pitch: 0, label: `Ke ${lain}` }))
+        .filter(Boolean);
+      const tur = {
+        titik: t,
+        preview_url: `https://picsum.photos/seed/${slug}-360-${t}/2048/1024`,
+        ukuran_bytes: antara(3_200_000, 5_800_000),
+        hotspot,
+      };
+      mediaRows.push(`  (${q(idTitik[i])}, ${q(id)}, 'foto360', ${q(`https://picsum.photos/seed/${slug}-360-${t}/5000/2500`)}, ${q(`Tur 360° ${t}`)}, ${jumlahFoto + i}, 5000, 2500, ${q(pilih(BLURHASH))}, ${js(tur)})`);
+    });
+    patokanId.push(uuid(), uuid());
+    mediaRows.push(`  (${q(patokanId[0])}, ${q(id)}, 'patokan', ${q(`https://picsum.photos/seed/${slug}-patokan-1/1600/1200`)}, ${q(`Gang masuk dari ${p.jalan.replace(/ Gg\..*$/, "")}`)}, ${jumlahFoto + 3}, 1600, 1200, ${q(pilih(BLURHASH))}, null)`);
+    mediaRows.push(`  (${q(patokanId[1])}, ${q(id)}, 'patokan', ${q(`https://picsum.photos/seed/${slug}-patokan-2/1600/1200`)}, 'Patokan: minimarket di ujung gang', ${jumlahFoto + 4}, 1600, 1200, ${q(pilih(BLURHASH))}, null)`);
+  }
+
   // ---- surroundings
   if (!p.tanpaSekitar) {
     const landmark = jakarta
       ? (() => { const kampus = AREA[1]; const stasiun = AREA[2]; const dK = jarakMeter(lat, lng, kampus.lat, kampus.lng); const dS = jarakMeter(lat, lng, stasiun.lat, stasiun.lng); return dK <= dS ? { nama: kampus.nama, jarak: dK } : { nama: stasiun.nama, jarak: dS }; })()
       : { nama: "Universitas Brawijaya (Gerbang Veteran)", jarak: jarakMeter(lat, lng, AREA[4].lat, AREA[4].lng) };
     const menit = Math.max(1, Math.round(landmark.jarak / 75));
-    const rute = [
-      `Keluar gang ke ${p.jalan.replace(/ Gg\..*$/, "")}`,
-      `Belok ${pilih(["kiri", "kanan"])}, lurus ${bulatkan(Math.round(landmark.jarak * 0.6), 50)} m`,
-      pilih(["Seberangi jalan di zebra cross depan minimarket", "Lewat jembatan penyeberangan", "Ikuti trotoar sampai lampu merah", "Masuk gang kecil di samping warung"]),
-      `${landmark.nama.split(" (")[0]} ada di ${pilih(["kanan", "kiri"])} jalan`,
+    // Route in the prompts/06 format: 2–4 steps, cycling so the seed always
+    // has a 2-step and a 4-step example. Photo ids are patched in below.
+    const jumlahLangkah = 2 + (PROFIL.indexOf(p) % 3);
+    const jalanUtama = p.jalan.replace(/ Gg\..*$/, "");
+    const semuaLangkah = [
+      { teks: `Dari ${landmark.nama.split(" (")[0]}, jalan lurus ${bulatkan(Math.round(landmark.jarak * 0.5), 50)} m ke arah ${jalanUtama}`, ikon: "lurus" },
+      { teks: `Belok ${pilih(["kiri", "kanan"])} di ${pilih(["warung cat biru", "minimarket", "masjid kecil", "pangkalan ojek", "pohon beringin besar"])}`, ikon: pilih(["belok-kiri", "belok-kanan"]), foto: 0 },
+      { teks: pilih(["Seberangi jalan di zebra cross depan minimarket", "Lewat jembatan penyeberangan", "Ikuti trotoar sampai lampu merah", "Masuk gang kecil di samping warung"]), ikon: pilih(["seberang", "gang"]) },
+      { teks: `Kos ada di ${pilih(["kanan", "kiri"])} gang, pagar ${pilih(["hijau", "hitam", "cokelat", "putih"])}`, ikon: "tujuan", foto: 1 },
     ];
+    const langkah = jumlahLangkah === 2 ? [semuaLangkah[0], semuaLangkah[3]] : jumlahLangkah === 3 ? [semuaLangkah[0], semuaLangkah[1], semuaLangkah[3]] : semuaLangkah;
+    const ikonLandmark = jakarta ? (landmark.nama.startsWith("Stasiun") ? "stasiun" : "kampus") : "kampus";
+    const rute = {
+      landmark: { nama: landmark.nama, ikon: ikonLandmark },
+      langkah: langkah.map((l) => ({ teks: l.teks, ikon: l.ikon, ...(l.foto != null && patokanId[l.foto] ? { foto_id: patokanId[l.foto] } : {}) })),
+      total_menit: menit,
+      akses: p.lift ? "mobil" : pilih(["motor", "motor", "mobil", "jalan_kaki"]),
+    };
     const minimarket = peluang(0.85) ? { nama: jakarta ? pilih(["Indomaret Kemanggisan Raya", "Alfamart Rawa Belong", "Indomaret Palmerah Barat", "Alfamidi Anggrek Cakra", "Indomaret KH Syahdan"]) : pilih(["Indomaret Kertoleksono", "Alfamart Sumbersari", "Indomaret Watugong", "Alfamart Veteran"]), jarak_m: bulatkan(antara(40, 400), 10) } : null;
     const warung = peluang(0.9) ? { nama: pilih(["Warteg Bahari", "Warung Bu Yem", "Nasi Padang Sederhana", "Warung Pecel Lele Pak Kumis", "Warmindo 24 Jam", "Warung Nasi Bu Sum"]), jarak_m: bulatkan(antara(20, 250), 10) } : null;
     const laundryDekat = peluang(0.75) ? { nama: pilih(["Laundry Kiloan Bersih", "Cuci Kilat Express", "Laundry Mama", "Superwash"]), jarak_m: bulatkan(antara(50, 350), 10), harga_per_kg: bulatkan(antara(6000, 9000), 500) } : null;
     const transit = jakarta
       ? (peluang(0.8) ? pilih([{ jenis: "KRL", nama: "Stasiun Palmerah", jarak_m: jarakMeter(lat, lng, AREA[2].lat, AREA[2].lng) }, { jenis: "TransJakarta", nama: "Halte Slipi Kemanggisan", jarak_m: bulatkan(antara(300, 1200), 50) }, { jenis: "Angkot", nama: "M11 Tanah Abang–Meruya", jarak_m: bulatkan(antara(50, 300), 10) }]) : null)
       : (peluang(0.6) ? { jenis: "Angkot", nama: pilih(["ADL", "AL", "GML"]), jarak_m: bulatkan(antara(50, 400), 10) } : null);
-    sekitarRows.push(`  (${q(id)}, ${q(landmark.nama)}, ${landmark.jarak}, ${menit}, ${js(rute)}, ${js(minimarket)}, ${js(warung)}, ${js(laundryDekat)}, ${js(transit)}, ${q(p.lift ? "mobil" : pilih(["motor", "motor", "mobil", "jalan_kaki"]))}, ${p.peneranganNull ? "null" : String(antara(2, 5))}, ${b(p.redFlags?.includes(1) ? true : peluang(0.15))})`);
-  }
-
-  // ---- media (placeholders with real dimensions)
-  const keterangan = ["Tampak depan", "Kamar tipe " + kamar[0].nama, "Kamar mandi", "Koridor", "Dapur bersama", "Area parkir", "Ruang tamu", "Jemuran"];
-  const jumlahFoto = tier === "free" ? antara(4, 6) : antara(6, 8);
-  for (let i = 0; i < jumlahFoto; i++) {
-    mediaRows.push(`  (${q(id)}, 'foto', ${q(`https://picsum.photos/seed/${slug}-${i + 1}/1600/1200`)}, ${q(keterangan[i] ?? `Foto ${i + 1}`)}, ${i}, 1600, 1200, ${q(pilih(BLURHASH))})`);
-  }
-  if (tier !== "free") {
-    mediaRows.push(`  (${q(id)}, 'foto360', ${q(`https://picsum.photos/seed/${slug}-360/4096/2048`)}, 'Tur 360° kamar dan koridor', ${jumlahFoto}, 4096, 2048, ${q(pilih(BLURHASH))})`);
-    mediaRows.push(`  (${q(id)}, 'patokan', ${q(`https://picsum.photos/seed/${slug}-patokan-1/1600/1200`)}, ${q(`Gang masuk dari ${p.jalan.replace(/ Gg\..*$/, "")}`)}, ${jumlahFoto + 1}, 1600, 1200, ${q(pilih(BLURHASH))})`);
-    mediaRows.push(`  (${q(id)}, 'patokan', ${q(`https://picsum.photos/seed/${slug}-patokan-2/1600/1200`)}, 'Patokan: minimarket di ujung gang', ${jumlahFoto + 2}, 1600, 1200, ${q(pilih(BLURHASH))})`);
+    sekitarRows.push(`  (${q(id)}, ${q(landmark.nama)}, ${landmark.jarak}, ${menit}, ${js(rute)}, ${js(minimarket)}, ${js(warung)}, ${js(laundryDekat)}, ${js(transit)}, ${q(rute.akses)}, ${p.peneranganNull ? "null" : String(antara(2, 5))}, ${b(p.redFlags?.includes(1) ? true : peluang(0.15))})`);
   }
 
   // ---- surveyor notes
@@ -437,7 +466,7 @@ emit(`insert into kos_penilaian (kos_id, skor_kamar_mandi, skor_dapur, skor_kori
 emit(`insert into kos_fasilitas (kos_id, fasilitas_id) values\n${kosFasRows.join(",\n")};\n`);
 emit(`insert into kos_aturan (kos_id, jam_malam, tamu, lawan_jenis, pasangan, anak, hewan, masak_di_kamar, merokok, mayoritas_penghuni, suasana) values\n${aturanRows.join(",\n")};\n`);
 emit(`insert into kos_sekitar (kos_id, landmark_nama, landmark_jarak_m, landmark_menit_jalan, rute, minimarket, warung, laundry, transit, akses, penerangan, rawan_banjir) values\n${sekitarRows.join(",\n")};\n`);
-emit(`insert into kos_media (kos_id, jenis, url, keterangan, urutan, lebar, tinggi, blurhash) values\n${mediaRows.join(",\n")};\n`);
+emit(`insert into kos_media (id, kos_id, jenis, url, keterangan, urutan, lebar, tinggi, blurhash, tur) values\n${mediaRows.join(",\n")};\n`);
 emit(`insert into catatan_surveyor (kos_id, hal_baik, perlu_diketahui, kesan_pemilik, red_flags) values\n${catatanRows.join(",\n")};\n`);
 emit(`insert into log_ketersediaan (kos_id, tipe_kamar_id, kamar_tersedia, sumber, dibuat_pada) values\n${logRows.join(",\n")};\n`);
 emit(`commit;\n`);
