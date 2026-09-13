@@ -5,6 +5,9 @@
 -- the homepage "Baru disurvei" rail and reusable by saved/compare pages.
 -- cari_saran: typeahead over area.nama and kos.nama (trigram indexes).
 
+-- Hosted Supabase applies migrations without `extensions` on the search_path.
+set search_path = public, extensions;
+
 create or replace view kos_kartu
 with (security_invoker = on)
 as

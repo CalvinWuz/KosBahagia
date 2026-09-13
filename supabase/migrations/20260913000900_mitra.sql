@@ -9,6 +9,9 @@
 --   *_via_tautan           read/update availability with a link token
 --   statistik_mitra        the numbers on the dashboard
 
+-- Hosted Supabase applies migrations without `extensions` on the search_path.
+set search_path = public, extensions;
+
 create extension if not exists pgcrypto with schema extensions;
 
 alter table kos add column if not exists deskripsi text;

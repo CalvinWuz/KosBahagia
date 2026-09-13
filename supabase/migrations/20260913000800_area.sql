@@ -5,6 +5,9 @@
 -- Membership matches /cari: tayang, availability confirmed ≤ 90 days,
 -- within the area's radius of its centre.
 
+-- Hosted Supabase applies migrations without `extensions` on the search_path.
+set search_path = public, extensions;
+
 create or replace function area_radius_m(p_tipe tipe_area)
 returns integer
 language sql
@@ -29,6 +32,7 @@ returns table (
 )
 language sql
 stable
+set search_path = public, extensions
 as $$
   with a as (
     select lokasi, area_radius_m(tipe) as radius from area where slug = p_slug
@@ -86,6 +90,7 @@ create or replace function area_tetangga(p_slug text, p_limit integer default 3)
 returns table (slug text, nama text, tipe tipe_area, jarak_m integer, jumlah_kos integer)
 language sql
 stable
+set search_path = public, extensions
 as $$
   with asal as (select lokasi from area where slug = p_slug)
   select

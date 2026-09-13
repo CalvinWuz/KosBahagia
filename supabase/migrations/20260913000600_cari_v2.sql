@@ -4,6 +4,9 @@
 --   cari_kos      + p_q (name filter), aturan.dekat_minimarket, ada_360 output,
 --                 full kos (0 rooms left) sink to the bottom
 
+-- Hosted Supabase applies migrations without `extensions` on the search_path.
+set search_path = public, extensions;
+
 create or replace view area_publik
 with (security_invoker = on)
 as
@@ -141,6 +144,7 @@ returns table (
 )
 language sql
 stable
+set search_path = public, extensions
 as $$
 with pusat as (
   select st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography as titik

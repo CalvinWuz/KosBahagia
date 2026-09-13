@@ -5,6 +5,9 @@
 -- Sum of the mandatory items in tipe_kamar.biaya_lain. Immutable so it can
 -- feed the generated total_bulanan column. Items look like
 -- {"nama": "Sampah", "jumlah": 20000, "wajib": true}; wajib defaults to true.
+-- Hosted Supabase applies migrations without `extensions` on the search_path.
+set search_path = public, extensions;
+
 create or replace function biaya_lain_wajib(biaya jsonb)
 returns integer
 language sql

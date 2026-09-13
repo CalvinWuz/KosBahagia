@@ -11,6 +11,9 @@
 -- 0–10 with one decimal. Kebersihan or kedap missing → skor NULL
 -- ("Belum dinilai"). Sekitar missing → its weight is dropped, not guessed.
 
+-- Hosted Supabase applies migrations without `extensions` on the search_path.
+set search_path = public, extensions;
+
 create or replace view kos_skor
 with (security_invoker = on)
 as
@@ -170,6 +173,7 @@ returns table (
 )
 language sql
 stable
+set search_path = public, extensions
 as $$
 with pusat as (
   select st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography as titik
