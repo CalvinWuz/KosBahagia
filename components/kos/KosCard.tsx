@@ -64,7 +64,8 @@ export function KosCard({
       className={cn(
         "relative flex overflow-hidden rounded-2xl border border-biru-100 bg-putih",
         ringkas ? "flex-row" : "h-full flex-col",
-        penuh && "opacity-60",
+        // Full kos step back visually without losing text contrast.
+        penuh && "border-arang-500/20 bg-kertas-50 [&_img]:grayscale",
         className,
       )}
       aria-label={kos.nama ?? undefined}
@@ -167,7 +168,7 @@ export function KosCard({
 }
 
 // Save + compare. Local-only (no login wall); sits above the stretched link.
-function AksiKartu({ id, nama }: { id: string; nama: string }) {
+export function AksiKartu({ id, nama }: { id: string; nama: string }) {
   const tersimpan = useSimpanan("simpan").includes(id);
   const banding = useSimpanan("banding");
   const dibanding = banding.includes(id);

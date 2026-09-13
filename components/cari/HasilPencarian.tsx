@@ -244,6 +244,7 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
             <Kosong kunci={kunci} saran={saran} params={params} sekarang={sekarangDate} />
           ) : (
             <>
+              <h2 className="sr-only">Hasil pencarian</h2>
               <ul className={cn("grid gap-4 sm:grid-cols-2", memuat && "opacity-60")} aria-busy={memuat}>
                 {hasil.map((k, i) => (
                   <li key={k.id}>

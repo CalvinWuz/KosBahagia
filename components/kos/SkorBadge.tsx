@@ -28,7 +28,7 @@ export function SkorBadge({
       {dinilai ? (
         <>
           {formatSkor(skor)}
-          <span className={cn("font-medium opacity-80", size === "lg" ? "text-small" : "text-micro")}>/10</span>
+          <span className={cn("font-medium", size === "lg" ? "text-small" : "text-micro")}>/10</span>
         </>
       ) : (
         "Belum dinilai"

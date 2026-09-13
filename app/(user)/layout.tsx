@@ -6,6 +6,8 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 
 export const metadata: Metadata = {
+  // Absolute URLs for canonical/OpenGraph. Override per environment.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://kosbahagia.com"),
   title: {
     default: "Kos Bahagia — Kos yang sudah kami cek langsung",
     template: "%s · Kos Bahagia",
