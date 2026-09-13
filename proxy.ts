@@ -10,13 +10,17 @@ import { COOKIE_MITRA } from "@/lib/supabase/mitra-cookie";
 // surface can be developed on plain localhost.
 
 const MITRA_URL = process.env.NEXT_PUBLIC_MITRA_URL ?? "https://mitra.kosbahagia.com";
-const HOST_UTAMA = (() => {
+const hostDari = (u: string, fallback: string) => {
   try {
-    return new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://kosbahagia.com").host;
+    return new URL(u).host;
   } catch {
-    return "kosbahagia.com";
+    return fallback;
   }
-})();
+};
+const HOST_UTAMA = hostDari(process.env.NEXT_PUBLIC_SITE_URL ?? "https://kosbahagia.com", "kosbahagia.com");
+// Without a dedicated mitra host (e.g. a *.vercel.app preview where
+// NEXT_PUBLIC_MITRA_URL is "<site>/mitra"), /mitra/* stays on the main host.
+const MITRA_HOST_TERPISAH = hostDari(MITRA_URL, "") !== HOST_UTAMA;
 
 
 function hostMitra(host: string) {
@@ -29,7 +33,7 @@ export async function proxy(req: NextRequest) {
   const diMitra = hostMitra(host);
 
   // Main production host: owner UI is not served here.
-  if (!diMitra && url.pathname.startsWith("/mitra") && (host === HOST_UTAMA || host === `www.${HOST_UTAMA}`)) {
+  if (!diMitra && MITRA_HOST_TERPISAH && url.pathname.startsWith("/mitra") && (host === HOST_UTAMA || host === `www.${HOST_UTAMA}`)) {
     const tujuan = new URL(url.pathname.replace(/^\/mitra/, "") || "/", MITRA_URL);
     tujuan.search = url.search;
     return NextResponse.redirect(tujuan, 308);
