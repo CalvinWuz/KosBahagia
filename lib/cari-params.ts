@@ -30,6 +30,8 @@ export type CariParams = {
   tanpa_jam_malam?: boolean;
   hewan?: boolean;
   masak?: boolean;
+  /** Negative filter: hide kos with no minimarket within 300 m. */
+  dekat_minimarket?: boolean;
   urut?: UrutCari;
   /** 1-based page. */
   hal?: number;
@@ -54,6 +56,7 @@ export function hrefCari(p: CariParams): string {
   if (p.tanpa_jam_malam) sp.set("tanpa_jam_malam", "1");
   if (p.hewan) sp.set("hewan", "1");
   if (p.masak) sp.set("masak", "1");
+  if (p.dekat_minimarket) sp.set("dekat_minimarket", "1");
   if (p.urut && p.urut !== "relevan") sp.set("urut", p.urut);
   if (p.hal && p.hal > 1) sp.set("hal", String(p.hal));
   const qs = sp.toString();
@@ -91,7 +94,35 @@ export function bacaCariParams(mentah: Mentah | URLSearchParams): CariParams {
     tanpa_jam_malam: g("tanpa_jam_malam") === "1",
     hewan: g("hewan") === "1",
     masak: g("masak") === "1",
+    dekat_minimarket: g("dekat_minimarket") === "1",
     urut: URUT.includes(urut as UrutCari) ? (urut as UrutCari) : "relevan",
     hal: angka(g("hal"), 1, 1000) ?? 1,
   };
+}
+
+/** Filters that narrow results (everything except where/how to sort). */
+export const KUNCI_FILTER = [
+  "harga_min",
+  "harga_max",
+  "tipe",
+  "kebersihan",
+  "kedap",
+  "fasilitas",
+  "pasangan",
+  "tanpa_jam_malam",
+  "hewan",
+  "masak",
+  "dekat_minimarket",
+] as const satisfies readonly (keyof CariParams)[];
+
+export function jumlahFilterAktif(p: CariParams): number {
+  return KUNCI_FILTER.filter((k) => {
+    const v = p[k];
+    return Array.isArray(v) ? v.length > 0 : Boolean(v);
+  }).length;
+}
+
+/** Same search, no narrowing filters. */
+export function tanpaFilter(p: CariParams): CariParams {
+  return { q: p.q, area: p.area, radius: p.radius, urut: p.urut };
 }

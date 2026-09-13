@@ -42,3 +42,6 @@ next-env.d.ts
 
 # keep the template
 !.env.example
+
+# copied from node_modules by scripts/salin-maplibre.mjs
+/public/maplibre/

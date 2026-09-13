@@ -31,6 +31,13 @@ npm run db:types            # regenerates lib/supabase/types.ts (never hand-edit
 - Seed: `supabase/seed/generate.ts` writes `supabase/seed/01_seed.sql` (`npm run seed:generate`). 40 kos in Palmerah (Jakarta Barat), 10 in Lowokwaru (Malang).
 - Skor Bahagia lives in two places on purpose: `lib/scoring.ts` (UI breakdown, unit-tested) and the `kos_skor` view (search ranking). `npm run cek:skor-db` proves they agree on the seed.
 
+## Map
+
+`/cari` uses MapLibre GL with OpenFreeMap tiles (no key). MapLibre ≥ 6 loads its
+worker as a separate module, so `scripts/salin-maplibre.mjs` copies it into
+`public/maplibre/` before `dev` and `build` (gitignored). The map bundle is
+loaded with `next/dynamic` only when the map is shown.
+
 ## Check
 
 ```bash

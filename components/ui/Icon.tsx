@@ -181,3 +181,71 @@ export function IconJam(props: IconProps) {
     </Svg>
   );
 }
+
+// ---- search page icons
+export function IconSuara(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M4 10v4h4l5 4V6l-5 4z" />
+      <path d="m17 9 4 6M21 9l-4 6" />
+    </Svg>
+  );
+}
+
+export function IconHati(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z" />
+    </Svg>
+  );
+}
+
+export function IconBanding(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M4 8h13l-3-3M20 16H7l3 3" />
+    </Svg>
+  );
+}
+
+export function IconPeta(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="m3 6 6-2 6 2 6-2v14l-6 2-6-2-6 2z" />
+      <path d="M9 4v14M15 6v14" />
+    </Svg>
+  );
+}
+
+export function IconDaftar(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M4 6h16M4 12h16M4 18h16" />
+    </Svg>
+  );
+}
+
+export function IconKembali(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M19 12H5M11 6l-6 6 6 6" />
+    </Svg>
+  );
+}
+
+export function IconFilter(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M4 6h16M7 12h10M10 18h4" />
+    </Svg>
+  );
+}
+
+export function IconPutar(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M20 12a8 8 0 1 1-2.3-5.7" />
+      <path d="M20 4v5h-5" />
+    </Svg>
+  );
+}

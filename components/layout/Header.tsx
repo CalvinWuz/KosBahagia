@@ -10,9 +10,13 @@ import { IconBookmark, IconSearch } from "@/components/ui/Icon";
 // the saved-items shortcut. Nothing here mentions owners or dashboards.
 // On the homepage the hero owns the search box, so the entry is hidden there.
 export function Header() {
-  const cari = usePathname() !== "/";
+  const pathname = usePathname();
+  const cari = pathname !== "/";
+  // /cari has its own sticky bar on mobile; the global header would only
+  // eat vertical space there.
+  const diCari = pathname.startsWith("/cari");
   return (
-    <header className="sticky top-0 z-40 border-b border-biru-100 bg-putih">
+    <header className={cn("sticky top-0 z-40 border-b border-biru-100 bg-putih", diCari && "hidden lg:block")}>
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
         <Link
           href="/"

@@ -104,14 +104,20 @@ select is(
   'draft and arsip kos never appear');
 
 -- 7. ordering ----------------------------------------------------------------
+-- Full kos (0 rooms) sink to the very bottom (checked in cari_v2.test.sql);
+-- everything else is ranked among the kos that still have a room.
 create temp table urutan as
   select row_number() over () as posisi, *
   from cari_kos(-6.2019, 106.7818, 5000, p_limit => 200);
+create temp table aktif as
+  select row_number() over (order by u.posisi) as posisi, u.slug, u.tier, u.perlu_dikonfirmasi, u.skor
+  from urutan u where u.kamar_tersedia > 0;
 
 select is(
-  (select count(*) from urutan where tier = 'spotlight' and posisi <= 2),
-  2::bigint,
-  'ordering: the first two rows are spotlight');
+  (select count(*) from aktif where tier = 'spotlight'
+    and posisi <= least(2, (select count(*) from aktif where tier = 'spotlight' and not perlu_dikonfirmasi))),
+  least(2::bigint, (select count(*) from aktif where tier = 'spotlight' and not perlu_dikonfirmasi)),
+  'ordering: fresh spotlight kos with rooms take the top slots (max two)');
 
 select is(
   (select count(*) from urutan where tier = 'spotlight'),
@@ -119,12 +125,12 @@ select is(
   'ordering: all three Jakarta spotlight kos are in the result');
 
 select ok(
-  (select min(posisi) from urutan where tier = 'free')
-  > (select max(posisi) from urutan where tier in ('premium', 'spotlight') and not perlu_dikonfirmasi),
-  'ordering: the third spotlight drops to premium rank; every fresh paid kos precedes every free one');
+  (select min(posisi) from aktif where tier = 'free' and not perlu_dikonfirmasi)
+  > (select max(posisi) from aktif where tier in ('premium', 'spotlight') and not perlu_dikonfirmasi),
+  'ordering: every fresh paid kos precedes every fresh free one');
 
 select ok(
-  (select bool_and(perlu_dikonfirmasi) from urutan where posisi > (select count(*) from urutan where not perlu_dikonfirmasi)),
+  (select bool_and(perlu_dikonfirmasi) from aktif where posisi > (select count(*) from aktif where not perlu_dikonfirmasi)),
   'ordering: every stale listing sits below every fresh one');
 
 select is(
@@ -139,7 +145,7 @@ select is(
 select ok(
   (select bool_and(skor_berikut is null or skor >= skor_berikut)
      from (select skor, lead(skor) over (order by posisi) as skor_berikut
-           from urutan where not perlu_dikonfirmasi and tier = 'free') x),
+           from aktif where not perlu_dikonfirmasi and tier = 'free') x),
   'ordering: within fresh free listings, relevance is by skor desc (nulls last)');
 
 select ok(
@@ -147,7 +153,7 @@ select ok(
      from (select total_bulanan, lead(total_bulanan) over (order by posisi) as total_berikut
            from (select row_number() over () as posisi, *
                  from cari_kos(-7.9526, 112.6141, 3000, p_urut => 'termurah', p_limit => 100)) m
-           where tier = 'free' and not perlu_dikonfirmasi) x),
+           where tier = 'free' and not perlu_dikonfirmasi and kamar_tersedia > 0) x),
   'termurah (Malang): fresh free listings are sorted by total ascending');
 
 select ok(
@@ -155,7 +161,7 @@ select ok(
      from (select jarak_m, lead(jarak_m) over (order by posisi) as jarak_berikut
            from (select row_number() over () as posisi, *
                  from cari_kos(-6.2019, 106.7818, 5000, p_urut => 'terdekat', p_limit => 200)) m
-           where tier = 'free' and not perlu_dikonfirmasi) x),
+           where tier = 'free' and not perlu_dikonfirmasi and kamar_tersedia > 0) x),
   'terdekat: fresh free listings are sorted by distance ascending');
 
 -- 8. headline number is the real total ---------------------------------------

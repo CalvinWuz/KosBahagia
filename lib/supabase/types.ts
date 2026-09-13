@@ -246,6 +246,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "kos_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "area_publik"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "kos_owner_id_fkey"
             columns: ["owner_id"]
             isOneToOne: false
@@ -791,8 +798,45 @@ export type Database = {
       }
     }
     Views: {
+      area_publik: {
+        Row: {
+          deskripsi: string | null
+          id: string | null
+          lat: number | null
+          lng: number | null
+          nama: string | null
+          seo_deskripsi: string | null
+          seo_judul: string | null
+          slug: string | null
+          tipe: Database["public"]["Enums"]["tipe_area"] | null
+        }
+        Insert: {
+          deskripsi?: string | null
+          id?: string | null
+          lat?: never
+          lng?: never
+          nama?: string | null
+          seo_deskripsi?: string | null
+          seo_judul?: string | null
+          slug?: string | null
+          tipe?: Database["public"]["Enums"]["tipe_area"] | null
+        }
+        Update: {
+          deskripsi?: string | null
+          id?: string | null
+          lat?: never
+          lng?: never
+          nama?: string | null
+          seo_deskripsi?: string | null
+          seo_judul?: string | null
+          slug?: string | null
+          tipe?: Database["public"]["Enums"]["tipe_area"] | null
+        }
+        Relationships: []
+      }
       kos_kartu: {
         Row: {
+          ada_360: boolean | null
           area_nama: string | null
           area_slug: string | null
           disurvei_pada: string | null
@@ -851,11 +895,13 @@ export type Database = {
           p_min_kebersihan?: number
           p_min_kedap?: number
           p_offset?: number
+          p_q?: string
           p_radius_m?: number
           p_tipe?: Database["public"]["Enums"]["tipe_kos"]
           p_urut?: string
         }
         Returns: {
+          ada_360: boolean
           foto_blurhash: string
           foto_lebar: number
           foto_tinggi: number
@@ -866,10 +912,13 @@ export type Database = {
           jumlah_red_flags: number
           kamar_tersedia: number
           ketersediaan_dikonfirmasi_pada: string
+          landmark_menit_jalan: number
+          landmark_nama: string
           lat: number
           lng: number
           nama: string
           perlu_dikonfirmasi: boolean
+          rincian: Json
           skor: number
           skor_kebersihan: number
           skor_kedap: number
