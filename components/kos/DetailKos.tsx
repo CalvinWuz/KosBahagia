@@ -60,7 +60,7 @@ export function DetailKos({ data, sekarang }: { data: DetailKosData; sekarang: s
           </div>
           <div className="flex items-start justify-between gap-3">
             <h1 className="text-h1 text-arang-900">{kos.nama}</h1>
-            <AksiKartu id={kos.id} nama={kos.nama} />
+            <AksiKartu kos={{ id: kos.id, slug: kos.slug, nama: kos.nama, total_bulanan: kartu.total_bulanan, kamar_tersedia: kartu.kamar_tersedia }} />
           </div>
           <p className="text-body text-arang-900">
             {kos.alamat}

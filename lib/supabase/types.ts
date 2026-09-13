@@ -885,6 +885,20 @@ export type Database = {
       }
     }
     Functions: {
+      area_radius_m: {
+        Args: { p_tipe: Database["public"]["Enums"]["tipe_area"] }
+        Returns: number
+      }
+      area_tetangga: {
+        Args: { p_limit?: number; p_slug: string }
+        Returns: {
+          jarak_m: number
+          jumlah_kos: number
+          nama: string
+          slug: string
+          tipe: Database["public"]["Enums"]["tipe_area"]
+        }[]
+      }
       biaya_lain_wajib: { Args: { biaya: Json }; Returns: number }
       cari_kos: {
         Args: {
@@ -943,6 +957,22 @@ export type Database = {
       }
       kos_tayang: { Args: { p_kos_id: string }; Returns: boolean }
       punya_kos: { Args: { p_kos_id: string }; Returns: boolean }
+      statistik_area: {
+        Args: { p_slug: string }
+        Returns: {
+          jumlah_campur: number
+          jumlah_kos: number
+          jumlah_putra: number
+          jumlah_putri: number
+          jumlah_tanpa_jam_malam: number
+          max_total: number
+          median_total: number
+          min_total: number
+          model_listrik_umum: string
+          persen_km_dalam: number
+          rata_harga_makan: number
+        }[]
+      }
     }
     Enums: {
       akses_jalan: "motor" | "mobil" | "jalan_kaki"

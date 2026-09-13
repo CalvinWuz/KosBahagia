@@ -24,6 +24,10 @@ function mulberry32(seed: number) {
 }
 const rand = mulberry32(20260913);
 const antara = (min: number, max: number) => min + Math.floor(rand() * (max - min + 1));
+// Second stream for fields added after the pgTAP literals were hand-checked,
+// so new fields never shift the values earlier tests pinned down.
+const rand2 = mulberry32(20260914);
+const antara2 = (min: number, max: number) => min + Math.floor(rand2() * (max - min + 1));
 const pilih = <T>(arr: readonly T[]): T => arr[Math.floor(rand() * arr.length)];
 const peluang = (p: number) => rand() < p;
 const ambil = <T>(arr: readonly T[], n: number): T[] => {
@@ -446,7 +450,7 @@ for (const p of PROFIL) {
       akses: p.lift ? "mobil" : pilih(["motor", "motor", "mobil", "jalan_kaki"]),
     };
     const minimarket = peluang(0.85) ? { nama: jakarta ? pilih(["Indomaret Kemanggisan Raya", "Alfamart Rawa Belong", "Indomaret Palmerah Barat", "Alfamidi Anggrek Cakra", "Indomaret KH Syahdan"]) : pilih(["Indomaret Kertoleksono", "Alfamart Sumbersari", "Indomaret Watugong", "Alfamart Veteran"]), jarak_m: bulatkan(antara(40, 400), 10) } : null;
-    const warung = peluang(0.9) ? { nama: pilih(["Warteg Bahari", "Warung Bu Yem", "Nasi Padang Sederhana", "Warung Pecel Lele Pak Kumis", "Warmindo 24 Jam", "Warung Nasi Bu Sum"]), jarak_m: bulatkan(antara(20, 250), 10) } : null;
+    const warung = peluang(0.9) ? { nama: pilih(["Warteg Bahari", "Warung Bu Yem", "Nasi Padang Sederhana", "Warung Pecel Lele Pak Kumis", "Warmindo 24 Jam", "Warung Nasi Bu Sum"]), jarak_m: bulatkan(antara(20, 250), 10), harga_makan: bulatkan(antara2(jakarta ? 12000 : 8000, jakarta ? 25000 : 18000), 1000) } : null;
     const laundryDekat = peluang(0.75) ? { nama: pilih(["Laundry Kiloan Bersih", "Cuci Kilat Express", "Laundry Mama", "Superwash"]), jarak_m: bulatkan(antara(50, 350), 10), harga_per_kg: bulatkan(antara(6000, 9000), 500) } : null;
     const transit = jakarta
       ? (peluang(0.8) ? pilih([{ jenis: "KRL", nama: "Stasiun Palmerah", jarak_m: jarakMeter(lat, lng, AREA[2].lat, AREA[2].lng) }, { jenis: "TransJakarta", nama: "Halte Slipi Kemanggisan", jarak_m: bulatkan(antara(300, 1200), 50) }, { jenis: "Angkot", nama: "M11 Tanah Abang–Meruya", jarak_m: bulatkan(antara(50, 300), 10) }]) : null)

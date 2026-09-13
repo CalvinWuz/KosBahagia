@@ -6,7 +6,10 @@ import Link from "next/link";
 import type { Database } from "@/lib/supabase/types";
 import { cn } from "@/lib/cn";
 import { formatRupiah, formatRupiahRingkas, formatWaktuRelatif } from "@/lib/format";
-import { MAKS_BANDING, toggleBanding, toggleSimpan, useSimpanan } from "@/lib/simpan";
+import { gantiBanding, hapusBanding, tambahBanding, toggleSimpan, useBanding, useSimpanan, type RingkasanKos } from "@/lib/simpan";
+import { Sheet } from "@/components/ui/Sheet";
+import { Button } from "@/components/ui/Button";
+import { useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { IconBanding, IconDaun, IconHati, IconSuara } from "@/components/ui/Icon";
@@ -160,7 +163,7 @@ export function KosCard({
               )
             )}
           </div>
-          {!ringkas && <AksiKartu id={id} nama={kos.nama ?? ""} />}
+          {!ringkas && <AksiKartu kos={{ id, slug: kos.slug ?? "", nama: kos.nama ?? "", total_bulanan: kos.total_bulanan, kamar_tersedia: kos.kamar_tersedia }} />}
         </div>
       </div>
     </article>
@@ -168,22 +171,28 @@ export function KosCard({
 }
 
 // Save + compare. Local-only (no login wall); sits above the stretched link.
-export function AksiKartu({ id, nama }: { id: string; nama: string }) {
-  const tersimpan = useSimpanan("simpan").includes(id);
-  const banding = useSimpanan("banding");
-  const dibanding = banding.includes(id);
-  const bandingPenuh = !dibanding && banding.length >= MAKS_BANDING;
+// A fourth compare asks which of the three to drop instead of refusing.
+export function AksiKartu({ kos }: { kos: RingkasanKos }) {
+  const tersimpan = useSimpanan().some((s) => s.id === kos.id);
+  const banding = useBanding();
+  const dibanding = banding.some((b) => b.id === kos.id);
+  const [tanyaGanti, setTanyaGanti] = useState(false);
 
   const kelas =
-    "relative z-10 grid size-9 place-items-center rounded-full border border-biru-100 bg-putih text-arang-500 transition-colors duration-150 ease-out hover:border-biru-500 hover:text-biru-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-biru-500 aria-pressed:border-biru-500 aria-pressed:bg-biru-100 aria-pressed:text-biru-600 disabled:cursor-not-allowed disabled:opacity-50";
+    "relative z-10 grid size-9 place-items-center rounded-full border border-biru-100 bg-putih text-arang-500 transition-colors duration-150 ease-out hover:border-biru-500 hover:text-biru-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-biru-500 aria-pressed:border-biru-500 aria-pressed:bg-biru-100 aria-pressed:text-biru-600";
+
+  const klikBanding = () => {
+    if (dibanding) return hapusBanding(kos.id);
+    if (!tambahBanding(kos)) setTanyaGanti(true);
+  };
 
   return (
     <div className="flex shrink-0 gap-1.5">
       <button
         type="button"
         aria-pressed={tersimpan}
-        aria-label={tersimpan ? `Hapus ${nama} dari simpanan` : `Simpan ${nama}`}
-        onClick={() => toggleSimpan(id)}
+        aria-label={tersimpan ? `Hapus ${kos.nama} dari simpanan` : `Simpan ${kos.nama}`}
+        onClick={() => toggleSimpan(kos)}
         className={kelas}
       >
         <IconHati className={cn("size-4", tersimpan && "fill-current")} />
@@ -191,16 +200,33 @@ export function AksiKartu({ id, nama }: { id: string; nama: string }) {
       <button
         type="button"
         aria-pressed={dibanding}
-        disabled={bandingPenuh}
-        aria-label={
-          dibanding ? `Keluarkan ${nama} dari perbandingan` : bandingPenuh ? "Perbandingan sudah 3 kos" : `Bandingkan ${nama}`
-        }
-        title={bandingPenuh ? "Perbandingan sudah 3 kos" : undefined}
-        onClick={() => toggleBanding(id)}
+        aria-label={dibanding ? `Keluarkan ${kos.nama} dari perbandingan` : `Bandingkan ${kos.nama}`}
+        onClick={klikBanding}
         className={kelas}
       >
         <IconBanding className="size-4" />
       </button>
+
+      <Sheet open={tanyaGanti} onClose={() => setTanyaGanti(false)} title="Sudah 3 kos dibandingkan">
+        <p className="text-body text-arang-900">Ganti yang mana dengan {kos.nama}?</p>
+        <ul className="mt-3 flex flex-col gap-2">
+          {banding.map((b) => (
+            <li key={b.id}>
+              <Button
+                variant="secondary"
+                className="w-full justify-between"
+                onClick={() => {
+                  gantiBanding(b.id, kos);
+                  setTanyaGanti(false);
+                }}
+              >
+                <span className="truncate">{b.nama || "Kos"}</span>
+                <span className="text-small font-medium text-arang-500">Ganti</span>
+              </Button>
+            </li>
+          ))}
+        </ul>
+      </Sheet>
     </div>
   );
 }

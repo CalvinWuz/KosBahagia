@@ -48,6 +48,16 @@ loaded with `next/dynamic` only when the map is shown.
 - Pipeline: `npm run proses:360 -- ./kamar.jpg --titik kamar --slug <kos>` makes the
   2048/6144 px files and prints the `kos_media` row; push the files to R2 with wrangler.
 
+## Area pages, saved, compare
+
+- `/area/[slug]` is SSG (daily revalidation) and only generated for areas with at least
+  5 fresh listings (`MIN_LISTING_AREA` in `lib/area/data.ts`); thinner areas 404.
+  Facts and FAQ answers come from `statistik_area()`; the paragraph is `area.deskripsi`,
+  written by hand per area — never templated or generated.
+- `/disimpan` and `/banding` work signed out from localStorage (`lib/simpan.ts`).
+  A comparison is shareable as `/banding?kos=slug-a,slug-b,slug-c` and renders server-side.
+- `sitemap.xml` and `robots.txt` come from `app/sitemap.ts` / `app/robots.ts`.
+
 ## Check
 
 ```bash
