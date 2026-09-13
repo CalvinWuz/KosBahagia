@@ -254,8 +254,9 @@ otp_expiry = 3600
 # content_path = "./supabase/templates/password_changed_notification.html"
 
 [auth.sms]
-# Allow/disallow new user signups via SMS to your project.
-enable_signup = false
+# Owners sign in with their WhatsApp number (OTP). Local dev uses the test
+# numbers below; production needs a provider (Twilio/Meta) with channel whatsapp.
+enable_signup = true
 # If enabled, users need to confirm their phone number before signing in.
 enable_confirmations = false
 # Template for sending OTP to users
@@ -264,8 +265,9 @@ template = "Your code is {{ .Code }}"
 max_frequency = "5s"
 
 # Use pre-defined map of phone number to OTP for testing.
-# [auth.sms.test_otp]
-# 4152127777 = "123456"
+[auth.sms.test_otp]
+6281111111111 = "123456"
+6282222222222 = "123456"
 
 # Configure logged in session timeouts.
 # [auth.sessions]
@@ -286,9 +288,11 @@ max_frequency = "5s"
 
 # Configure one of the supported SMS providers: `twilio`, `twilio_verify`, `messagebird`, `textlocal`, `vonage`.
 [auth.sms.twilio]
-enabled = false
-account_sid = ""
-message_service_sid = ""
+# Local: a provider must be "enabled" for phone login to exist at all, but the
+# test numbers above never reach Twilio. Production fills these from env.
+enabled = true
+account_sid = "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+message_service_sid = "MGxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 # DO NOT commit your Twilio auth token to git. Use environment variable substitution instead:
 auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
 

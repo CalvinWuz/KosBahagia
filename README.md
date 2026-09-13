@@ -58,6 +58,22 @@ loaded with `next/dynamic` only when the map is shown.
   A comparison is shareable as `/banding?kos=slug-a,slug-b,slug-c` and renders server-side.
 - `sitemap.xml` and `robots.txt` come from `app/sitemap.ts` / `app/robots.ts`.
 
+## Owner surface (mitra)
+
+- Lives in `app/(mitra)/mitra/*`, served as `mitra.<domain>/*` by `proxy.ts` (rewrite on the
+  mitra host, redirect away from the main host). Locally use `http://mitra.localhost:3010`
+  or plain `http://localhost:3010/mitra/...`.
+- Sign-in is a WhatsApp-number OTP (Supabase phone auth). Locally the test numbers in
+  `supabase/config.toml` accept code `123456`; the CLI needs
+  `export SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN=lokal-dummy` before `supabase start`.
+  Production: configure a provider and set `NEXT_PUBLIC_WA_OTP=1` for the WhatsApp channel.
+- Monday reminders: `GET /api/cron/ingatkan-ketersediaan` (Vercel cron in `vercel.json`,
+  `Authorization: Bearer $CRON_SECRET`) mints a 7-day capability link `/t/<token>` per stale
+  kos and sends it over WhatsApp (Meta Cloud API when `WA_CLOUD_*` are set, dry run otherwise).
+  Updates through the link are logged with `sumber = bot_wa`.
+- After a survey, the team links a kos to its owner with the service role:
+  `update kos set owner_id = <auth.users.id> where id = <kos>`.
+
 ## Check
 
 ```bash

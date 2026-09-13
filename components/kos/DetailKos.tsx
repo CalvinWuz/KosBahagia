@@ -20,6 +20,7 @@ import { BarAksi } from "./detail/BarAksi";
 import { Blok } from "./detail/bagian";
 import { Tur360Pemicu } from "./tur360/Tur360Pemicu";
 import { bacaTitik, type TitikTur } from "./tur360/jenis";
+import { CatatKunjungan } from "./CatatKunjungan";
 
 const TIPE_LABEL: Record<string, string> = { putra: "Kos putra", putri: "Kos putri", campur: "Kos campur" };
 
@@ -43,6 +44,7 @@ export function DetailKos({ data, sekarang }: { data: DetailKosData; sekarang: s
 
   return (
     <div className="mx-auto max-w-6xl px-4 pt-4 pb-28 lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8 lg:pb-16">
+      <CatatKunjungan kosId={kos.id} />
       <div className="flex flex-col gap-10">
         {/* 1 */}
         <div className="flex flex-col gap-3">

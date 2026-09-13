@@ -166,6 +166,7 @@ export type Database = {
           ada_lift: boolean
           alamat: string
           area_id: string
+          deskripsi: string | null
           dibuat_pada: string
           disurvei_pada: string | null
           diubah_pada: string
@@ -191,6 +192,7 @@ export type Database = {
           ada_lift?: boolean
           alamat: string
           area_id: string
+          deskripsi?: string | null
           dibuat_pada?: string
           disurvei_pada?: string | null
           diubah_pada?: string
@@ -216,6 +218,7 @@ export type Database = {
           ada_lift?: boolean
           alamat?: string
           area_id?: string
+          deskripsi?: string | null
           dibuat_pada?: string
           disurvei_pada?: string | null
           diubah_pada?: string
@@ -567,6 +570,46 @@ export type Database = {
           },
         ]
       }
+      kunjungan_kos: {
+        Row: {
+          dibuat_pada: string
+          id: number
+          kos_id: string
+        }
+        Insert: {
+          dibuat_pada?: string
+          id?: never
+          kos_id: string
+        }
+        Update: {
+          dibuat_pada?: string
+          id?: never
+          kos_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kunjungan_kos_kos_id_fkey"
+            columns: ["kos_id"]
+            isOneToOne: false
+            referencedRelation: "kos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kunjungan_kos_kos_id_fkey"
+            columns: ["kos_id"]
+            isOneToOne: false
+            referencedRelation: "kos_kartu"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kunjungan_kos_kos_id_fkey"
+            columns: ["kos_id"]
+            isOneToOne: false
+            referencedRelation: "kos_skor"
+            referencedColumns: ["kos_id"]
+          },
+        ]
+      }
       laporan_user: {
         Row: {
           catatan: string | null
@@ -689,6 +732,216 @@ export type Database = {
           whatsapp?: string
         }
         Relationships: []
+      }
+      pendaftaran_mitra: {
+        Row: {
+          alamat: string
+          dibuat_pada: string
+          id: string
+          jumlah_kamar: number
+          nama: string
+          nama_kos: string
+          status: string
+          whatsapp: string
+        }
+        Insert: {
+          alamat: string
+          dibuat_pada?: string
+          id?: string
+          jumlah_kamar: number
+          nama: string
+          nama_kos: string
+          status?: string
+          whatsapp: string
+        }
+        Update: {
+          alamat?: string
+          dibuat_pada?: string
+          id?: string
+          jumlah_kamar?: number
+          nama?: string
+          nama_kos?: string
+          status?: string
+          whatsapp?: string
+        }
+        Relationships: []
+      }
+      pengingat_wa: {
+        Row: {
+          dikirim_pada: string
+          id: number
+          kos_id: string
+          owner_id: string | null
+          pesan: string
+          status: string
+          whatsapp: string
+        }
+        Insert: {
+          dikirim_pada?: string
+          id?: never
+          kos_id: string
+          owner_id?: string | null
+          pesan: string
+          status?: string
+          whatsapp: string
+        }
+        Update: {
+          dikirim_pada?: string
+          id?: never
+          kos_id?: string
+          owner_id?: string | null
+          pesan?: string
+          status?: string
+          whatsapp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pengingat_wa_kos_id_fkey"
+            columns: ["kos_id"]
+            isOneToOne: false
+            referencedRelation: "kos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pengingat_wa_kos_id_fkey"
+            columns: ["kos_id"]
+            isOneToOne: false
+            referencedRelation: "kos_kartu"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pengingat_wa_kos_id_fkey"
+            columns: ["kos_id"]
+            isOneToOne: false
+            referencedRelation: "kos_skor"
+            referencedColumns: ["kos_id"]
+          },
+          {
+            foreignKeyName: "pengingat_wa_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owner"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      permintaan_koreksi: {
+        Row: {
+          bidang: string
+          dibuat_pada: string
+          id: string
+          kos_id: string
+          owner_id: string
+          pesan: string
+          status: string
+        }
+        Insert: {
+          bidang: string
+          dibuat_pada?: string
+          id?: string
+          kos_id: string
+          owner_id: string
+          pesan: string
+          status?: string
+        }
+        Update: {
+          bidang?: string
+          dibuat_pada?: string
+          id?: string
+          kos_id?: string
+          owner_id?: string
+          pesan?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permintaan_koreksi_kos_id_fkey"
+            columns: ["kos_id"]
+            isOneToOne: false
+            referencedRelation: "kos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permintaan_koreksi_kos_id_fkey"
+            columns: ["kos_id"]
+            isOneToOne: false
+            referencedRelation: "kos_kartu"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permintaan_koreksi_kos_id_fkey"
+            columns: ["kos_id"]
+            isOneToOne: false
+            referencedRelation: "kos_skor"
+            referencedColumns: ["kos_id"]
+          },
+          {
+            foreignKeyName: "permintaan_koreksi_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owner"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tautan_ketersediaan: {
+        Row: {
+          dibuat_pada: string
+          dipakai_pada: string | null
+          id: string
+          kadaluarsa: string
+          kos_id: string
+          owner_id: string | null
+          token_hash: string
+        }
+        Insert: {
+          dibuat_pada?: string
+          dipakai_pada?: string | null
+          id?: string
+          kadaluarsa: string
+          kos_id: string
+          owner_id?: string | null
+          token_hash: string
+        }
+        Update: {
+          dibuat_pada?: string
+          dipakai_pada?: string | null
+          id?: string
+          kadaluarsa?: string
+          kos_id?: string
+          owner_id?: string | null
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tautan_ketersediaan_kos_id_fkey"
+            columns: ["kos_id"]
+            isOneToOne: false
+            referencedRelation: "kos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tautan_ketersediaan_kos_id_fkey"
+            columns: ["kos_id"]
+            isOneToOne: false
+            referencedRelation: "kos_kartu"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tautan_ketersediaan_kos_id_fkey"
+            columns: ["kos_id"]
+            isOneToOne: false
+            referencedRelation: "kos_skor"
+            referencedColumns: ["kos_id"]
+          },
+          {
+            foreignKeyName: "tautan_ketersediaan_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owner"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tipe_kamar: {
         Row: {
@@ -899,7 +1152,20 @@ export type Database = {
           tipe: Database["public"]["Enums"]["tipe_area"]
         }[]
       }
+      baca_ketersediaan_via_tautan: {
+        Args: { p_token: string }
+        Returns: {
+          dikonfirmasi_pada: string
+          kamar_tersedia: number
+          kos_id: string
+          kos_nama: string
+          nama: string
+          tipe_kamar_id: string
+          total_kamar: number
+        }[]
+      }
       biaya_lain_wajib: { Args: { biaya: Json }; Returns: number }
+      buat_tautan_ketersediaan: { Args: { p_kos_id: string }; Returns: string }
       cari_kos: {
         Args: {
           p_aturan?: Json
@@ -955,7 +1221,23 @@ export type Database = {
           slug: string
         }[]
       }
+      konfirmasi_ketersediaan: {
+        Args: { p_kos_id: string }
+        Returns: undefined
+      }
       kos_tayang: { Args: { p_kos_id: string }; Returns: boolean }
+      median_area_bulan_ini: {
+        Args: { p_kos_id: string }
+        Returns: {
+          median_klik: number
+          median_kunjungan: number
+        }[]
+      }
+      perbarui_ketersediaan_via_tautan: {
+        Args: { p_perubahan: Json; p_token: string }
+        Returns: number
+      }
+      posisi_di_area: { Args: { p_kos_id: string }; Returns: number }
       punya_kos: { Args: { p_kos_id: string }; Returns: boolean }
       statistik_area: {
         Args: { p_slug: string }

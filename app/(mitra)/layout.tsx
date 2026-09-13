@@ -2,20 +2,24 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "../globals.css";
 import { plusJakarta } from "@/lib/fonts";
-import { Logo } from "@/components/ui/Logo";
+import { NavMitra } from "@/components/mitra/NavMitra";
+import { DasarMitraProvider } from "@/lib/mitra/DasarMitra";
+import { dasarMitra } from "@/lib/mitra/dasar";
+import { sesiMitra } from "@/lib/mitra/sesi";
 
 export const metadata: Metadata = {
   title: {
     default: "Kos Bahagia Mitra",
     template: "%s · Kos Bahagia Mitra",
   },
-  description: "Kelola listing kos kamu di Kos Bahagia.",
+  description: "Tempat pemilik kos memperbarui ketersediaan dan melihat performa listingnya.",
   robots: { index: false, follow: false },
 };
 
 // Root layout for the owner surface (mitra.kosbahagia.com): a calm, dense,
 // utilitarian shell. It deliberately shares nothing with the user Header.
-export default function MitraLayout({ children }: { children: ReactNode }) {
+export default async function MitraLayout({ children }: { children: ReactNode }) {
+  const [dasar, sesi] = await Promise.all([dasarMitra(), sesiMitra()]);
   return (
     <html lang="id" className={plusJakarta.variable}>
       <body className="flex min-h-dvh flex-col">
@@ -25,16 +29,15 @@ export default function MitraLayout({ children }: { children: ReactNode }) {
         >
           Langsung ke konten
         </a>
-        <header className="border-b border-arang-500/20 bg-putih">
-          <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-4 text-arang-900">
-            <Logo className="size-6" />
-            <span className="text-small font-bold">Kos Bahagia</span>
-            <span className="text-small text-arang-500">Mitra</span>
-          </div>
-        </header>
-        <main id="konten" className="flex-1">
-          {children}
-        </main>
+        <DasarMitraProvider dasar={dasar}>
+          <NavMitra dasar={dasar} masuk={Boolean(sesi)} nama={sesi?.owner?.nama} />
+          <main id="konten" className="flex-1">
+            {children}
+          </main>
+          <footer className="border-t border-arang-500/10 py-4 text-center text-micro text-arang-500">
+            Kos Bahagia Mitra. Butuh bantuan? Hubungi tim lewat WhatsApp di halaman Paket.
+          </footer>
+        </DasarMitraProvider>
       </body>
     </html>
   );
