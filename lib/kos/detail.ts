@@ -39,7 +39,15 @@ export type DetailKosData = {
 };
 
 export async function ambilDetailKos(db: Klien, slug: string): Promise<DetailKosData | null> {
-  const { data: kartu } = await db.from("kos_kartu").select("*").eq("slug", slug).eq("status", "tayang").maybeSingle();
+  const { data: kartu, error: kartuErr } = await db
+    .from("kos_kartu")
+    .select("*")
+    .eq("slug", slug)
+    .eq("status", "tayang")
+    .maybeSingle();
+  // A failed query is not "kos tidak ada": throwing renders error.tsx instead of
+  // caching a 404 for the ISR window.
+  if (kartuErr) throw new Error(`kos_kartu(${slug}): ${kartuErr.message}`);
   if (!kartu?.id) return null;
   const id = kartu.id;
 
@@ -59,6 +67,7 @@ export async function ambilDetailKos(db: Klien, slug: string): Promise<DetailKos
       db.from("fasilitas").select("*").order("kategori").order("nama"),
       db.from("kos_fasilitas").select("fasilitas(slug)").eq("kos_id", id),
     ]);
+  if (kosRes.error) throw new Error(`kos(${slug}): ${kosRes.error.message}`);
   if (!kosRes.data) return null;
 
   const { area, ...kos } = kosRes.data;
