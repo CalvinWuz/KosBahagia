@@ -2,21 +2,40 @@
 
 import { buttonClasses } from "@/components/ui/Button";
 import { formatRupiah } from "@/lib/format";
-import { catatKlikWa, linkWa, pesanWa } from "@/lib/wa";
+import { catatKlikWa, linkWa, pesanWa, type SumberKlik } from "@/lib/wa";
 import type { TipeKamar } from "@/lib/kos/detail";
 import { cn } from "@/lib/cn";
 
 // The one orange button on this page. A plain link so it works signed out
 // and without JavaScript; the klik_wa row is fired, not awaited.
-export function TombolChat({ kosId, namaKos, whatsapp, kamar, className }: { kosId: string; namaKos: string; whatsapp: string; kamar: TipeKamar | null; className?: string }) {
+export function TombolChat({
+  kosId,
+  namaKos,
+  whatsapp,
+  kamar,
+  className,
+  variant = "primary",
+  size = "lg",
+  sumber = "detail" as SumberKlik,
+}: {
+  kosId: string;
+  namaKos: string;
+  whatsapp: string;
+  kamar: TipeKamar | null;
+  className?: string;
+  /** "secondary" where several kos share a screen (compare table): orange stays singular. */
+  variant?: "primary" | "secondary";
+  size?: "sm" | "md" | "lg";
+  sumber?: SumberKlik;
+}) {
   const href = linkWa(whatsapp, pesanWa({ namaKos, tipeKamar: kamar?.nama, totalBulanan: kamar?.total_bulanan ?? 0 }));
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      onClick={() => catatKlikWa(kosId, "detail")}
-      className={buttonClasses({ variant: "primary", size: "lg", className })}
+      onClick={() => catatKlikWa(kosId, sumber)}
+      className={buttonClasses({ variant, size, className })}
     >
       Chat pemilik
     </a>

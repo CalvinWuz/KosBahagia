@@ -36,6 +36,10 @@ function cocokArea(areas: AreaPublik[], q: string): AreaPublik | undefined {
  * area (wide radius) → the default area.
  */
 export function tentukanPusat(params: CariParams, areas: AreaPublik[]): Pusat {
+  // "Cari di area peta ini": a free centre, no area name to show.
+  if (params.lat != null && params.lng != null) {
+    return { lat: params.lat, lng: params.lng, radius: params.radius ?? 2000, nama: "Area di peta", q: params.q };
+  }
   const dariSlug = params.area ? areas.find((a) => a.slug === params.area) : undefined;
   const dariTeks = !dariSlug && params.q ? cocokArea(areas, params.q) : undefined;
   const area = dariSlug ?? dariTeks ?? areas.find((a) => a.slug === AREA_DEFAULT) ?? areas[0];

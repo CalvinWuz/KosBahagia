@@ -14,7 +14,10 @@ import dynamic from "next/dynamic";
 const Sheet = dynamic(() => import("@/components/ui/Sheet").then((m) => m.Sheet));
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { StatusTaut } from "@/components/ui/StatusTaut";
 import { IconBanding, IconDaun, IconHati, IconSuara } from "@/components/ui/Icon";
+import { tampilkanToast } from "@/lib/toast";
+import { BATAS_BERISIK } from "@/lib/skala";
 import { SkorBadge } from "./SkorBadge";
 
 export type KosKartu = Database["public"]["Views"]["kos_kartu"]["Row"];
@@ -40,6 +43,7 @@ export function KosCard({
   sekarang = new Date(),
   prioritas = false,
   ringkas = false,
+  onSorot,
   className,
 }: {
   kos: KosRingkas;
@@ -49,6 +53,8 @@ export function KosCard({
   prioritas?: boolean;
   /** Compact horizontal layout for the map mini card. */
   ringkas?: boolean;
+  /** Pointer enters/leaves the card; the map pin follows. */
+  onSorot?: (id: string | null) => void;
   className?: string;
 }) {
   const id = kos.id ?? kos.slug ?? "";
@@ -63,6 +69,8 @@ export function KosCard({
     kos.skor_kebersihan != null && kos.skor_kebersihan >= 4 && { label: "Bersih", ikon: <IconDaun className="size-3.5" /> },
     kos.skor_kedap != null && kos.skor_kedap >= 4 && { label: "Kedap suara", ikon: <IconSuara className="size-3.5" /> },
   ].filter((x): x is { label: string; ikon: ReactElement } => Boolean(x));
+  // Information, not a penalty: a measured low score is worth a word.
+  const berisik = kos.skor_kedap != null && kos.skor_kedap < BATAS_BERISIK;
 
   return (
     <article
@@ -74,8 +82,11 @@ export function KosCard({
         className,
       )}
       aria-label={kos.nama ?? undefined}
+      onMouseEnter={onSorot ? () => onSorot(id) : undefined}
+      onMouseLeave={onSorot ? () => onSorot(null) : undefined}
     >
-      <div className={cn("relative shrink-0 bg-biru-100", ringkas ? "w-32 self-stretch" : "aspect-[4/3] w-full")}>
+      {/* Phones: a shorter photo so more than one card fits a screen. */}
+      <div className={cn("relative shrink-0 bg-biru-100", ringkas ? "w-32 self-stretch" : "aspect-[16/10] w-full sm:aspect-[4/3]")}>
         {kos.foto_url && (
           <FotoBlur
             src={kos.foto_url}
@@ -111,6 +122,7 @@ export function KosCard({
               className="line-clamp-2 rounded-sm after:absolute after:inset-0 after:rounded-2xl focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-biru-500"
             >
               {kos.nama}
+              <StatusTaut selubung />
             </Link>
           </h3>
           <span className="shrink-0 rounded-md bg-kertas-50 px-1.5 py-0.5 text-micro text-arang-500">
@@ -133,7 +145,7 @@ export function KosCard({
           {tambahan.length > 0 && ` + ${tambahan.join(" + ")}`}
         </p>
 
-        {!ringkas && (kekuatan.length > 0 || redFlags > 0) && (
+        {!ringkas && (kekuatan.length > 0 || redFlags > 0 || berisik) && (
           <ul className="mt-1.5 flex flex-wrap gap-1.5">
             {kekuatan.map((k) => (
               <li key={k.label} className="inline-flex items-center gap-1 rounded-full bg-daun-100 px-2 py-0.5 text-micro font-bold text-daun-700">
@@ -141,6 +153,12 @@ export function KosCard({
                 {k.label}
               </li>
             ))}
+            {berisik && (
+              <li className="inline-flex items-center gap-1 rounded-full bg-arang-500/10 px-2 py-0.5 text-micro font-bold text-arang-900">
+                <IconSuara className="size-3.5" />
+                Berisik
+              </li>
+            )}
             {redFlags > 0 && (
               <li className="inline-flex items-center rounded-full bg-merah-100 px-2 py-0.5 text-micro font-bold text-merah-700">
                 {redFlags} hal penting
@@ -184,9 +202,23 @@ export function AksiKartu({ kos }: { kos: RingkasanKos }) {
   const kelas =
     "relative z-10 grid size-9 place-items-center rounded-full border border-biru-100 bg-putih text-arang-500 transition-colors duration-150 ease-out hover:border-biru-500 hover:text-biru-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-biru-500 aria-pressed:border-biru-500 aria-pressed:bg-biru-100 aria-pressed:text-biru-600";
 
+  const klikSimpan = () => {
+    toggleSimpan(kos);
+    if (tersimpan) tampilkanToast({ teks: "Dihapus dari simpanan." });
+    else tampilkanToast({ teks: "Tersimpan di HP ini.", aksi: { label: "Lihat simpanan", href: "/disimpan" } });
+  };
   const klikBanding = () => {
-    if (dibanding) return hapusBanding(kos.id);
-    if (!tambahBanding(kos)) setTanyaGanti(true);
+    if (dibanding) {
+      hapusBanding(kos.id);
+      tampilkanToast({ teks: "Dikeluarkan dari perbandingan." });
+      return;
+    }
+    if (!tambahBanding(kos)) return setTanyaGanti(true);
+    const n = banding.length + 1;
+    tampilkanToast({
+      teks: n === 1 ? "Ditambahkan. Pilih 1–2 kos lagi untuk dibandingkan." : `Ditambahkan ke perbandingan (${n} dari 3).`,
+      aksi: n >= 2 ? { label: "Bandingkan", href: "/banding" } : undefined,
+    });
   };
 
   return (
@@ -195,7 +227,7 @@ export function AksiKartu({ kos }: { kos: RingkasanKos }) {
         type="button"
         aria-pressed={tersimpan}
         aria-label={tersimpan ? `Hapus ${kos.nama} dari simpanan` : `Simpan ${kos.nama}`}
-        onClick={() => toggleSimpan(kos)}
+        onClick={klikSimpan}
         className={kelas}
       >
         <IconHati className={cn("size-4", tersimpan && "fill-current")} />
@@ -222,6 +254,7 @@ export function AksiKartu({ kos }: { kos: RingkasanKos }) {
                 onClick={() => {
                   gantiBanding(b.id, kos);
                   setTanyaGanti(false);
+                  tampilkanToast({ teks: `${kos.nama} masuk perbandingan.`, aksi: { label: "Bandingkan", href: "/banding" } });
                 }}
               >
                 <span className="truncate">{b.nama || "Kos"}</span>
@@ -240,7 +273,7 @@ export function AksiKartu({ kos }: { kos: RingkasanKos }) {
 export function KosCardSkeleton() {
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-biru-100 bg-putih" aria-hidden="true">
-      <Skeleton className="aspect-[4/3] w-full rounded-none" />
+      <Skeleton className="aspect-[16/10] w-full rounded-none sm:aspect-[4/3]" />
       <div className="flex flex-col gap-2 p-3">
         <Skeleton className="h-5 w-3/4" />
         <Skeleton className="h-4 w-1/2" />

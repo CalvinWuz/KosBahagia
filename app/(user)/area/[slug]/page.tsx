@@ -17,6 +17,9 @@ export const dynamicParams = true;
 
 type Params = { params: Promise<{ slug: string }> };
 const TIPE: Record<string, string> = { kecamatan: "Kecamatan", kampus: "Kampus", stasiun: "Stasiun" };
+/** Cards shown on the area page before "Lihat semua". */
+const CUPLIKAN = 6;
+
 const SITUS = process.env.NEXT_PUBLIC_SITE_URL ?? "https://kosbahagia.com";
 
 export async function generateStaticParams() {
@@ -100,6 +103,8 @@ export default async function HalamanArea({ params }: Params) {
 
       <FaktaArea s={statistik} nama={nama} />
 
+      {/* A taste, not the whole catalogue: the full list lives on /cari with
+          filters and the map. Keeps the page short on phones. */}
       <section aria-labelledby="daftar-kos">
         <div className="flex items-end justify-between gap-4">
           <h2 id="daftar-kos" className="text-h2 text-arang-900">Kos di {nama}</h2>
@@ -108,11 +113,20 @@ export default async function HalamanArea({ params }: Params) {
           </Link>
         </div>
         <ul className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {kos.map((k, i) => (
+          {kos.slice(0, CUPLIKAN).map((k, i) => (
             <li key={k.id}><KosCard kos={k} sekarang={sekarang} prioritas={i < 3} /></li>
           ))}
         </ul>
+        {kos.length > CUPLIKAN && (
+          <div className="mt-4 flex justify-center">
+            <Link href={hrefCari({ area: slug })} className={buttonClasses({ variant: "secondary" })}>
+              Lihat semua {statistik.jumlah_kos} kos di {nama}
+            </Link>
+          </div>
+        )}
       </section>
+
+      <FaqArea faq={faq} />
 
       {tetangga.length > 0 && (
         <section aria-labelledby="dekat-sini">
@@ -130,8 +144,6 @@ export default async function HalamanArea({ params }: Params) {
           </ul>
         </section>
       )}
-
-      <FaqArea faq={faq} />
     </div>
   );
 }

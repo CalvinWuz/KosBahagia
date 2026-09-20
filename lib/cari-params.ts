@@ -17,6 +17,9 @@ export type CariParams = {
   area?: string;
   /** Radius in metres around the area centre. */
   radius?: number;
+  /** Free centre from "Cari di area peta ini"; overrides `area`. */
+  lat?: number;
+  lng?: number;
   harga_min?: number;
   harga_max?: number;
   tipe?: TipeKosParam;
@@ -35,6 +38,8 @@ export type CariParams = {
   urut?: UrutCari;
   /** 1-based page. */
   hal?: number;
+  /** Mobile view state; not a filter. */
+  tampil?: "peta";
 };
 
 const URUT: UrutCari[] = ["relevan", "termurah", "terdekat", "skor"];
@@ -46,6 +51,10 @@ export function hrefCari(p: CariParams): string {
   if (p.q?.trim()) sp.set("q", p.q.trim());
   if (p.area) sp.set("area", p.area);
   if (p.radius) sp.set("radius", String(p.radius));
+  if (p.lat != null && p.lng != null) {
+    sp.set("lat", p.lat.toFixed(5));
+    sp.set("lng", p.lng.toFixed(5));
+  }
   if (p.harga_min) sp.set("harga_min", String(p.harga_min));
   if (p.harga_max) sp.set("harga_max", String(p.harga_max));
   if (p.tipe) sp.set("tipe", p.tipe);
@@ -59,6 +68,7 @@ export function hrefCari(p: CariParams): string {
   if (p.dekat_minimarket) sp.set("dekat_minimarket", "1");
   if (p.urut && p.urut !== "relevan") sp.set("urut", p.urut);
   if (p.hal && p.hal > 1) sp.set("hal", String(p.hal));
+  if (p.tampil === "peta") sp.set("tampil", "peta");
   const qs = sp.toString();
   return qs ? `/cari?${qs}` : "/cari";
 }
@@ -80,10 +90,14 @@ export function bacaCariParams(mentah: Mentah | URLSearchParams): CariParams {
   const tipe = g("tipe");
   const urut = g("urut");
   const pasangan = g("pasangan");
+  const lat = angka(g("lat"), -11, 6);
+  const lng = angka(g("lng"), 95, 141);
   return {
     q: g("q")?.trim() || undefined,
     area: g("area")?.trim() || undefined,
     radius: angka(g("radius"), 100, 20_000),
+    lat: lat != null && lng != null ? lat : undefined,
+    lng: lat != null && lng != null ? lng : undefined,
     harga_min: angka(g("harga_min"), 0, 50_000_000),
     harga_max: angka(g("harga_max"), 0, 50_000_000),
     tipe: TIPE.includes(tipe as TipeKosParam) ? (tipe as TipeKosParam) : undefined,
@@ -97,6 +111,7 @@ export function bacaCariParams(mentah: Mentah | URLSearchParams): CariParams {
     dekat_minimarket: g("dekat_minimarket") === "1",
     urut: URUT.includes(urut as UrutCari) ? (urut as UrutCari) : "relevan",
     hal: angka(g("hal"), 1, 1000) ?? 1,
+    tampil: g("tampil") === "peta" ? "peta" : undefined,
   };
 }
 
@@ -124,5 +139,5 @@ export function jumlahFilterAktif(p: CariParams): number {
 
 /** Same search, no narrowing filters. */
 export function tanpaFilter(p: CariParams): CariParams {
-  return { q: p.q, area: p.area, radius: p.radius, urut: p.urut };
+  return { q: p.q, area: p.area, radius: p.radius, lat: p.lat, lng: p.lng, urut: p.urut, tampil: p.tampil };
 }

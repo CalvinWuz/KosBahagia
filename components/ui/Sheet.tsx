@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@headlessui/react";
 import { cn } from "@/lib/cn";
+import { useLapisRiwayat } from "@/lib/navigasi";
 import { IconClose } from "./Icon";
 
 export type SheetProps = {
@@ -18,6 +19,14 @@ export type SheetProps = {
   footer?: ReactNode;
   /** Full-screen on mobile (search, pickers). Still a side panel on desktop. */
   penuh?: boolean;
+  /**
+   * Every sheet adds one history entry while open so the phone's back
+   * button closes it. A sheet that changes the URL live (filters) passes
+   * the current href here so back-close keeps those changes.
+   */
+  hrefTerakhir?: string;
+  /** See useLapisRiwayat: keep the history entry on a button-close. */
+  pertahankan?: () => boolean;
   children: ReactNode;
   className?: string;
 };
@@ -31,9 +40,12 @@ export function Sheet({
   title,
   footer,
   penuh = false,
+  hrefTerakhir,
+  pertahankan,
   children,
   className,
 }: SheetProps) {
+  useLapisRiwayat({ open, onClose, hrefTerakhir, pertahankan });
   return (
     <Dialog open={open} onClose={onClose} className="relative z-50">
       <DialogBackdrop
@@ -56,7 +68,7 @@ export function Sheet({
               aria-hidden="true"
             />
           )}
-          <header className="flex shrink-0 items-center justify-between gap-4 border-b border-biru-100 px-4 py-3">
+          <div className="flex shrink-0 items-center justify-between gap-4 border-b border-biru-100 px-4 py-3">
             <DialogTitle className="text-h2 text-arang-900">{title}</DialogTitle>
             <button
               type="button"
@@ -66,14 +78,14 @@ export function Sheet({
             >
               <IconClose />
             </button>
-          </header>
+          </div>
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
             {children}
           </div>
           {footer && (
-            <footer className="shrink-0 border-t border-biru-100 bg-putih px-4 py-3">
+            <div className="shrink-0 border-t border-biru-100 bg-putih px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
               {footer}
-            </footer>
+            </div>
           )}
         </DialogPanel>
       </div>

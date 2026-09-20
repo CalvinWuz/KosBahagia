@@ -1,5 +1,7 @@
 import type { Penilaian } from "@/lib/kos/detail";
+import { kataKebersihan, kataKedap, kataSelisihDb } from "@/lib/skala";
 import { Baris, BelumDicatat, Blok, Skala } from "./bagian";
+import { ArtiSkala } from "./ArtiSkala";
 
 const PEMBERSIH: Record<string, string> = {
   petugas: "Petugas kebersihan",
@@ -20,12 +22,13 @@ export function BuktiKebersihan({ penilaian }: { penilaian: Penilaian | null }) 
   const beda = p.db_ambient != null && p.db_tes != null ? p.db_tes - p.db_ambient : null;
   return (
     <Blok id="kebersihan" judul="Kebersihan & kedap suara" keterangan="Dinilai di lokasi dengan rubrik tetap dan desibel meter.">
+      <p className="-mt-1 mb-3 text-small"><ArtiSkala /></p>
       <div className="grid gap-6 sm:grid-cols-2">
         <div className="flex flex-col gap-3">
           <h3 className="text-small font-bold text-arang-900">Kebersihan</h3>
-          <Skala nilai={p.skor_kamar_mandi} label="Kamar mandi" />
-          <Skala nilai={p.skor_dapur} label="Dapur" />
-          <Skala nilai={p.skor_koridor} label="Koridor" />
+          <Skala nilai={p.skor_kamar_mandi} label="Kamar mandi" kata={kataKebersihan(p.skor_kamar_mandi)} />
+          <Skala nilai={p.skor_dapur} label="Dapur" kata={kataKebersihan(p.skor_dapur)} />
+          <Skala nilai={p.skor_koridor} label="Koridor" kata={kataKebersihan(p.skor_koridor)} />
           <dl className="divide-y divide-biru-100 border-t border-biru-100">
             <Baris label="Yang membersihkan">{p.pembersih ? (PEMBERSIH[p.pembersih] ?? p.pembersih) : null}</Baris>
             <Baris label="Frekuensi bersih-bersih">{p.frekuensi_bersih}</Baris>
@@ -34,7 +37,7 @@ export function BuktiKebersihan({ penilaian }: { penilaian: Penilaian | null }) 
         </div>
         <div className="flex flex-col gap-3">
           <h3 className="text-small font-bold text-arang-900">Kedap suara</h3>
-          <Skala nilai={p.skor_kedap} label="Kedap suara" />
+          <Skala nilai={p.skor_kedap} label="Kedap suara" kata={kataKedap(p.skor_kedap)} />
           {p.db_ambient != null && p.db_tes != null ? (
             <div className="rounded-xl bg-kertas-50 p-3">
               <div className="flex items-end justify-between text-small">
@@ -49,7 +52,7 @@ export function BuktiKebersihan({ penilaian }: { penilaian: Penilaian | null }) 
               <Batang nilai={p.db_tes} />
               {beda != null && (
                 <p className="mt-2 text-micro text-arang-500">
-                  Selisih {beda} dB. Makin kecil, makin sedikit suara tetangga yang tembus.
+                  Selisih {beda} dB{kataSelisihDb(beda) && <>: <b className="text-arang-900">{kataSelisihDb(beda)?.toLowerCase()}</b></>}. Makin kecil, makin sedikit suara tetangga yang tembus.
                 </p>
               )}
             </div>

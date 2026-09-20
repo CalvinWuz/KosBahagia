@@ -13,6 +13,8 @@ export type KosBanding = {
   kamar: TipeKamar | null;
   kmDalam: boolean;
   jamMalam: string | null;
+  /** For the per-column chat button. */
+  whatsapp: string | null;
 };
 
 /** `?kos=a,b,c` — slugs (shareable) or ids (from the tray). Max 3, deduplicated. */
@@ -37,10 +39,11 @@ export async function ambilBanding(db: Klien, kunci: string[]): Promise<KosBandi
   const kosIds = kartu.map((k) => k.id as string);
   if (kosIds.length === 0) return [];
 
-  const [kamarRes, fasRes, aturanRes] = await Promise.all([
+  const [kamarRes, fasRes, aturanRes, kosRes] = await Promise.all([
     db.from("tipe_kamar").select("*").in("kos_id", kosIds).order("total_bulanan"),
     db.from("kos_fasilitas").select("kos_id, fasilitas!inner(slug)").in("kos_id", kosIds).eq("fasilitas.slug", "kamar-mandi-dalam"),
     db.from("kos_aturan").select("kos_id, jam_malam").in("kos_id", kosIds),
+    db.from("kos").select("id, whatsapp").in("id", kosIds),
   ]);
 
   return kartu.map((k) => ({
@@ -48,5 +51,6 @@ export async function ambilBanding(db: Klien, kunci: string[]): Promise<KosBandi
     kamar: (kamarRes.data ?? []).find((t) => t.kos_id === k.id) ?? null,
     kmDalam: (fasRes.data ?? []).some((f) => f.kos_id === k.id),
     jamMalam: (aturanRes.data ?? []).find((a) => a.kos_id === k.id)?.jam_malam ?? null,
+    whatsapp: (kosRes.data ?? []).find((x) => x.id === k.id)?.whatsapp ?? null,
   }));
 }

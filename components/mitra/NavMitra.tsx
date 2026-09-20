@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 import { keluar } from "@/lib/mitra/aksi";
+import { TautanMasuk } from "./TautanMasuk";
 
 const MENU = [
   { href: "/dashboard", label: "Ringkasan" },
@@ -14,7 +15,7 @@ export function NavMitra({ dasar, masuk, nama }: { dasar: string; masuk: boolean
   return (
     <header className="border-b border-arang-500/20 bg-putih">
       <div className="mx-auto flex h-14 max-w-3xl items-center gap-3 px-4">
-        <Link href={`${dasar}/`} className="flex items-center gap-2 rounded-sm text-arang-900">
+        <Link href={`${dasar}/`} aria-label="Kos Bahagia Mitra, ke halaman depan" className="flex items-center gap-2 rounded-sm text-arang-900">
           <Logo className="size-6" />
           <span className="text-small font-bold">Kos Bahagia</span>
           <span className="text-small text-arang-500">Mitra</span>
@@ -30,9 +31,7 @@ export function NavMitra({ dasar, masuk, nama }: { dasar: string; masuk: boolean
               </form>
             </>
           ) : (
-            <Link href={`${dasar}/masuk`} className="h-10 rounded-lg px-3 text-small leading-10 font-bold text-biru-600 hover:bg-kertas-50">
-              Masuk
-            </Link>
+            <TautanMasuk href={`${dasar}/masuk`} />
           )}
         </div>
       </div>

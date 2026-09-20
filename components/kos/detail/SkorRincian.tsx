@@ -1,8 +1,10 @@
 import { Accordion, AccordionItem } from "@/components/ui/Accordion";
 import { SkorBadge } from "@/components/kos/SkorBadge";
 import { BOBOT } from "@/lib/scoring";
+import { kataKebersihan, kataKedap } from "@/lib/skala";
 import type { Penilaian, Sekitar, SkorKos } from "@/lib/kos/detail";
 import { BelumDicatat, Blok } from "./bagian";
+import { ArtiSkala } from "./ArtiSkala";
 
 // Block 3: the number, then every component with its raw measurement.
 // The formula is the same one lib/scoring.ts documents.
@@ -14,6 +16,7 @@ export function SkorRincian({ skor, penilaian, sekitar, nFasilitas }: { skor: Sk
       nama: "Kebersihan",
       bobot: BOBOT.kebersihan,
       nilai: skor?.kebersihan ?? null,
+      kata: kataKebersihan(skor?.kebersihan),
       bukti: penilaian
         ? [
             ["Kamar mandi", penilaian.skor_kamar_mandi],
@@ -26,6 +29,7 @@ export function SkorRincian({ skor, penilaian, sekitar, nFasilitas }: { skor: Sk
       nama: "Kedap suara",
       bobot: BOBOT.kedap,
       nilai: skor?.kedap ?? null,
+      kata: kataKedap(skor?.kedap),
       bukti: penilaian
         ? [
             penilaian.material_tembok ? `Tembok ${penilaian.material_tembok}` : null,
@@ -37,18 +41,21 @@ export function SkorRincian({ skor, penilaian, sekitar, nFasilitas }: { skor: Sk
       nama: "Transparansi biaya",
       bobot: BOBOT.transparansi,
       nilai: skor?.transparansi ?? null,
+      kata: null as string | null,
       bukti: tersembunyi != null ? [`Biaya di luar sewa sekitar ${tersembunyi}% dari total`] : [],
     },
     {
       nama: "Fasilitas untuk harganya",
       bobot: BOBOT.fasilitas,
       nilai: skor?.fasilitas ?? null,
+      kata: null as string | null,
       bukti: [`${nFasilitas} fasilitas yang bisa difilter, dibanding kos lain di kisaran harga yang sama`],
     },
     {
       nama: "Sekitar",
       bobot: BOBOT.sekitar,
       nilai: skor?.sekitar ?? null,
+      kata: null as string | null,
       bukti: sekitar
         ? [
             sekitar.landmark_menit_jalan != null ? `${sekitar.landmark_menit_jalan} menit jalan ke ${sekitar.landmark_nama}` : null,
@@ -61,10 +68,21 @@ export function SkorRincian({ skor, penilaian, sekitar, nFasilitas }: { skor: Sk
 
   return (
     <Blok id="skor" judul="Skor Bahagia" keterangan="Dihitung dari survei kami, bukan dari ulasan. Tier berbayar tidak memengaruhi angka ini.">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <SkorBadge skor={skor?.skor ?? null} size="lg" />
-        {skor?.skor == null && (
+        {skor?.skor == null ? (
           <p className="text-small text-arang-500">Rubrik kebersihan atau kedap suara belum lengkap, jadi kami tidak menebak angkanya.</p>
+        ) : (
+          <ul className="flex flex-wrap gap-1.5" aria-label="Ringkasan">
+            {komponen
+              .filter((k) => k.kata)
+              .map((k) => (
+                <li key={k.nama} className="rounded-full bg-kertas-50 px-2.5 py-1 text-small text-arang-900">
+                  <span className="text-arang-500">{k.nama}:</span> <b>{k.kata}</b>
+                </li>
+              ))}
+            <li className="flex items-center"><ArtiSkala /></li>
+          </ul>
         )}
       </div>
       <Accordion className="mt-3">
@@ -76,7 +94,13 @@ export function SkorRincian({ skor, penilaian, sekitar, nFasilitas }: { skor: Sk
                   <span className="text-small font-bold text-arang-900">
                     {k.nama} <span className="font-medium text-arang-500">({Math.round(k.bobot * 100)}%)</span>
                   </span>
-                  {k.nilai == null ? <BelumDicatat /> : <span className="text-small font-bold text-arang-900 tabular-nums">{k.nilai.toFixed(1).replace(".", ",")}/5</span>}
+                  {k.nilai == null ? (
+                    <BelumDicatat />
+                  ) : (
+                    <span className="text-small font-bold text-arang-900 tabular-nums">
+                      {k.nilai.toFixed(1).replace(".", ",")}/5{k.kata && <span className="font-medium text-arang-500"> · {k.kata}</span>}
+                    </span>
+                  )}
                 </div>
                 <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-biru-100" aria-hidden="true">
                   <div className="h-full rounded-full bg-biru-500" style={{ width: `${((k.nilai ?? 0) / 5) * 100}%` }} />

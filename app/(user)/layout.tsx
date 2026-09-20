@@ -4,6 +4,9 @@ import "../globals.css";
 import { plusJakarta } from "@/lib/fonts";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { Toaster } from "@/components/ui/Toast";
+import { TrayBanding } from "@/components/kos/TrayBanding";
+import { PelacakRiwayat } from "@/lib/navigasi";
 import Script from "next/script";
 
 // Privacy-respecting analytics: cookieless, no personal data, off unless configured.
@@ -23,7 +26,7 @@ export const metadata: Metadata = {
 // Root layout for the renter surface (kosbahagia.com): the bright shell.
 export default function UserLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="id" className={plusJakarta.variable}>
+    <html lang="id" className={plusJakarta.variable} data-scroll-behavior="smooth">
       <body className="flex min-h-dvh flex-col">
         <a
           href="#konten"
@@ -36,6 +39,9 @@ export default function UserLayout({ children }: { children: ReactNode }) {
           {children}
         </main>
         <Footer />
+        <TrayBanding />
+        <Toaster />
+        <PelacakRiwayat />
         {PLAUSIBLE && <Script defer data-domain={PLAUSIBLE} src={process.env.NEXT_PUBLIC_PLAUSIBLE_SRC ?? "https://plausible.io/js/script.js"} strategy="afterInteractive" />}
       </body>
     </html>

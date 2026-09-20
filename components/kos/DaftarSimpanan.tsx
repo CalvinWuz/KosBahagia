@@ -5,19 +5,25 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
 import { Button, buttonClasses } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Chip";
 import { KosCard, KosCardSkeleton, type KosKartu } from "@/components/kos/KosCard";
 import { restSelect } from "@/lib/supabase/rest";
 import { formatRupiah } from "@/lib/format";
-import { hapusSimpan, segarkanSimpan, setBanding, useSimpanan, type Simpanan } from "@/lib/simpan";
+import { hapusSimpan, segarkanSimpan, setBanding, toggleSimpan, useSimpanan, type Simpanan } from "@/lib/simpan";
+import { tampilkanToast } from "@/lib/toast";
 
 const hidrasi = () => () => {};
 const useSudahHidrasi = () => useSyncExternalStore(hidrasi, () => true, () => false);
 
+type Urut = "terbaru" | "termurah";
+
 // /disimpan — works signed out. Each card says what changed since the save.
-export function DaftarSimpanan() {
+export function DaftarSimpanan({ dariTautan = [] }: { dariTautan?: string[] }) {
   const simpanan = useSimpanan();
   const siap = useSudahHidrasi();
   const router = useRouter();
+  const [urut, setUrut] = useState<Urut>("terbaru");
+  const [disalin, setDisalin] = useState(false);
   const kunci = simpanan.map((s) => s.id).join(",");
   const [data, setData] = useState<{ kunci: string; kos: KosKartu[] } | null>(null);
 
@@ -29,6 +35,8 @@ export function DaftarSimpanan() {
       batal = true;
     };
   }, [kunci]);
+
+  if (dariTautan.length > 0) return <DariTautan slugs={dariTautan} />;
 
   if (!siap) {
     return (
@@ -53,24 +61,53 @@ export function DaftarSimpanan() {
 
   const memuat = data?.kunci !== kunci;
   const sekarang = new Date();
+  const kosDari = (s: Simpanan) => data?.kos.find((k) => k.id === s.id);
+  const terurut = [...simpanan].sort((a, b) => {
+    if (urut === "termurah") return (kosDari(a)?.total_bulanan ?? a.total_bulanan ?? Infinity) - (kosDari(b)?.total_bulanan ?? b.total_bulanan ?? Infinity);
+    return (b.disimpan_pada || "").localeCompare(a.disimpan_pada || "");
+  });
+
   const bandingkan = () => {
-    setBanding(simpanan.slice(0, 3).map((s) => ({ id: s.id, slug: s.slug, nama: s.nama })));
-    router.push(`/banding?kos=${simpanan.slice(0, 3).map((s) => s.slug || s.id).join(",")}`);
+    const tiga = terurut.slice(0, 3);
+    setBanding(tiga.map((s) => ({ id: s.id, slug: s.slug, nama: s.nama })));
+    router.push(`/banding?kos=${tiga.map((s) => s.slug || s.id).join(",")}`);
+  };
+
+  const bagikan = async () => {
+    const slugs = simpanan.map((s) => s.slug).filter(Boolean);
+    const url = `${window.location.origin}/disimpan?kos=${slugs.join(",")}`;
+    try {
+      if (navigator.share) return await navigator.share({ title: "Kos yang kusimpan", url });
+      await navigator.clipboard.writeText(url);
+      setDisalin(true);
+      window.setTimeout(() => setDisalin(false), 2500);
+    } catch {
+      // User dismissed the share sheet.
+    }
   };
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-small text-arang-500">{simpanan.length} kos tersimpan di HP ini.</p>
-        {simpanan.length >= 2 && (
-          <Button variant="secondary" size="sm" onClick={bandingkan}>
-            Bandingkan {Math.min(simpanan.length, 3)} teratas
-          </Button>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {simpanan.length >= 2 && (
+            <Button variant="secondary" size="sm" onClick={bandingkan}>
+              Bandingkan {Math.min(simpanan.length, 3)} teratas
+            </Button>
+          )}
+          <Button variant="ghost" size="sm" onClick={bagikan}>{disalin ? "Tautan disalin" : "Bagikan daftar"}</Button>
+        </div>
       </div>
+      {simpanan.length >= 2 && (
+        <div className="flex gap-2" role="group" aria-label="Urutkan">
+          <Chip selected={urut === "terbaru"} onClick={() => setUrut("terbaru")}>Terbaru disimpan</Chip>
+          <Chip selected={urut === "termurah"} onClick={() => setUrut("termurah")}>Termurah</Chip>
+        </div>
+      )}
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-busy={memuat}>
-        {simpanan.map((s) => {
-          const kos = data?.kos.find((k) => k.id === s.id);
+        {terurut.map((s) => {
+          const kos = kosDari(s);
           if (memuat) return <li key={s.id}><KosCardSkeleton /></li>;
           if (!kos) return <li key={s.id}><TidakTayang s={s} /></li>;
           return (
@@ -81,6 +118,57 @@ export function DaftarSimpanan() {
           );
         })}
       </ul>
+    </div>
+  );
+}
+
+// A list opened from a shared link. Nothing is written until the user says so.
+function DariTautan({ slugs }: { slugs: string[] }) {
+  const router = useRouter();
+  const simpanan = useSimpanan();
+  const [kos, setKos] = useState<KosKartu[] | null>(null);
+  const kunciSlug = slugs.join(",");
+  useEffect(() => {
+    let batal = false;
+    restSelect("kos_kartu", { select: "*", slug: `in.(${kunciSlug})`, status: "eq.tayang" }).then(({ data }) => !batal && setKos(data ?? []));
+    return () => {
+      batal = true;
+    };
+  }, [kunciSlug]);
+
+  const belumAda = (kos ?? []).filter((k) => !simpanan.some((s) => s.id === k.id));
+  const simpanSemua = () => {
+    belumAda.forEach((k) => toggleSimpan({ id: k.id ?? "", slug: k.slug ?? "", nama: k.nama ?? "", total_bulanan: k.total_bulanan, kamar_tersedia: k.kamar_tersedia }));
+    tampilkanToast({ teks: `${belumAda.length} kos disimpan ke HP ini.` });
+    router.replace("/disimpan");
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3 rounded-2xl border border-biru-100 bg-putih p-4 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-small text-arang-900">
+          Daftar dari tautan yang dibagikan{kos ? `, ${kos.length} kos` : ""}.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {belumAda.length > 0 && (
+            <Button variant="primary" size="sm" onClick={simpanSemua}>
+              Simpan {belumAda.length} kos ke HP ini
+            </Button>
+          )}
+          <Link href="/disimpan" className={buttonClasses({ variant: "ghost", size: "sm" })}>Lihat simpananku</Link>
+        </div>
+      </div>
+      {kos === null ? (
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true">
+          {Array.from({ length: Math.min(slugs.length, 3) }, (_, i) => <li key={i}><KosCardSkeleton /></li>)}
+        </ul>
+      ) : kos.length === 0 ? (
+        <p className="text-small text-arang-500">Kos di tautan ini sudah tidak tayang.</p>
+      ) : (
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {kos.map((k) => <li key={k.id}><KosCard kos={k} /></li>)}
+        </ul>
+      )}
     </div>
   );
 }

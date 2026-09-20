@@ -109,12 +109,4 @@ export async function ambilDetailKos(db: Klien, slug: string): Promise<DetailKos
 /** Per-request memo so generateMetadata, the page and the OG image share one fetch. */
 export const detailKos = cache((slug: string) => ambilDetailKos(supabaseServer(), slug));
 
-/** Top strengths for metadata and cards, derived from survey scores only. */
-export function kekuatanKos(d: Pick<DetailKosData, "skor" | "sekitar">): string[] {
-  const hasil: string[] = [];
-  if ((d.skor?.kebersihan ?? 0) >= 4) hasil.push("Bersih");
-  if ((d.skor?.kedap ?? 0) >= 4) hasil.push("Kedap suara");
-  if ((d.skor?.transparansi ?? 0) >= 4.5) hasil.push("Biaya transparan");
-  if (d.sekitar?.landmark_menit_jalan != null && d.sekitar.landmark_menit_jalan <= 7) hasil.push("Dekat landmark");
-  return hasil.slice(0, 2);
-}
+export { kekuatanKos } from "./kekuatan";

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { mitraBrowser } from "@/lib/supabase/mitra-client";
@@ -25,10 +25,18 @@ export function FormMasuk({ next }: { next: string }) {
   const [kode, setKode] = useState("");
   const [sibuk, setSibuk] = useState(false);
   const [galat, setGalat] = useState<string | null>(null);
+  const [tunggu, setTunggu] = useState(0);
+  const [terkirimLagi, setTerkirimLagi] = useState(false);
   const viaWa = process.env.NEXT_PUBLIC_WA_OTP === "1";
 
-  const kirimKode = async (e: FormEvent) => {
-    e.preventDefault();
+  // Resend is allowed after 30 s; the countdown says how long.
+  useEffect(() => {
+    if (tunggu <= 0) return;
+    const t = window.setTimeout(() => setTunggu((n) => n - 1), 1000);
+    return () => window.clearTimeout(t);
+  }, [tunggu]);
+
+  const kirim = async () => {
     setSibuk(true);
     setGalat(null);
     const { error } = await mitraBrowser().auth.signInWithOtp({
@@ -36,8 +44,22 @@ export function FormMasuk({ next }: { next: string }) {
       options: { channel: viaWa ? "whatsapp" : "sms", shouldCreateUser: true },
     });
     setSibuk(false);
-    if (error) return setGalat("Kode belum bisa dikirim. Cek nomornya, lalu coba lagi.");
-    setTahap("kode");
+    if (error) {
+      setGalat("Kode belum bisa dikirim. Cek nomornya, lalu coba lagi.");
+      return false;
+    }
+    setTunggu(30);
+    return true;
+  };
+
+  const kirimKode = async (e: FormEvent) => {
+    e.preventDefault();
+    if (await kirim()) setTahap("kode");
+  };
+
+  const kirimUlang = async () => {
+    setKode("");
+    setTerkirimLagi(await kirim());
   };
 
   const verifikasi = async (e: FormEvent) => {
@@ -76,9 +98,19 @@ export function FormMasuk({ next }: { next: string }) {
       <Button type="submit" variant="primary" size="lg" loading={sibuk} className="w-full">
         Masuk
       </Button>
-      <button type="button" onClick={() => setTahap("nomor")} className="text-small font-bold text-biru-600 hover:underline">
-        Ganti nomor atau minta kode baru
-      </button>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-small">
+        {tunggu > 0 ? (
+          <span className="text-arang-500 tabular-nums" aria-live="polite">Kirim ulang bisa dalam {tunggu} detik</span>
+        ) : (
+          <button type="button" onClick={kirimUlang} disabled={sibuk} className="font-bold text-biru-600 hover:underline disabled:opacity-50">
+            Kirim ulang kode
+          </button>
+        )}
+        <button type="button" onClick={() => setTahap("nomor")} className="font-bold text-biru-600 hover:underline">
+          Ganti nomor
+        </button>
+      </div>
+      {terkirimLagi && tunggu > 0 && <p className="text-small text-daun-700" role="status">Kode baru dikirim ke {keE164(nomor)}.</p>}
     </form>
   );
 }

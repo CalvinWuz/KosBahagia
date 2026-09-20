@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
 import { Chip } from "@/components/ui/Chip";
 import { IconClose } from "@/components/ui/Icon";
+import { useLapisRiwayat } from "@/lib/navigasi";
 import { formatUkuran } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { buatMesin, type Kamera, type Mesin } from "./mesin";
@@ -27,6 +28,8 @@ type Status = "pratinjau" | "penuh" | "siap" | "gagal";
 // Loaded only after the user taps "Lihat 360°". Preview (2048 px) first,
 // then the full file once it arrives and fits the GPU's texture limit.
 export default function Tur360({ titik, awalId, fotoCadangan, onClose }: Props) {
+  // Phone back button closes the viewer, not the page.
+  useLapisRiwayat({ open: true, onClose });
   const [didukung] = useState(() => {
     try {
       const c = document.createElement("canvas");

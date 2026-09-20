@@ -1,10 +1,12 @@
+import { Accordion, AccordionItem } from "@/components/ui/Accordion";
 import { IconCheck, IconClose } from "@/components/ui/Icon";
 import type { Fasilitas, TipeKamar } from "@/lib/kos/detail";
-import { cn } from "@/lib/cn";
 import { Blok } from "./bagian";
 
-// Block 6: grouped kamar / bersama. Absence is information, so what the kos
-// lacks stays visible in grey. Room-level items follow the selected type.
+// Block 6: grouped kamar / bersama. What the kos has is a compact grid;
+// what it lacks is still information, so it stays one tap away instead of
+// being struck through one line at a time. Room-level items follow the
+// selected type.
 export function DaftarFasilitas({ semua, dimiliki, kamar }: { semua: Fasilitas[]; dimiliki: string[]; kamar: TipeKamar | null }) {
   const set = new Set(dimiliki);
   // Room-type specifics override the kos-level flag.
@@ -18,26 +20,47 @@ export function DaftarFasilitas({ semua, dimiliki, kamar }: { semua: Fasilitas[]
     { judul: "Di kamar", isi: semua.filter((f) => f.kategori === "kamar") },
     { judul: "Bersama", isi: semua.filter((f) => f.kategori === "bersama") },
   ];
+  const tidakAda = semua.filter((f) => !ada(f));
+
   return (
-    <Blok id="fasilitas" judul="Fasilitas" keterangan={kamar ? `Untuk kamar ${kamar.nama}. Yang abu-abu tidak tersedia.` : "Yang abu-abu tidak tersedia."}>
-      <div className="grid gap-5 sm:grid-cols-2">
-        {kelompok.map((g) => (
-          <div key={g.judul}>
-            <h3 className="mb-2 text-small font-bold text-arang-900">{g.judul}</h3>
-            <ul className="flex flex-col gap-1.5">
-              {g.isi.map((f) => {
-                const punya = ada(f);
-                return (
-                  <li key={f.slug} className={cn("flex items-center gap-2 text-small", punya ? "text-arang-900" : "text-arang-500 line-through decoration-arang-500/40")}>
-                    {punya ? <IconCheck className="size-4 shrink-0 text-daun-700" /> : <IconClose className="size-4 shrink-0 text-arang-500/60" />}
+    <Blok id="fasilitas" judul="Fasilitas" keterangan={kamar ? `Untuk kamar ${kamar.nama}.` : undefined}>
+      <div className="flex flex-col gap-5">
+        {kelompok.map((g) => {
+          const punya = g.isi.filter(ada);
+          return (
+            <div key={g.judul}>
+              <h3 className="mb-2 text-small font-bold text-arang-900">
+                {g.judul} <span className="font-medium text-arang-500 tabular-nums">({punya.length})</span>
+              </h3>
+              {punya.length === 0 ? (
+                <p className="text-small text-arang-500">Tidak ada yang tercatat.</p>
+              ) : (
+                <ul className="grid grid-cols-2 gap-x-3 gap-y-1.5 sm:grid-cols-3">
+                  {punya.map((f) => (
+                    <li key={f.slug} className="flex items-center gap-2 text-small text-arang-900">
+                      <IconCheck className="size-4 shrink-0 text-daun-700" />
+                      <span>{f.nama}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          );
+        })}
+        {tidakAda.length > 0 && (
+          <Accordion>
+            <AccordionItem title={`Tidak tersedia (${tidakAda.length})`}>
+              <ul className="grid grid-cols-2 gap-x-3 gap-y-1.5 sm:grid-cols-3">
+                {tidakAda.map((f) => (
+                  <li key={f.slug} className="flex items-center gap-2 text-small text-arang-500">
+                    <IconClose className="size-4 shrink-0 text-arang-500/60" />
                     <span>{f.nama}</span>
-                    {!punya && <span className="sr-only">tidak tersedia</span>}
                   </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
+                ))}
+              </ul>
+            </AccordionItem>
+          </Accordion>
+        )}
       </div>
     </Blok>
   );

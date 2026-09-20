@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 export default async function MitraLayout({ children }: { children: ReactNode }) {
   const [dasar, sesi] = await Promise.all([dasarMitra(), sesiMitra()]);
   return (
-    <html lang="id" className={plusJakarta.variable}>
+    <html lang="id" className={plusJakarta.variable} data-scroll-behavior="smooth">
       <body className="flex min-h-dvh flex-col">
         <a
           href="#konten"

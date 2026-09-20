@@ -6,6 +6,7 @@ import { Chip } from "@/components/ui/Chip";
 import { Sheet } from "@/components/ui/Sheet";
 import { formatRupiah } from "@/lib/format";
 import { tanpaFilter, type CariParams, type TipeKosParam } from "@/lib/cari-params";
+import { PILIHAN_KEBERSIHAN, PILIHAN_KEDAP } from "@/lib/skala";
 import { cn } from "@/lib/cn";
 
 export type FasilitasFilter = { slug: string; nama: string; kategori: string };
@@ -19,7 +20,9 @@ const TIPE: Array<{ nilai: TipeKosParam; label: string }> = [
 ];
 
 // The full filter set. Every control applies immediately (no Apply button);
-// the primary button only closes the sheet and reads the live count.
+// the primary button only closes the sheet and reads the live count. The
+// parent applies changes with replaceState while the sheet is open, so one
+// sheet session is one history step; hrefTerakhir keeps it on back-close.
 export function FilterSheet({
   open,
   onClose,
@@ -28,6 +31,8 @@ export function FilterSheet({
   memuat,
   fasilitas,
   terapkan,
+  hrefTerakhir,
+  pertahankan,
 }: {
   open: boolean;
   onClose: () => void;
@@ -36,6 +41,8 @@ export function FilterSheet({
   memuat: boolean;
   fasilitas: FasilitasFilter[];
   terapkan: Ubah;
+  hrefTerakhir?: string;
+  pertahankan?: () => boolean;
 }) {
   const fas = new Set(params.fasilitas ?? []);
   const toggleFasilitas = (slug: string) =>
@@ -52,6 +59,8 @@ export function FilterSheet({
       onClose={onClose}
       title="Filter"
       penuh
+      hrefTerakhir={hrefTerakhir}
+      pertahankan={pertahankan}
       footer={
         <div className="flex gap-3">
           <Button variant="ghost" onClick={() => terapkan(tanpaFilter)}>
@@ -88,9 +97,24 @@ export function FilterSheet({
           </div>
         </Kelompok>
 
-        <Kelompok judul="Kebersihan & suara" keterangan="Skor survei kami, skala 1–5">
-          <Slider label="Kebersihan minimal" nilai={params.kebersihan} onCommit={(v) => terapkan((p) => ({ ...p, kebersihan: v }))} />
-          <Slider label="Kedap suara minimal" nilai={params.kedap} onCommit={(v) => terapkan((p) => ({ ...p, kedap: v }))} />
+        <Kelompok judul="Kebersihan" keterangan="Dari rubrik surveyor kami, skala 1–5. Pilih batas bawahnya.">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Kebersihan minimal">
+            {PILIHAN_KEBERSIHAN.map((t) => (
+              <Chip key={t.nilai} selected={params.kebersihan === t.nilai} onClick={() => terapkan((p) => ({ ...p, kebersihan: p.kebersihan === t.nilai ? undefined : t.nilai }))}>
+                {t.label}
+              </Chip>
+            ))}
+          </div>
+        </Kelompok>
+
+        <Kelompok judul="Kedap suara" keterangan="Dari material tembok dan tes desibel di lokasi.">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Kedap suara minimal">
+            {PILIHAN_KEDAP.map((t) => (
+              <Chip key={t.nilai} selected={params.kedap === t.nilai} onClick={() => terapkan((p) => ({ ...p, kedap: p.kedap === t.nilai ? undefined : t.nilai }))}>
+                {t.label}
+              </Chip>
+            ))}
+          </div>
         </Kelompok>
 
         <Kelompok judul="Aturan">
@@ -147,43 +171,6 @@ function Kelompok({ judul, keterangan, children }: { judul: string; keterangan?:
   );
 }
 
-// Range 0–5 where 0 means "tidak difilter". Commits on release / keyup so
-// dragging does not spam the URL.
-function Slider({ label, nilai, onCommit }: { label: string; nilai?: number; onCommit: (v: number | undefined) => void }) {
-  const [lokal, setLokal] = useState(nilai ?? 0);
-  const [propSebelumnya, setPropSebelumnya] = useState(nilai);
-  if (propSebelumnya !== nilai) {
-    // Prop changed from outside (back button, "Hapus semua"): resync.
-    setPropSebelumnya(nilai);
-    setLokal(nilai ?? 0);
-  }
-  const commit = () => onCommit(lokal === 0 ? undefined : lokal);
-  const id = `slider-${label.replace(/\s+/g, "-").toLowerCase()}`;
-  return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center justify-between">
-        <label htmlFor={id} className="text-small text-arang-900">{label}</label>
-        <span className="text-small font-bold text-biru-600 tabular-nums">{lokal === 0 ? "Semua" : `${lokal} dari 5`}</span>
-      </div>
-      <input
-        id={id}
-        type="range"
-        min={0}
-        max={5}
-        step={1}
-        value={lokal}
-        onChange={(e) => setLokal(Number(e.target.value))}
-        onPointerUp={commit}
-        onKeyUp={(e) => e.key !== "Tab" && e.key !== "Escape" && commit()}
-        className="h-2 w-full cursor-pointer accent-biru-500"
-      />
-      <div className="flex justify-between text-micro text-arang-500" aria-hidden="true">
-        <span>Semua</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
-      </div>
-    </div>
-  );
-}
-
 function InputRupiah({ label, nilai, onCommit }: { label: string; nilai?: number; onCommit: (v: number | undefined) => void }) {
   const [teks, setTeks] = useState(nilai ? String(nilai) : "");
   const [propSebelumnya, setPropSebelumnya] = useState(nilai);
@@ -206,7 +193,7 @@ function InputRupiah({ label, nilai, onCommit }: { label: string; nilai?: number
           type="text"
           inputMode="numeric"
           value={teks}
-          placeholder="0"
+          placeholder="Berapa pun"
           onChange={(e) => setTeks(e.target.value.replace(/\D/g, ""))}
           onBlur={commit}
           onKeyDown={(e) => e.key === "Enter" && commit()}
