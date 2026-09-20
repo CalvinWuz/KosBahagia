@@ -10,14 +10,15 @@ export function Logo({ className }: { className?: string }) {
       aria-hidden="true"
       focusable="false"
     >
+      {/* Roof apex and eaves are rounded so the mark reads soft at 24px. */}
       <path
-        d="M4 14 16 4l12 10v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"
+        d="M4.6 13.6 15.1 4.7a1.4 1.4 0 0 1 1.8 0l10.5 8.9V26.4A1.6 1.6 0 0 1 25.8 28H6.2a1.6 1.6 0 0 1-1.6-1.6z"
         className="fill-current"
       />
       <path
-        d="M11 19c1.5 2 3.2 3 5 3s3.5-1 5-3"
+        d="M11.2 19.2c1.4 2.1 3 3.1 4.8 3.1s3.4-1 4.8-3.1"
         className="stroke-putih"
-        strokeWidth={2.4}
+        strokeWidth={2.6}
         strokeLinecap="round"
         fill="none"
       />

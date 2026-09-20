@@ -15,7 +15,8 @@ const TOTAL = CONTOH.sewa + CONTOH.komponen.reduce((a, b) => a + b.jumlah, 0);
 export function PenjelasBiaya() {
   return (
     <section aria-labelledby="penjelas-biaya" className="mx-auto w-full max-w-6xl px-4">
-      <h2 id="penjelas-biaya" className="text-h2 text-arang-900">
+      <p className="text-micro font-bold text-biru-600">Angka yang jujur</p>
+      <h2 id="penjelas-biaya" className="mt-1 text-h2 text-arang-900">
         Kenapa angka di sini terlihat lebih mahal?
       </h2>
       <p className="mt-1 max-w-2xl text-body text-arang-500">
@@ -30,7 +31,8 @@ export function PenjelasBiaya() {
           <p className="text-small text-arang-500">sewa saja, sisanya ketahuan setelah masuk</p>
         </div>
 
-        <div className="rounded-2xl border-2 border-biru-500 bg-putih p-5">
+        <div className="relative rounded-2xl border-2 border-biru-500 bg-putih p-5">
+          <span className="absolute -top-3 right-4 rounded-full bg-biru-500 px-2.5 py-0.5 text-micro font-bold text-putih">Yang kamu bayar</span>
           <p className="text-micro font-bold text-biru-600">Di Kos Bahagia</p>
           <p className="mt-2 text-price text-arang-900 tabular-nums">{formatRupiah(TOTAL)}</p>
           <p className="text-small text-arang-500">total per bulan, kamar yang sama</p>

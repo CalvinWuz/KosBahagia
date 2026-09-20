@@ -32,6 +32,10 @@
   --color-daun-700: #087a54;
   --color-merah-100: #fde2e2;
   --color-merah-700: #b91c1c;
+  /* Homepage illustration only: a warm wood floor so the room does not read all-blue. */
+  --color-kayu-100: #f3e9da;
+  --color-kayu-500: #cfae7f;
+  --color-langit-100: #eaf4ff;
 
   /* Type — one family; personality comes from weight/size contrast only. */
   --font-sans: var(--font-jakarta), "Plus Jakarta Sans", system-ui, sans-serif;
@@ -39,6 +43,10 @@
   --text-display: 2rem;
   --text-display--line-height: 2.375rem;
   --text-display--font-weight: 800;
+  /* Homepage headline at lg and up; nothing else may use it. */
+  --text-display-lg: 2.75rem;
+  --text-display-lg--line-height: 3.125rem;
+  --text-display-lg--font-weight: 800;
   --text-h1: 1.5rem;
   --text-h1--line-height: 1.875rem;
   --text-h1--font-weight: 700;
@@ -61,11 +69,21 @@
   /* Motion */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --animate-shimmer: shimmer 1.6s linear infinite;
-  /* Homepage hero sketch: the route draws itself once, landmarks pop in. */
-  --animate-gambar: gambar 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-muncul: muncul 200ms ease-out both;
   /* Thin top bar while a link's page is loading. */
   --animate-progres: progres 1s ease-in-out infinite;
+  /* Hero proof chips drift a few pixels; off under reduced motion. */
+  --animate-melayang: melayang 6s ease-in-out infinite;
+
+  @keyframes melayang {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-6px);
+    }
+  }
 
   @keyframes progres {
     from {
@@ -81,14 +99,6 @@
     }
     to {
       background-position: -200% 0;
-    }
-  }
-  @keyframes gambar {
-    from {
-      stroke-dashoffset: 1;
-    }
-    to {
-      stroke-dashoffset: 0;
     }
   }
   @keyframes muncul {

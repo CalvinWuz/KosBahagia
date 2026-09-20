@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Sheet } from "@/components/ui/Sheet";
 import {
   IconBulan,
+  IconChevronDown,
   IconDaun,
   IconDompet,
   IconKampus,
@@ -111,8 +112,10 @@ export function PresetGrid({ kampus }: { kampus: AreaRingkas[] }) {
   );
 }
 
+// Preset tiles: icon tile top-left, arrow bottom-right that only shows on
+// hover/focus. The lift is transform-only so nothing around it reflows.
 const kelasKartu =
-  "flex h-full min-h-24 w-full flex-col items-start gap-2 rounded-2xl border border-biru-100 bg-putih p-4 text-left transition-colors duration-150 ease-out hover:border-biru-500 hover:bg-biru-100/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-biru-500";
+  "group relative flex h-full min-h-28 w-full flex-col items-start gap-2 rounded-2xl border border-biru-100 bg-putih p-4 text-left shadow-sm shadow-biru-600/5 transition-[transform,border-color,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:border-biru-500 hover:shadow-lg hover:shadow-biru-600/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-biru-500 motion-reduce:hover:translate-y-0";
 
 function KartuPreset({
   href,
@@ -129,11 +132,15 @@ function KartuPreset({
 }) {
   const isi = (
     <>
-      <span className="grid size-10 place-items-center rounded-xl bg-biru-100 text-biru-600 [&>svg]:size-5">
+      <span className="grid size-11 place-items-center rounded-xl bg-gradient-to-br from-biru-100 to-biru-100/40 text-biru-600 ring-1 ring-biru-500/10 ring-inset transition-colors duration-200 group-hover:bg-biru-500 group-hover:from-biru-500 group-hover:to-biru-600 group-hover:text-putih [&>svg]:size-6">
         {ikon}
       </span>
       <span className="text-body leading-5 font-bold text-arang-900">{label}</span>
       <span className="text-micro text-arang-500">{keterangan}</span>
+      <IconChevronDown
+        aria-hidden="true"
+        className="absolute right-3 bottom-3 size-4 -rotate-90 text-biru-600 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+      />
     </>
   );
   return href ? (

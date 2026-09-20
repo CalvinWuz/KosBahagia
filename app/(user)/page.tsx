@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { HeroSketch } from "@/components/beranda/HeroSketch";
+import { HeroVisual } from "@/components/beranda/HeroVisual";
+import { IconCheck, IconPin, IconJam } from "@/components/ui/Icon";
 import { BaruDisurvei } from "@/components/beranda/BaruDisurvei";
 import { PenjelasBiaya } from "@/components/beranda/PenjelasBiaya";
 import { CaraVerifikasi } from "@/components/beranda/CaraVerifikasi";
@@ -18,10 +19,10 @@ export const revalidate = 600;
 
 async function muatData() {
   const sekarang = new Date();
-  const kosong = { area: [] as AreaRingkas[], kos: [] as KosKartu[], judul: "Baru disurvei", sekarang };
+  const kosong = { area: [] as AreaRingkas[], kos: [] as KosKartu[], judul: "Baru disurvei", sekarang, jumlahKos: 0 };
   try {
     const db = supabaseServer();
-    const [area, kartu] = await Promise.all([
+    const [area, kartu, hitung] = await Promise.all([
       db.from("area").select("slug, nama, tipe").order("tipe").order("nama"),
       db
         .from("kos_kartu")
@@ -29,6 +30,7 @@ async function muatData() {
         .eq("status", "tayang")
         .order("disurvei_pada", { ascending: false })
         .limit(24),
+      db.from("kos_kartu").select("id", { count: "exact", head: true }).eq("status", "tayang"),
     ]);
     // Always the six newest surveys; the label says how recent they are.
     const kos = (kartu.data ?? []).slice(0, 6);
@@ -40,41 +42,76 @@ async function muatData() {
       : semuaSejak(30)
         ? "Baru disurvei bulan ini"
         : "Terakhir disurvei";
-    return { area: (area.data ?? []) as AreaRingkas[], kos, judul, sekarang };
+    return { area: (area.data ?? []) as AreaRingkas[], kos, judul, sekarang, jumlahKos: hitung.count ?? 0 };
   } catch {
     return kosong;
   }
 }
 
 export default async function Beranda() {
-  const { area, kos, judul, sekarang } = await muatData();
+  const { area, kos, judul, sekarang, jumlahKos } = await muatData();
   const kampus = area.filter((a) => a.tipe === "kampus");
+  const kecamatan = area.filter((a) => a.tipe === "kecamatan");
+  const terbaru = kos[0]?.disurvei_pada ? new Date(kos[0].disurvei_pada) : null;
+  const hariSejak = terbaru ? Math.max(0, Math.round((sekarang.getTime() - terbaru.getTime()) / 86_400_000)) : null;
 
   return (
-    <div className="flex flex-col gap-12 pb-16">
-      <section className="bg-biru-100">
-        <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 py-10 lg:grid-cols-[1.1fr_1fr] lg:py-16">
+    <div className="flex flex-col gap-14 pb-16 lg:gap-20">
+      {/* Hero: cheerful on the front door. A tinted block with a faint dot
+          grid, the headline, the one search box, and the product itself
+          drawn beside it. */}
+      <section className="relative overflow-hidden bg-biru-100">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 [background-image:radial-gradient(var(--color-biru-500)_1px,transparent_1px)] [background-size:22px_22px] opacity-[0.12]"
+        />
+        <div aria-hidden="true" className="pointer-events-none absolute -top-24 -left-24 size-80 rounded-full bg-putih/60 blur-3xl" />
+        <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pt-10 pb-16 lg:grid-cols-[1.05fr_1fr] lg:gap-6 lg:py-20">
           <div className="flex flex-col gap-5">
-            <h1 className="max-w-xl text-display text-arang-900">
+            <p className="inline-flex w-fit items-center gap-2 rounded-full bg-putih/80 py-1 pr-3 pl-1.5 text-micro font-bold text-biru-600 shadow-sm">
+              <span className="grid size-5 place-items-center rounded-full bg-daun-100 text-daun-700">
+                <IconCheck className="size-3" />
+              </span>
+              Disurvei langsung, satu kecamatan dulu
+            </p>
+            <h1 className="max-w-xl text-display text-arang-900 lg:text-display-lg">
               Kos yang sudah kami cek langsung
             </h1>
-            <p className="max-w-xl text-body text-arang-900">
-              Biaya bulanan sebenarnya, skor kebersihan, dan catatan surveyor untuk tiap kos di
-              Jakarta Barat dan Malang.
+            <p className="max-w-lg text-body text-arang-900">
+              Biaya bulanan sebenarnya, skor kebersihan dan kedap suara, plus catatan surveyor untuk
+              tiap kos di Jakarta Barat dan Malang.
             </p>
             <PencarianHero areaPopuler={area} />
+            <ul className="flex flex-wrap gap-x-5 gap-y-2 text-small text-arang-900" aria-label="Fakta singkat">
+              <li className="inline-flex items-center gap-1.5">
+                <IconCheck className="size-4 text-daun-700" />
+                <span><b className="tabular-nums">{jumlahKos}</b> kos disurvei</span>
+              </li>
+              <li className="inline-flex items-center gap-1.5">
+                <IconPin className="size-4 text-biru-600" />
+                {kecamatan.length > 0 ? kecamatan.map((k) => k.nama).join(" · ") : "Jakarta Barat · Malang"}
+              </li>
+              {hariSejak != null && (
+                <li className="inline-flex items-center gap-1.5">
+                  <IconJam className="size-4 text-biru-600" />
+                  survei terakhir {hariSejak === 0 ? "hari ini" : `${hariSejak} hari lalu`}
+                </li>
+              )}
+            </ul>
           </div>
-          <HeroSketch className="mx-auto h-auto w-full max-w-md lg:max-w-none" />
+          <HeroVisual className="mt-2 lg:mt-0" />
         </div>
       </section>
 
       <LanjutkanCari />
 
       <section aria-labelledby="preset" className="mx-auto w-full max-w-6xl px-4">
-        <h2 id="preset" className="text-h2 text-arang-900">
+        <p className="text-micro font-bold text-biru-600">Mulai dari sini</p>
+        <h2 id="preset" className="mt-1 text-h2 text-arang-900">
           Mulai dari yang paling kamu butuhkan
         </h2>
-        <div className="mt-4">
+        <p className="mt-1 text-small text-arang-500">Satu ketukan ke hasil yang sudah difilter.</p>
+        <div className="mt-5">
           <PresetGrid kampus={kampus} />
         </div>
       </section>

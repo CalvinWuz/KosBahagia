@@ -77,9 +77,12 @@ export function IconSpinner(props: IconProps) {
 export function IconDompet(props: IconProps) {
   return (
     <Svg {...props}>
-      <path d="M3 7h15a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-      <path d="M3 7V5.5A1.5 1.5 0 0 1 4.5 4H16v3" />
-      <circle cx="16" cy="14" r="1.2" />
+      <path d="M3 8.5A2.5 2.5 0 0 1 5.5 6H19a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="currentColor" fillOpacity={0.15} stroke="none" />
+      <path d="M3 8.5A2.5 2.5 0 0 1 5.5 6H19a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <path d="M3 8.5V6a2 2 0 0 1 2-2h11v2" />
+      <path d="M15 11h6v5h-6a2.5 2.5 0 0 1 0-5z" fill="currentColor" fillOpacity={0.15} stroke="none" />
+      <path d="M15 11h6v5h-6a2.5 2.5 0 0 1 0-5z" />
+      <circle cx="17.5" cy="13.5" r="0.9" fill="currentColor" stroke="none" />
     </Svg>
   );
 }
@@ -87,8 +90,9 @@ export function IconDompet(props: IconProps) {
 export function IconDaun(props: IconProps) {
   return (
     <Svg {...props}>
-      <path d="M5 19c0-8 5-13 14-13-1 8-5 13-13 13" />
-      <path d="M6 18c2-4 5-7 9-9" />
+      <path d="M4.5 19.5C4.5 11 10.5 5 20 4.5c-.6 9.5-6 15.5-15.5 15z" fill="currentColor" fillOpacity={0.15} stroke="none" />
+      <path d="M4.5 19.5C4.5 11 10.5 5 20 4.5c-.6 9.5-6 15.5-15.5 15z" />
+      <path d="M4.5 19.5c3-5 7-9 12-11.5" />
     </Svg>
   );
 }
@@ -96,10 +100,13 @@ export function IconDaun(props: IconProps) {
 export function IconPasangan(props: IconProps) {
   return (
     <Svg {...props}>
-      <circle cx="9" cy="8" r="3" />
-      <circle cx="16.5" cy="9" r="2.5" />
+      <path d="M3.5 19a5.5 5.5 0 0 1 11 0z" fill="currentColor" fillOpacity={0.15} stroke="none" />
+      <path d="M14.5 19a4 4 0 0 1 6.5-3.1V19z" fill="currentColor" fillOpacity={0.15} stroke="none" />
+      <circle cx="9" cy="8" r="3.2" />
+      <circle cx="16.5" cy="9" r="2.4" />
       <path d="M3.5 19a5.5 5.5 0 0 1 11 0" />
-      <path d="M14.5 19a4 4 0 0 1 6.5-3" />
+      <path d="M14.5 19a4 4 0 0 1 6.5-3.1" />
+      <path d="M13.5 5.2c.8-1.4 3-1.4 3.2.4-.2 1.3-1.5 2.1-1.6 2.2-.1-.1-1.4-.9-1.6-2.2" fill="currentColor" stroke="none" transform="translate(4.5 -2.6) scale(0.8)" />
     </Svg>
   );
 }
@@ -107,9 +114,11 @@ export function IconPasangan(props: IconProps) {
 export function IconKampus(props: IconProps) {
   return (
     <Svg {...props}>
+      <path d="m2 9 10-5 10 5-10 5z" fill="currentColor" fillOpacity={0.15} stroke="none" />
       <path d="m2 9 10-5 10 5-10 5z" />
-      <path d="M6 11.5V16c0 1.5 3 3 6 3s6-1.5 6-3v-4.5" />
-      <path d="M22 9v6" />
+      <path d="M6 11.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-4.5" />
+      <path d="M22 9v5.5" />
+      <circle cx="22" cy="16" r="0.9" fill="currentColor" stroke="none" />
     </Svg>
   );
 }
@@ -117,10 +126,10 @@ export function IconKampus(props: IconProps) {
 export function IconShower(props: IconProps) {
   return (
     <Svg {...props}>
-      <path d="M4 20V6a3 3 0 0 1 3-3h1a3 3 0 0 1 3 3v1" />
-      <path d="M8 7h6" />
-      <path d="M11 6v3" />
-      <path d="M8 13v1M11 13v1M14 13v1M9.5 17v1M12.5 17v1" />
+      <path d="M7.5 7h6.5a1 1 0 0 1 1 1v1.5H6.5V8a1 1 0 0 1 1-1z" fill="currentColor" fillOpacity={0.15} stroke="none" />
+      <path d="M4 20V7.5A3.5 3.5 0 0 1 7.5 4h1A2.5 2.5 0 0 1 11 6.5V7" />
+      <path d="M7.5 7h6.5a1 1 0 0 1 1 1v1.5H6.5V8a1 1 0 0 1 1-1z" />
+      <path d="M8 13v1.5M11 13v1.5M14 13v1.5M9.5 17.5V19M12.5 17.5V19" />
     </Svg>
   );
 }
@@ -128,8 +137,9 @@ export function IconShower(props: IconProps) {
 export function IconBulan(props: IconProps) {
   return (
     <Svg {...props}>
-      <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" />
-      <path d="m3 3 18 18" />
+      <path d="M19.5 15.2A8 8 0 0 1 8.8 4.5a8 8 0 1 0 10.7 10.7z" fill="currentColor" fillOpacity={0.15} stroke="none" />
+      <path d="M19.5 15.2A8 8 0 0 1 8.8 4.5a8 8 0 1 0 10.7 10.7z" />
+      <path d="m17 2.5.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z" fill="currentColor" stroke="none" />
     </Svg>
   );
 }
@@ -146,10 +156,11 @@ export function IconPin(props: IconProps) {
 export function IconJalanKaki(props: IconProps) {
   return (
     <Svg {...props}>
-      <circle cx="13" cy="4" r="1.5" />
-      <path d="m9 21 2-6 3 2v4" />
-      <path d="m9 12 2-4 3 1 2 3h2" />
-      <path d="m11 8-3 2-1 4" />
+      <circle cx="13.5" cy="4" r="1.8" fill="currentColor" stroke="none" />
+      <path d="M12.5 8.2 10 13l2.8 2.3V21" />
+      <path d="M10 13l-2.6 3.4" />
+      <path d="M12.5 8.2c1.4-.4 2.6.2 3.2 1.5l1 2 2.3.6" />
+      <path d="M12.5 8.2 9.6 9.8 8.5 13" />
     </Svg>
   );
 }
@@ -157,8 +168,12 @@ export function IconJalanKaki(props: IconProps) {
 export function IconPengukur(props: IconProps) {
   return (
     <Svg {...props}>
-      <path d="M3 17 17 3l4 4L7 21z" />
-      <path d="m8 8 2 2M11 5l2 2M14 8l2 2M5 11l2 2" />
+      <path d="M4 18a8 8 0 0 1 16 0z" fill="currentColor" fillOpacity={0.15} stroke="none" />
+      <path d="M4 18a8 8 0 0 1 16 0" />
+      <path d="M12 18l4.2-5.6" />
+      <circle cx="12" cy="18" r="1.4" fill="currentColor" stroke="none" />
+      <path d="M6.2 13.2l1 .7M12 10v1.2M17.8 13.2l-1 .7" />
+      <path d="M3 21h18" />
     </Svg>
   );
 }
@@ -166,9 +181,12 @@ export function IconPengukur(props: IconProps) {
 export function IconCatatan(props: IconProps) {
   return (
     <Svg {...props}>
+      <path d="M6 3h9l4 4v14H6z" fill="currentColor" fillOpacity={0.15} stroke="none" />
       <path d="M6 3h9l4 4v14H6z" />
       <path d="M15 3v4h4" />
-      <path d="M9 12h7M9 16h7" />
+      <path d="M9 12h6M9 16h4" />
+      <circle cx="16" cy="16.5" r="2.6" fill="currentColor" stroke="none" />
+      <path d="M16 15.2v1.6M16 18.1v.1" className="stroke-putih" strokeWidth={1.4} />
     </Svg>
   );
 }

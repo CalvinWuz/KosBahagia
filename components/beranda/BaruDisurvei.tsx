@@ -17,7 +17,14 @@ export function BaruDisurvei({
     <section aria-labelledby="baru-disurvei" className="mx-auto w-full max-w-6xl px-4">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h2 id="baru-disurvei" className="text-h2 text-arang-900">
+          <p className="flex items-center gap-1.5 text-micro font-bold text-biru-600">
+            <span aria-hidden="true" className="relative flex size-2">
+              <span className="absolute inset-0 rounded-full bg-daun-500 opacity-60 motion-safe:animate-ping" />
+              <span className="relative size-2 rounded-full bg-daun-500" />
+            </span>
+            Tim di lapangan
+          </p>
+          <h2 id="baru-disurvei" className="mt-1 text-h2 text-arang-900">
             {judul}
           </h2>
           <p className="text-small text-arang-500">Tim kami baru saja datang, ukur, dan foto.</p>
