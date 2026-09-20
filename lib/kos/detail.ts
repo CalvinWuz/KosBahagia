@@ -29,6 +29,8 @@ export type DetailKosData = {
   penilaian: Penilaian | null;
   aturan: Aturan | null;
   sekitar: Sekitar | null;
+  /** Coordinates of the route's landmark when it matches one of our areas. */
+  landmark: { lat: number; lng: number } | null;
   media: Media[];
   catatan: Catatan | null;
   skor: SkorKos | null;
@@ -72,6 +74,15 @@ export async function ambilDetailKos(db: Klien, slug: string): Promise<DetailKos
 
   const { area, ...kos } = kosRes.data;
   const total = kartu.total_bulanan ?? 0;
+
+  // The landmark is usually one of our areas (a campus, a station); its
+  // coordinates let the real-map inset draw both ends of the route.
+  const landmarkNama = sekitarRes.data?.landmark_nama?.split(" (")[0];
+  const landmarkRes = landmarkNama
+    ? await db.from("area_publik").select("lat, lng").ilike("nama", `${landmarkNama}%`).limit(1).maybeSingle()
+    : { data: null };
+  const landmark =
+    landmarkRes.data?.lat != null && landmarkRes.data?.lng != null ? { lat: landmarkRes.data.lat, lng: landmarkRes.data.lng } : null;
   const { data: kandidat } = await db
     .from("kos_kartu")
     .select("*")
@@ -95,6 +106,7 @@ export async function ambilDetailKos(db: Klien, slug: string): Promise<DetailKos
     penilaian: penilaianRes.data,
     aturan: aturanRes.data,
     sekitar: sekitarRes.data,
+    landmark,
     media: mediaRes.data ?? [],
     catatan: catatanRes.data,
     skor: skorRes.data,

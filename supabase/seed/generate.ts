@@ -7,9 +7,32 @@
 // scores and notes vary on purpose; rubric fields that were "not measured"
 // stay NULL and are never filled with a middle value.
 
-import { writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+
+// ---------------------------------------------------------------- dummy photos
+// public/dummy/manifest.json is written by scripts/foto-dummy.mjs. When it
+// exists, every kos gets a coherent set of placeholder photos (front, room,
+// bathroom, ...) chosen by a stable hash, so the same kos always shows the
+// same pictures. Without it the seed falls back to picsum URLs. Selection
+// never touches the PRNG streams, so pgTAP literals stay put.
+type FotoDummy = { id: string; kategori: string; url: string; preview_url?: string; lebar: number; tinggi: number; blurhash: string };
+const MANIFEST_DUMMY: FotoDummy[] = (() => {
+  const f = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "public", "dummy", "manifest.json");
+  return existsSync(f) ? (JSON.parse(readFileSync(f, "utf8")) as FotoDummy[]) : [];
+})();
+function hashKecil(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+  return h >>> 0;
+}
+function fotoDummy(kategori: string, kunci: string): FotoDummy | null {
+  const daftar = MANIFEST_DUMMY.filter((d) => d.kategori === kategori);
+  if (daftar.length === 0) return null;
+  return daftar[hashKecil(`${kunci}|${kategori}`) % daftar.length];
+}
+const KATEGORI_FOTO = ["tampak-depan", "kamar", "kamar-mandi", "koridor", "dapur", "parkir", "ruang-tamu", "jemuran"];
 
 // ---------------------------------------------------------------- utils
 function mulberry32(seed: number) {
@@ -401,7 +424,11 @@ for (const p of PROFIL) {
   const keterangan = ["Tampak depan", "Kamar tipe " + kamar[0].nama, "Kamar mandi", "Koridor", "Dapur bersama", "Area parkir", "Ruang tamu", "Jemuran"];
   const jumlahFoto = tier === "free" ? antara(4, 6) : antara(6, 8);
   for (let i = 0; i < jumlahFoto; i++) {
-    mediaRows.push(`  (${q(uuid())}, ${q(id)}, 'foto', ${q(`https://picsum.photos/seed/${slug}-${i + 1}/1600/1200`)}, ${q(keterangan[i] ?? `Foto ${i + 1}`)}, ${i}, 1600, 1200, ${q(pilih(BLURHASH))}, null)`);
+    // Same PRNG order as before the manifest existed: id first, then blurhash.
+    const mid = uuid();
+    const bh = pilih(BLURHASH);
+    const d = fotoDummy(KATEGORI_FOTO[i] ?? "kamar", `${slug}-${i}`);
+    mediaRows.push(`  (${q(mid)}, ${q(id)}, 'foto', ${q(d?.url ?? `https://picsum.photos/seed/${slug}-${i + 1}/1600/1200`)}, ${q(keterangan[i] ?? `Foto ${i + 1}`)}, ${i}, ${d?.lebar ?? 1600}, ${d?.tinggi ?? 1200}, ${q(d?.blurhash ?? bh)}, null)`);
   }
   const patokanId: string[] = [];
   if (tier !== "free") {
@@ -412,17 +439,23 @@ for (const p of PROFIL) {
       const hotspot = titik
         .map((lain, j) => (j === i ? null : { ke: idTitik[j], yaw: (j - i) * 120 + 60, pitch: 0, label: `Ke ${lain}` }))
         .filter(Boolean);
+      const d360 = fotoDummy(`360-${t}`, `${slug}-360-${t}`);
       const tur = {
         titik: t,
-        preview_url: `https://picsum.photos/seed/${slug}-360-${t}/2048/1024`,
+        preview_url: d360?.preview_url ?? `https://picsum.photos/seed/${slug}-360-${t}/2048/1024`,
         ukuran_bytes: antara(3_200_000, 5_800_000),
         hotspot,
       };
-      mediaRows.push(`  (${q(idTitik[i])}, ${q(id)}, 'foto360', ${q(`https://picsum.photos/seed/${slug}-360-${t}/5000/2500`)}, ${q(`Tur 360° ${t}`)}, ${jumlahFoto + i}, 5000, 2500, ${q(pilih(BLURHASH))}, ${js(tur)})`);
+      const bh360 = pilih(BLURHASH);
+      mediaRows.push(`  (${q(idTitik[i])}, ${q(id)}, 'foto360', ${q(d360?.url ?? `https://picsum.photos/seed/${slug}-360-${t}/5000/2500`)}, ${q(`Tur 360° ${t}`)}, ${jumlahFoto + i}, ${d360?.lebar ?? 5000}, ${d360?.tinggi ?? 2500}, ${q(d360?.blurhash ?? bh360)}, ${js(tur)})`);
     });
     patokanId.push(uuid(), uuid());
-    mediaRows.push(`  (${q(patokanId[0])}, ${q(id)}, 'patokan', ${q(`https://picsum.photos/seed/${slug}-patokan-1/1600/1200`)}, ${q(`Gang masuk dari ${p.jalan.replace(/ Gg\..*$/, "")}`)}, ${jumlahFoto + 3}, 1600, 1200, ${q(pilih(BLURHASH))}, null)`);
-    mediaRows.push(`  (${q(patokanId[1])}, ${q(id)}, 'patokan', ${q(`https://picsum.photos/seed/${slug}-patokan-2/1600/1200`)}, 'Patokan: minimarket di ujung gang', ${jumlahFoto + 4}, 1600, 1200, ${q(pilih(BLURHASH))}, null)`);
+    const bhP1 = pilih(BLURHASH);
+    const dP1 = fotoDummy("patokan-gang", `${slug}-patokan-1`);
+    mediaRows.push(`  (${q(patokanId[0])}, ${q(id)}, 'patokan', ${q(dP1?.url ?? `https://picsum.photos/seed/${slug}-patokan-1/1600/1200`)}, ${q(`Gang masuk dari ${p.jalan.replace(/ Gg\..*$/, "")}`)}, ${jumlahFoto + 3}, 1600, 1200, ${q(dP1?.blurhash ?? bhP1)}, null)`);
+    const bhP2 = pilih(BLURHASH);
+    const dP2 = fotoDummy("patokan-minimarket", `${slug}-patokan-2`);
+    mediaRows.push(`  (${q(patokanId[1])}, ${q(id)}, 'patokan', ${q(dP2?.url ?? `https://picsum.photos/seed/${slug}-patokan-2/1600/1200`)}, 'Patokan: minimarket di ujung gang', ${jumlahFoto + 4}, 1600, 1200, ${q(dP2?.blurhash ?? bhP2)}, null)`);
   }
 
   // ---- surroundings

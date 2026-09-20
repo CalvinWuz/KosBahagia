@@ -47,7 +47,7 @@ const BAGIAN: Bagian[] = [
 // the title block sits above the gallery so name, score and address are on
 // the first screen; blocks 3–12 keep their order everywhere.
 export function DetailKos({ data, sekarang }: { data: DetailKosData; sekarang: string }) {
-  const { kartu, kos, area, tipeKamar, penilaian, aturan, sekitar, media, catatan, skor, semuaFasilitas, fasilitasKos, serupa } = data;
+  const { kartu, kos, area, tipeKamar, penilaian, aturan, sekitar, landmark, media, catatan, skor, semuaFasilitas, fasilitasKos, serupa } = data;
   const sekarangDate = useMemo(() => new Date(sekarang), [sekarang]);
   const [kamarId, setKamarId] = useState(tipeKamar[0]?.id ?? null);
   const kamar = tipeKamar.find((t) => t.id === kamarId) ?? tipeKamar[0] ?? null;
@@ -168,7 +168,7 @@ export function DetailKos({ data, sekarang }: { data: DetailKosData; sekarang: s
             {/* 7 */}
             <DaftarAturan aturan={aturan} />
             {/* 8 */}
-            <CaraKeSini sekitar={sekitar} patokan={patokan} lat={kartu.lat} lng={kartu.lng} nama={kos.nama} />
+            <CaraKeSini sekitar={sekitar} patokan={patokan} lat={kartu.lat} lng={kartu.lng} landmark={landmark} nama={kos.nama} />
             {/* 9 */}
             <SekitarKos sekitar={sekitar} />
             {/* 10 */}

@@ -13,7 +13,10 @@ export const contentType = "image/png";
 export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const d = await detailKos(slug);
-  const foto = d?.media.find((m) => m.jenis === "foto")?.url;
+  // next/og needs an absolute URL; seed placeholders under /dummy are relative.
+  const situs = process.env.NEXT_PUBLIC_SITE_URL ?? "https://kosbahagia.com";
+  const fotoMentah = d?.media.find((m) => m.jenis === "foto")?.url;
+  const foto = fotoMentah?.startsWith("/") ? `${situs}${fotoMentah}` : fotoMentah;
   const total = d ? formatRupiah(d.kartu.total_bulanan ?? 0) : "";
 
   return new ImageResponse(

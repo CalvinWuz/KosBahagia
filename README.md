@@ -58,7 +58,7 @@ mengubah data survei**. Paket hanya memengaruhi urutan dan kekayaan media.
   </tr>
 </table>
 
-> Foto di atas masih data *seed* (placeholder). `npm run cek:rilis` memblokir rilis sampai diganti foto asli.
+> Foto di atas masih ilustrasi *seed* (placeholder dari `public/dummy/`). `npm run cek:rilis` memblokir rilis sampai diganti foto asli.
 
 ## Skor Bahagia
 
@@ -154,7 +154,10 @@ Halaman mitra ada di `http://localhost:3000/mitra`; OTP lokal menerima nomor uji
 | `npm run lint` · `npm run typecheck` · `npm test` | ESLint · `tsc --noEmit` · `node:test` untuk `lib/**/*.test.ts` |
 | `npx supabase test db` | 85 asersi pgTAP: `cari_kos`, `kos_skor`, `kos_kartu`, RLS, mitra, area |
 | `npm run db:types` | Regenerasi `lib/supabase/types.ts` (jangan diedit tangan) |
-| `npm run seed:generate` | Tulis ulang `supabase/seed/01_seed.sql` dari generator deterministik |
+| `npm run seed:generate` | Tulis ulang `supabase/seed/01_seed.sql` dari generator deterministik; memakai `public/dummy/manifest.json` bila ada |
+| `node scripts/foto-dummy-ilustrasi.mjs` | Gambar ulang 42 foto placeholder (ilustrasi) ke `public/dummy/` + manifest |
+| `node scripts/foto-dummy.mjs` | Versi AI (Gemini) dari skrip di atas; butuh `GEMINI_API_KEY` dengan billing |
+| `node scripts/sql-foto-dummy.mjs` | Cetak `UPDATE kos_media` untuk mengarahkan basis data yang sudah terisi ke foto dummy |
 | `npm run cek:skor-db` | Bukti `lib/scoring.ts` dan view `kos_skor` sepakat |
 | `npm run proses:360 -- foto.jpg --titik kamar --slug <kos>` | Buat file 360° 2048/6144 px dan cetak baris `kos_media` |
 | `npm run cek:rilis` | Gerbang rilis terhadap basis data produksi |

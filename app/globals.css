@@ -74,6 +74,17 @@
   --animate-progres: progres 1s ease-in-out infinite;
   /* Hero proof chips drift a few pixels; off under reduced motion. */
   --animate-melayang: melayang 6s ease-in-out infinite;
+  /* Minimap: the route draws itself once when it scrolls into view. */
+  --animate-gambar: gambar 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  @keyframes gambar {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
 
   @keyframes melayang {
     0%,

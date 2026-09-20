@@ -1,0 +1,342 @@
+[
+  {
+    "id": "tampak-depan-1",
+    "kategori": "tampak-depan",
+    "url": "/dummy/tampak-depan-1.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LXPjS]xvtl%M~qj[bcogo#j[enjZ"
+  },
+  {
+    "id": "tampak-depan-2",
+    "kategori": "tampak-depan",
+    "url": "/dummy/tampak-depan-2.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LVPZ[gxvtl%M~Xj[bvogs=j[adjZ"
+  },
+  {
+    "id": "tampak-depan-3",
+    "kategori": "tampak-depan",
+    "url": "/dummy/tampak-depan-3.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LRPG%4x]x]%M?wj[t7ofWFj[n$jY"
+  },
+  {
+    "id": "tampak-depan-4",
+    "kategori": "tampak-depan",
+    "url": "/dummy/tampak-depan-4.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LYQTDqxuXm%M?wkCoLo0XnkCiwjF"
+  },
+  {
+    "id": "tampak-depan-5",
+    "kategori": "tampak-depan",
+    "url": "/dummy/tampak-depan-5.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LSOX8+x]%L%M_4j[t7ofxAj[WEjY"
+  },
+  {
+    "id": "tampak-depan-6",
+    "kategori": "tampak-depan",
+    "url": "/dummy/tampak-depan-6.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LXPZ+Jxutl%M~qj@g3ogtSofaKae"
+  },
+  {
+    "id": "kamar-1",
+    "kategori": "kamar",
+    "url": "/dummy/kamar-1.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LbPs^vx^-l%Mpfoct6R.?Es7RoNI"
+  },
+  {
+    "id": "kamar-2",
+    "kategori": "kamar",
+    "url": "/dummy/kamar-2.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LfPZ[f%gxaxvt:oLs-R+^jV@R*R%"
+  },
+  {
+    "id": "kamar-3",
+    "kategori": "kamar",
+    "url": "/dummy/kamar-3.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LUQ]Z$%N-n-p?KslofR.^%nzNKNI"
+  },
+  {
+    "id": "kamar-4",
+    "kategori": "kamar",
+    "url": "/dummy/kamar-4.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LdPjZ9-:oyxwt:bHt5WD?ERkoIV?"
+  },
+  {
+    "id": "kamar-5",
+    "kategori": "kamar",
+    "url": "/dummy/kamar-5.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LcP?~}x^$|%Mpfodt6R--nsjR:M}"
+  },
+  {
+    "id": "kamar-6",
+    "kategori": "kamar",
+    "url": "/dummy/kamar-6.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LfPZ[f%gxaxvt:oLs-R+^jV@R*R%"
+  },
+  {
+    "id": "kamar-7",
+    "kategori": "kamar",
+    "url": "/dummy/kamar-7.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LcPs@nx^%J%Mpfoct6R.?Fs7RnNH"
+  },
+  {
+    "id": "kamar-8",
+    "kategori": "kamar",
+    "url": "/dummy/kamar-8.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LcPZ.R-:tRxvpfayxZa$?FM|n$jY"
+  },
+  {
+    "id": "kamar-mandi-1",
+    "kategori": "kamar-mandi",
+    "url": "/dummy/kamar-mandi-1.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LWRWG1%Mt6%M~Vofs:j@NLfkayay"
+  },
+  {
+    "id": "kamar-mandi-2",
+    "kategori": "kamar-mandi",
+    "url": "/dummy/kamar-mandi-2.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LWRWG1%Mt6%M~Voes:j[NLbHayay"
+  },
+  {
+    "id": "kamar-mandi-3",
+    "kategori": "kamar-mandi",
+    "url": "/dummy/kamar-mandi-3.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LORMl9-:s,x]~qadj?WBRiRkRkae"
+  },
+  {
+    "id": "kamar-mandi-4",
+    "kategori": "kamar-mandi",
+    "url": "/dummy/kamar-mandi-4.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LXRfzw%Mayxv~Voej[ayIrWVj[a{"
+  },
+  {
+    "id": "koridor-1",
+    "kategori": "koridor",
+    "url": "/dummy/koridor-1.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LWS6Mb%0jc%L%%oJaJjZRjkWt7j]"
+  },
+  {
+    "id": "koridor-2",
+    "kategori": "koridor",
+    "url": "/dummy/koridor-2.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LYRfkB?FNH%L.Af5emf6ofR.t8of"
+  },
+  {
+    "id": "koridor-3",
+    "kategori": "koridor",
+    "url": "/dummy/koridor-3.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LWRyshogNMxv%%WXRiWDnzxaxaoe"
+  },
+  {
+    "id": "koridor-4",
+    "kategori": "koridor",
+    "url": "/dummy/koridor-4.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LTR:E7t6R.xu%%ayRiWBngt8xtof"
+  },
+  {
+    "id": "dapur-1",
+    "kategori": "dapur",
+    "url": "/dummy/dapur-1.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LgPs;jxtxZxv_3oeWCbI~St6RkWB"
+  },
+  {
+    "id": "dapur-2",
+    "kategori": "dapur",
+    "url": "/dummy/dapur-2.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LkR3D:%1ozxu.Aoeaya~.8ofWAax"
+  },
+  {
+    "id": "dapur-3",
+    "kategori": "dapur",
+    "url": "/dummy/dapur-3.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LjPZ_dt6t7xu?dj?WBbI~Ct7RjWB"
+  },
+  {
+    "id": "parkir-1",
+    "kategori": "parkir",
+    "url": "/dummy/parkir-1.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LfONa-t8oytR?wofWBoL-oofj]of"
+  },
+  {
+    "id": "parkir-2",
+    "kategori": "parkir",
+    "url": "/dummy/parkir-2.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LbOq4*t7ax%M?wozofae-.oMf8of"
+  },
+  {
+    "id": "parkir-3",
+    "kategori": "parkir",
+    "url": "/dummy/parkir-3.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LfONa-t8oexu?wj]WVkB%Lofjuof"
+  },
+  {
+    "id": "ruang-tamu-1",
+    "kategori": "ruang-tamu",
+    "url": "/dummy/ruang-tamu-1.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LdPs|.NNbG%MyZbIRlRk==xsWDM|"
+  },
+  {
+    "id": "ruang-tamu-2",
+    "kategori": "ruang-tamu",
+    "url": "/dummy/ruang-tamu-2.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LMQ0XFb{bp-.%%ozNGIo~6$|RnIq"
+  },
+  {
+    "id": "ruang-tamu-3",
+    "kategori": "ruang-tamu",
+    "url": "/dummy/ruang-tamu-3.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LcP@2}X8oL-p%%ogWAV?={xaWBNG"
+  },
+  {
+    "id": "jemuran-1",
+    "kategori": "jemuran",
+    "url": "/dummy/jemuran-1.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LWO|*2-:Rn%M_Nofazof%MRlobjY"
+  },
+  {
+    "id": "jemuran-2",
+    "kategori": "jemuran",
+    "url": "/dummy/jemuran-2.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LBQvByRpt3_3v49cxYt7~po~snX7"
+  },
+  {
+    "id": "patokan-gang-1",
+    "kategori": "patokan-gang",
+    "url": "/dummy/patokan-gang-1.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LaQ0p=ozs:%2?wR+WBofkDxuR*bG"
+  },
+  {
+    "id": "patokan-gang-2",
+    "kategori": "patokan-gang",
+    "url": "/dummy/patokan-gang-2.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LUQTM]?Hxt-;?ws;RjoeRnNGM|WB"
+  },
+  {
+    "id": "patokan-gang-3",
+    "kategori": "patokan-gang",
+    "url": "/dummy/patokan-gang-3.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LTP%kl?IxZ%M?^%MRjWANIM|IpbH"
+  },
+  {
+    "id": "patokan-minimarket-1",
+    "kategori": "patokan-minimarket",
+    "url": "/dummy/patokan-minimarket-1.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LPO;0z-;x]%M_NRkozt6.St6MyoL"
+  },
+  {
+    "id": "patokan-minimarket-2",
+    "kategori": "patokan-minimarket",
+    "url": "/dummy/patokan-minimarket-2.webp",
+    "lebar": 1600,
+    "tinggi": 1200,
+    "blurhash": "LUPZGk%M$xxv}QRjozoz-.s.NLkC"
+  },
+  {
+    "id": "360-kamar-1",
+    "kategori": "360-kamar",
+    "url": "/dummy/360-kamar-1.webp",
+    "preview_url": "/dummy/360-kamar-1-preview.webp",
+    "lebar": 4096,
+    "tinggi": 2048,
+    "blurhash": "LdRC_Gx^oe%2%%axWEWYj=ngoLfl"
+  },
+  {
+    "id": "360-kamar-2",
+    "kategori": "360-kamar",
+    "url": "/dummy/360-kamar-2.webp",
+    "preview_url": "/dummy/360-kamar-2-preview.webp",
+    "lebar": 4096,
+    "tinggi": 2048,
+    "blurhash": "LfRC}Mx^oe%2%%ayR*Wqj[nhj[fl"
+  },
+  {
+    "id": "360-koridor-1",
+    "kategori": "360-koridor",
+    "url": "/dummy/360-koridor-1.webp",
+    "preview_url": "/dummy/360-koridor-1-preview.webp",
+    "lebar": 4096,
+    "tinggi": 2048,
+    "blurhash": "LhQvzatRj[t8%%j[fQoexuocays,"
+  },
+  {
+    "id": "360-dapur-1",
+    "kategori": "360-dapur",
+    "url": "/dummy/360-dapur-1.webp",
+    "preview_url": "/dummy/360-dapur-1-preview.webp",
+    "lebar": 4096,
+    "tinggi": 2048,
+    "blurhash": "LcQv:%t7WB-p.At6a#WDxUkCofRk"
+  }
+]

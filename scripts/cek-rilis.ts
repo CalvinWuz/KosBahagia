@@ -28,8 +28,8 @@ const tanpaSurveyor = tayang.filter((k) => !k.surveyor || !k.disurvei_pada);
 if (tanpaSurveyor.length) masalah.push(`${tanpaSurveyor.length} kos tayang tanpa nama surveyor/tanggal survei: ${tanpaSurveyor.slice(0, 5).map((k) => k.slug).join(", ")}`);
 
 const { data: media } = await db.from("kos_media").select("url").limit(2000);
-const placeholder = (media ?? []).filter((m) => /picsum\.photos|placeholder|example\.com/i.test(m.url));
-if (placeholder.length) masalah.push(`${placeholder.length} foto masih placeholder (picsum/example).`);
+const placeholder = (media ?? []).filter((m) => /picsum\.photos|placeholder|example\.com|^\/dummy\//i.test(m.url));
+if (placeholder.length) masalah.push(`${placeholder.length} foto masih placeholder (picsum/dummy).`);
 
 const { data: area } = await db.from("area").select("slug, deskripsi");
 const tanpaDeskripsi = (area ?? []).filter((a) => !a.deskripsi || a.deskripsi.length < 80);
