@@ -11,14 +11,26 @@ import { useEffect, useRef } from "react";
 
 let terakhirDiLuar: HTMLElement | null = null;
 const diLuarDialog = (el: Element | null): el is HTMLElement => el instanceof HTMLElement && el !== document.body && !el.closest('[role="dialog"]');
+
+// Installed from the root layout (lib/navigasi imports this module), so it
+// is already listening when the opener gets focus. Loading it together with
+// the dialog is too late: by then the opener has lost focus (the dialog makes
+// the page inert), and the first open of every sheet would land on <body>.
+// Pointer presses count too, because Safari does not focus a clicked button.
 if (typeof document !== "undefined") {
-  // Dialog code is loaded on first open, after the opener already has focus:
-  // start from whatever is focused now.
   if (diLuarDialog(document.activeElement)) terakhirDiLuar = document.activeElement;
   document.addEventListener(
     "focusin",
     (e) => {
       const el = e.target as Element | null;
+      if (diLuarDialog(el)) terakhirDiLuar = el;
+    },
+    true,
+  );
+  document.addEventListener(
+    "pointerdown",
+    (e) => {
+      const el = (e.target as Element | null)?.closest?.('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])') ?? null;
       if (diLuarDialog(el)) terakhirDiLuar = el;
     },
     true,

@@ -2,6 +2,10 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
+// Side effect: start tracking the last focused element outside dialogs from
+// the first page load (see lib/fokus.ts). PelacakRiwayat keeps this module in
+// the root layout's bundle.
+import "./fokus";
 
 // Navigation helpers shared by the back buttons and every layered UI
 // (sheet, lightbox, 360° viewer). Two problems they solve:
