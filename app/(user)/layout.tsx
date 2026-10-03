@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import "../globals.css";
 import { plusJakarta } from "@/lib/fonts";
 import { Header } from "@/components/layout/Header";
+import { BannerDemo } from "@/components/layout/BannerDemo";
+import { MODE_DEMO } from "@/lib/demo";
 import { Footer } from "@/components/layout/Footer";
 import { Toaster } from "@/components/ui/Toast";
 import { TrayBanding } from "@/components/kos/TrayBanding";
@@ -19,8 +21,9 @@ export const metadata: Metadata = {
     default: "Kos Bahagia — Kos yang sudah kami cek langsung",
     template: "%s · Kos Bahagia",
   },
-  description:
-    "Cari kos di Jakarta dan Malang dengan biaya bulanan sebenarnya, skor kebersihan dan kedap suara, serta catatan surveyor. Setiap kos sudah kami datangi.",
+  description: MODE_DEMO
+    ? "Prototipe Kos Bahagia dengan data contoh: cari kos dengan biaya bulanan sebenarnya, skor kebersihan dan kedap suara, serta catatan surveyor."
+    : "Cari kos di Jakarta dan Malang dengan biaya bulanan sebenarnya, skor kebersihan dan kedap suara, serta catatan surveyor. Setiap kos sudah kami datangi.",
 };
 
 // Root layout for the renter surface (kosbahagia.com): the bright shell.
@@ -34,6 +37,7 @@ export default function UserLayout({ children }: { children: ReactNode }) {
         >
           Langsung ke konten
         </a>
+        <BannerDemo />
         <Header />
         <main id="konten" className="flex-1">
           {children}

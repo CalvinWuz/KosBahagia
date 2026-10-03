@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { KosCard, type KosKartu } from "@/components/kos/KosCard";
 import { hrefCari } from "@/lib/cari-params";
+import { MODE_DEMO } from "@/lib/demo";
 
 // Proof the team is active. Newest survey first; the label widens from
 // "minggu ini" to "bulan ini" instead of hiding when a week is quiet.
@@ -15,19 +16,21 @@ export function BaruDisurvei({
 }) {
   return (
     <section aria-labelledby="baru-disurvei" className="mx-auto w-full max-w-6xl px-4">
-      <div className="flex items-end justify-between gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
         <div>
           <p className="flex items-center gap-1.5 text-micro font-bold text-biru-600">
             <span aria-hidden="true" className="relative flex size-2">
               <span className="absolute inset-0 rounded-full bg-daun-500 opacity-60 motion-safe:animate-ping" />
               <span className="relative size-2 rounded-full bg-daun-500" />
             </span>
-            Tim di lapangan
+            {MODE_DEMO ? "Data contoh terbaru" : "Tim di lapangan"}
           </p>
           <h2 id="baru-disurvei" className="mt-1 text-h2 text-arang-900">
             {judul}
           </h2>
-          <p className="text-small text-arang-500">Tim kami baru saja datang, ukur, dan foto.</p>
+          <p className="text-small text-arang-500">
+            {MODE_DEMO ? "Kos contoh dengan tanggal survei paling baru. Bukan hasil kunjungan sungguhan." : "Tim kami baru saja datang, ukur, dan foto."}
+          </p>
         </div>
         <Link href={hrefCari({})} className="shrink-0 rounded-sm text-small font-bold text-biru-600 hover:underline">
           Lihat semua kos

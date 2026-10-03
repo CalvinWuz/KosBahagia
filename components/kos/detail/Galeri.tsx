@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { FotoBlur } from "@/components/ui/FotoBlur";
 import { IconChevronDown } from "@/components/ui/Icon";
 import type { Media } from "@/lib/kos/detail";
+import { adalahIlustrasi, altMedia } from "@/lib/media";
 import { cn } from "@/lib/cn";
 
 const Lightbox = dynamic(() => import("@/components/ui/Lightbox").then((m) => m.Lightbox));
@@ -34,7 +35,8 @@ export function Galeri({ foto, nama, aksi }: { foto: Media[]; nama: string; aksi
     setPernahBuka(true);
     setBuka(i);
   };
-  const alt = (f: Media, i: number) => (f.keterangan ? `${f.keterangan}, ${nama}` : `Foto ${i + 1} ${nama}`);
+  const alt = (f: Media, i: number) => altMedia({ url: f.url, keterangan: f.keterangan, nama, urutan: i });
+  const ilustrasi = foto.length > 0 && foto.every((f) => adalahIlustrasi(f.url));
 
   if (foto.length === 0) {
     return (
@@ -103,6 +105,11 @@ export function Galeri({ foto, nama, aksi }: { foto: Media[]; nama: string; aksi
         )}
       </div>
 
+      {ilustrasi && (
+        <p className="pointer-events-none absolute top-3 left-3 rounded-full bg-arang-900/75 px-2.5 py-1 text-micro font-bold text-putih">
+          Ilustrasi contoh, bukan foto kondisi kos
+        </p>
+      )}
       <div className="pointer-events-none absolute inset-x-3 bottom-3 flex items-end justify-between gap-2">
         <span className="rounded-full bg-arang-900/70 px-2.5 py-1 text-micro font-bold text-putih tabular-nums lg:hidden" aria-live="polite">
           {aktif + 1}/{foto.length}
@@ -144,7 +151,7 @@ function TombolGeser({ arah, onClick, disabled }: { arah: -1 | 1; onClick: () =>
       disabled={disabled}
       aria-label={arah < 0 ? "Foto sebelumnya" : "Foto berikutnya"}
       className={cn(
-        "absolute top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-full bg-putih/90 text-arang-900 shadow transition-opacity duration-150 hover:bg-putih disabled:opacity-0 lg:hidden",
+        "absolute top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-putih/90 text-arang-900 shadow transition-opacity duration-150 hover:bg-putih disabled:opacity-0 lg:hidden",
         arah < 0 ? "left-3" : "right-3",
       )}
     >

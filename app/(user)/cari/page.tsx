@@ -3,8 +3,8 @@ import { Suspense } from "react";
 import { DaftarSkeleton, HasilPencarian, type DataHasil } from "@/components/cari/HasilPencarian";
 import type { FasilitasFilter } from "@/components/cari/FilterSheet";
 import { supabaseServer } from "@/lib/supabase/server";
-import { bacaCariParams } from "@/lib/cari-params";
-import { ambilHasil } from "@/lib/cari/ambil";
+import { bacaCariParams, validasiRentangHarga } from "@/lib/cari-params";
+import { ambilHasil, ambilPromosi } from "@/lib/cari/ambil";
 import { tentukanPusat, type AreaPublik } from "@/lib/cari/pusat";
 
 export const metadata: Metadata = {
@@ -43,10 +43,16 @@ export default async function CariPage({ searchParams }: { searchParams: Promise
   const pusat = tentukanPusat(params, areas);
 
   let awal: DataHasil;
-  try {
-    awal = { kunci, ...(await ambilHasil(db, params, pusat)) };
-  } catch (e) {
-    awal = { kunci, hasil: [], total: 0, error: e instanceof Error ? e.message : "Gagal memuat" };
+  if (validasiRentangHarga(params.harga_min, params.harga_max)) {
+    // The page explains the input error; there is nothing to search.
+    awal = { kunci, hasil: [], total: 0, promosi: [] };
+  } else {
+    try {
+      const [hasil, promosi] = await Promise.all([ambilHasil(db, params, pusat), ambilPromosi(db, params, pusat)]);
+      awal = { kunci, ...hasil, promosi };
+    } catch (e) {
+      awal = { kunci, hasil: [], total: 0, promosi: [], error: e instanceof Error ? e.message : "Gagal memuat" };
+    }
   }
 
   return (

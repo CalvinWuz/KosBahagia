@@ -168,7 +168,8 @@ no layout shift when images load.
    surroundings 15%. Output 0–10, one decimal. A kos missing required inputs shows
    "Belum dinilai" — never a guessed number.
 3. **Freshness is public.** Every listing shows when availability was last confirmed. Older than
-   30 days → ranked down and labelled "Perlu dikonfirmasi". Older than 90 days → hidden from
+   30 days → ranked down and labelled "Belum dikonfirmasi" on the renter side (owners see
+   "Perlu dikonfirmasi"). Availability is per room type. Older than 90 days → hidden from
    default results.
 4. **Safety red flags always render**, regardless of tier, in a red panel that cannot be collapsed.
 5. **No login wall.** Search, detail and the WhatsApp handoff work signed-out. Auth is requested

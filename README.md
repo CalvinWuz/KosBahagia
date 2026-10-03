@@ -74,8 +74,10 @@ Skor 0–10 yang **dihitung, tidak pernah diketik tangan**, dari lima komponen:
 
 Rumusnya hidup di dua tempat dengan sengaja: [`lib/scoring.ts`](lib/scoring.ts) untuk rincian di UI
 (ada unit test), dan view `kos_skor` di Postgres untuk peringkat pencarian. `npm run cek:skor-db`
-membuktikan keduanya menghasilkan angka yang sama untuk seluruh seed. Kos yang datanya belum lengkap
-menampilkan "Belum dinilai", bukan angka tebakan.
+membuktikan keduanya menghasilkan angka yang sama untuk seluruh seed, termasuk total biaya tiap tipe kamar
+(`lib/biaya.ts` vs kolom `total_bulanan`). Kos yang datanya belum lengkap menampilkan "Belum dinilai", bukan
+angka tebakan. Transparansi biaya menilai **kelengkapan** informasi biaya (empat cek per tipe kamar), bukan
+besarnya biaya tambahan; detailnya di `/cara-kami-menilai` dan [`docs/audit-2026-10.md`](docs/audit-2026-10.md).
 
 ## Aturan produk yang dijaga kode
 
@@ -152,7 +154,8 @@ Halaman mitra ada di `http://localhost:3000/mitra`; OTP lokal menerima nomor uji
 | `npm run dev` | Server pengembangan (menyalin worker MapLibre lebih dulu) |
 | `npm run build` | Build produksi; harus lolos tanpa error TypeScript |
 | `npm run lint` · `npm run typecheck` · `npm test` | ESLint · `tsc --noEmit` · `node:test` untuk `lib/**/*.test.ts` |
-| `npx supabase test db` | 85 asersi pgTAP: `cari_kos`, `kos_skor`, `kos_kartu`, RLS, mitra, area |
+| `npx supabase test db` | 109 asersi pgTAP: `cari_kos_v3`, `kos_promosi`, `kos_skor`, `kos_kartu`, RLS, mitra, area, konsistensi data contoh |
+| `npm run cek:skor-db` | Bandingkan skor dan total biaya di Postgres dengan `lib/scoring.ts` + `lib/biaya.ts` (butuh Supabase lokal) |
 | `npm run db:types` | Regenerasi `lib/supabase/types.ts` (jangan diedit tangan) |
 | `npm run seed:generate` | Tulis ulang `supabase/seed/01_seed.sql` dari generator deterministik; memakai `public/dummy/manifest.json` bila ada |
 | `node scripts/foto-dummy-ilustrasi.mjs` | Gambar ulang 42 foto placeholder (ilustrasi) ke `public/dummy/` + manifest |
@@ -177,16 +180,20 @@ lib/
   scoring.ts       Skor Bahagia (cermin view kos_skor)
   format.ts        rupiah, jarak, waktu relatif (id-ID)
   cari-params.ts   kontrak URL pencarian
-  simpan.ts        simpan & banding di localStorage
+  biaya.ts         satu model biaya: total bulanan, estimasi, biaya belum diketahui, uang masuk
+  kamar.ts         status per tipe kamar (Tersedia / Penuh / Belum dikonfirmasi), kamar acuan
+  simpan.ts        simpan & banding (kos + tipe kamar) di localStorage perangkat ini
+  demo.ts          MODE_DEMO: penanda data contoh, tombol WhatsApp tanpa membuka nomor contoh
   supabase/        rest.ts (penyewa), server/mitra (pemilik), types.ts (generated)
   blurhash.ts      decoder BlurHash untuk placeholder foto
 supabase/
-  migrations/      9 migrasi: enum → tabel → kos_skor + cari_kos → RLS → kos_kartu → area → media → mitra
+  migrations/      11 migrasi: enum → tabel → kos_skor + cari_kos → RLS → kos_kartu → area → media → mitra
+                   → biaya per tipe kamar + rubrik transparansi → cari_kos_v3 + kos_promosi
   seed/            generate.ts → 01_seed.sql (50 kos: 40 Palmerah, 10 Lowokwaru)
   tests/           pgTAP
 proxy.ts           routing host mitra, gerbang sesi, noindex
 prompts/           prompt tugas 00–09 yang membangun repo ini, dijalankan berurutan
-docs/              uji-manusia.md, backlog.md, tangkapan/
+docs/              audit-2026-10.md, uji-manusia.md, backlog.md, tangkapan/
 CLAUDE.md          konteks proyek permanen (baca ini dulu sebelum mengubah apa pun)
 ```
 
@@ -221,7 +228,9 @@ Pembaruan lewat tautan dicatat dengan `sumber = bot_wa`.
 `update kos set owner_id = <auth.users.id> where id = <kos>`.
 
 **Seed deterministik.** `supabase/seed/generate.ts` memakai PRNG mulberry32. Literal pgTAP dipatok ke
-stream pertama; kolom yang ditambahkan belakangan memakai stream kedua (`rand2`) supaya tes lama tidak bergeser.
+stream pertama; kolom yang ditambahkan belakangan memakai stream kedua (`rand2`) dan ketiga (`rand3`, audit
+2026-10) supaya tes lama tidak bergeser. Catatan surveyor di seed diturunkan dari data terukur kos yang sama
+(setiap calon catatan punya syarat), jadi narasi tidak bisa bertentangan dengan angka.
 
 </details>
 
@@ -241,8 +250,14 @@ Variabel lingkungan yang dibutuhkan ada di [`.env.example`](.env.example). Ringk
 | `CRON_SECRET`, `WA_CLOUD_TOKEN`, `WA_CLOUD_PHONE_ID` | Pengingat Senin |
 | `NEXT_PUBLIC_WA_OTP`, `NEXT_PUBLIC_WA_TIM` | Kanal OTP mitra, nomor tim |
 | `NEXT_PUBLIC_PLAUSIBLE_DOMAIN`, `ERROR_WEBHOOK_URL` | Analitik tanpa cookie, laporan galat |
+| `NEXT_PUBLIC_MODE_DEMO` | Kosong/`1` = prototipe dengan data contoh (banner, label, WhatsApp tidak dibuka). Isi `0` hanya saat datanya asli |
 
 Pemantauan: `GET /api/sehat` mengembalikan `{"ok":true,"db":"ok"}` dan cocok untuk uptime monitor.
+
+**Setelah data atau migrasi berubah:** halaman statis dan cache fetch Next.js bisa menyajikan data lama sampai
+waktu revalidasi habis (beranda 10 menit, detail 1 jam), jadi halaman yang berbeda bisa sempat tidak sinkron.
+Di lokal hapus `.next/cache/fetch-cache` sebelum `npm run build`; di Vercel lakukan redeploy dan purge Data Cache
+(Project Settings → Data Cache).
 
 ## Gerbang rilis
 

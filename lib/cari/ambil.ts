@@ -2,18 +2,22 @@ import type { Database } from "@/lib/supabase/types";
 import type { CariParams } from "@/lib/cari-params";
 import type { Pusat } from "./pusat";
 
-export type HasilKos = Database["public"]["Functions"]["cari_kos"]["Returns"][number];
-type Argumen = Database["public"]["Functions"]["cari_kos"]["Args"];
+type Fungsi = Database["public"]["Functions"];
+export type HasilKos = Fungsi["cari_kos_v3"]["Returns"][number];
+export type KosPromosi = Fungsi["kos_promosi"]["Returns"][number];
+type Argumen = Fungsi["cari_kos_v3"]["Args"];
+type ArgumenPromosi = Fungsi["kos_promosi"]["Args"];
 
-/** Anything that can call cari_kos: supabase-js on the server, the tiny REST client in the browser. */
+/** Anything that can call the search RPCs: supabase-js on the server, the tiny REST client in the browser. */
 export type KlienCari = {
-  rpc(fn: "cari_kos", args: Argumen): PromiseLike<{ data: HasilKos[] | null; error: { message: string } | null }>;
+  rpc(fn: "cari_kos_v3", args: Argumen): PromiseLike<{ data: HasilKos[] | null; error: { message: string } | null }>;
+  rpc(fn: "kos_promosi", args: ArgumenPromosi): PromiseLike<{ data: KosPromosi[] | null; error: { message: string } | null }>;
 };
 type Klien = KlienCari;
 
 export const UKURAN_HALAMAN = 20;
 
-/** Maps URL params + centre to cari_kos() arguments. One place, both sides. */
+/** Maps URL params + centre to cari_kos_v3() arguments. One place, both sides. */
 export function argumenCari(
   p: CariParams,
   pusat: Pusat,
@@ -53,10 +57,27 @@ export async function ambilHasil(
   pusat: Pusat,
   halaman: { limit?: number; offset?: number } = {},
 ): Promise<HalamanHasil> {
-  const { data, error } = await db.rpc("cari_kos", argumenCari(p, pusat, halaman));
+  const { data, error } = await db.rpc("cari_kos_v3", argumenCari(p, pusat, halaman));
   if (error) throw new Error(error.message);
   const hasil = data ?? [];
   return { hasil, total: hasil.length ? Number(hasil[0].total_count) : 0 };
+}
+
+/**
+ * Paid spotlight kos that pass the same filters (max two). Shown in their own
+ * labelled block; they never change the order of the main list. A failure
+ * here never breaks the search: no promotions is a valid answer.
+ */
+export async function ambilPromosi(db: Klien, p: CariParams, pusat: Pusat): Promise<KosPromosi[]> {
+  const filter = Object.fromEntries(
+    Object.entries(argumenCari(p, pusat)).filter(([k]) => !["p_urut", "p_limit", "p_offset"].includes(k)),
+  ) as ArgumenPromosi;
+  try {
+    const { data, error } = await db.rpc("kos_promosi", { ...filter, p_limit: 2 });
+    return error ? [] : (data ?? []);
+  } catch {
+    return [];
+  }
 }
 
 /** Only the live count (cheapest possible call). */

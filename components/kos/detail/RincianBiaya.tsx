@@ -1,31 +1,65 @@
-import { Accordion, AccordionItem } from "@/components/ui/Accordion";
-import { Chip } from "@/components/ui/Chip";
-import { formatRupiah } from "@/lib/format";
-import type { TipeKamar } from "@/lib/kos/detail";
-import { Baris, BelumDicatat, Blok } from "./bagian";
+"use client";
 
-export const LISTRIK: Record<string, string> = {
-  termasuk: "Termasuk sewa",
-  token: "Token, isi sendiri",
-  flat: "Flat per bulan",
-  meteran: "Meteran, tagihan sesuai pemakaian",
-};
+import { Accordion, AccordionItem } from "@/components/ui/Accordion";
+import { formatRupiah, formatTanggal } from "@/lib/format";
+import { hitungBiaya, hitungUangMasuk, labelTotal, type ItemBiaya, type SifatBiaya, type TipeKamar } from "@/lib/biaya";
+import { Baris, BelumDicatat, Blok } from "./bagian";
+import { PilihKamar } from "./PilihKamar";
+
 const DEPOSIT: Record<string, string> = {
-  ya: "kembali penuh saat keluar",
+  ya: "kembali penuh",
   sebagian: "kembali sebagian",
   tidak: "tidak kembali",
 };
-const LAUNDRY: Record<string, string> = {
-  termasuk: "Termasuk",
-  tidak_ada: "Tidak ada",
-  berbayar: "Berbayar",
+const SIFAT: Record<SifatBiaya, string> = {
+  sewa: "",
+  tetap: "tetap",
+  pemakaian: "estimasi pemakaian",
+  termasuk: "termasuk sewa",
+  belum_diketahui: "belum diketahui",
+  opsional: "kalau dipakai",
 };
 
-type BiayaLain = { nama: string; jumlah: number; wajib?: boolean };
+function Nilai({ item }: { item: ItemBiaya }) {
+  if (item.sifat === "belum_diketahui") return <span className="font-bold text-merah-700">Belum diketahui</span>;
+  if (item.sifat === "termasuk") return <span>{item.keterangan ?? "Termasuk sewa"}</span>;
+  return (
+    <span className="tabular-nums">
+      {item.jumlah != null ? formatRupiah(item.jumlah) : <BelumDicatat />}
+      {item.sifat === "opsional" && item.keterangan && item.jumlah ? ` ${item.keterangan}` : ""}
+      {item.sifat === "opsional" && item.jumlah === 0 ? " (gratis)" : ""}
+    </span>
+  );
+}
 
-// Block 4: the real total up front, then every component. The electricity
-// model is main content, never a tooltip.
-export function RincianBiaya({ tipeKamar, terpilih, onPilih }: { tipeKamar: TipeKamar[]; terpilih: TipeKamar | null; onPilih: (id: string) => void }) {
+function LabelItem({ item }: { item: ItemBiaya }) {
+  const sifat = SIFAT[item.sifat];
+  return (
+    <span>
+      {item.nama}
+      {sifat && item.sifat !== "termasuk" && item.sifat !== "belum_diketahui" && <span className="block text-micro text-arang-500">{sifat}{item.keterangan && item.sifat !== "opsional" ? `, ${item.keterangan.toLowerCase()}` : ""}</span>}
+      {item.sifat === "belum_diketahui" && item.keterangan && <span className="block text-micro text-arang-500">{item.keterangan}</span>}
+    </span>
+  );
+}
+
+// Block 4: the selected room's monthly total, every component with what kind
+// of cost it is, then the cash needed to move in. Fixed fees, usage-based
+// estimates, included items, unknown amounts and optional spend are labelled
+// separately; an unknown amount is never shown as Rp0.
+export function RincianBiaya({
+  tipeKamar,
+  terpilih,
+  onPilih,
+  dikonfirmasiPada,
+  sekarang,
+}: {
+  tipeKamar: TipeKamar[];
+  terpilih: TipeKamar | null;
+  onPilih: (id: string) => void;
+  dikonfirmasiPada: string | null;
+  sekarang: Date;
+}) {
   if (!terpilih) {
     return (
       <Blok id="biaya" judul="Rincian biaya">
@@ -34,89 +68,98 @@ export function RincianBiaya({ tipeKamar, terpilih, onPilih }: { tipeKamar: Tipe
     );
   }
   const k = terpilih;
-  const biayaLain = (Array.isArray(k.biaya_lain) ? k.biaya_lain : []) as BiayaLain[];
-  const listrikJumlah = k.model_listrik === "termasuk" ? 0 : (k.estimasi_listrik ?? 0);
+  const biaya = hitungBiaya(k);
+  const masuk = hitungUangMasuk(k);
 
   return (
-    <Blok id="biaya" judul="Rincian biaya" keterangan="Angka besar adalah total yang kamu bayar tiap bulan.">
-      {tipeKamar.length > 1 && (
-        <ul className="mb-3 flex flex-wrap gap-2" aria-label="Tipe kamar">
-          {tipeKamar.map((t) => (
-            <li key={t.id}>
-              <Chip selected={t.id === k.id} onClick={() => onPilih(t.id)}>
-                {t.nama}
-              </Chip>
-            </li>
-          ))}
-        </ul>
-      )}
+    <Blok id="biaya" judul="Rincian biaya" keterangan={`Untuk kamar ${k.nama}${k.ukuran ? `, ${k.ukuran}` : ""}. Ganti tipe kamar untuk melihat biayanya.`}>
+      <PilihKamar tipeKamar={tipeKamar} terpilihId={k.id} onPilih={onPilih} dikonfirmasiPada={dikonfirmasiPada} sekarang={sekarang} className="mb-4" />
 
+      <p className="text-small font-bold text-arang-500">{labelTotal(biaya)}</p>
       <p className="text-price text-arang-900 tabular-nums">
-        {formatRupiah(k.total_bulanan ?? 0)}
-        <span className="ml-1 text-small font-normal text-arang-500">/bulan, total sudah semua</span>
+        {formatRupiah(biaya.total)}
+        <span className="ml-1 text-small font-normal text-arang-500">/bulan</span>
       </p>
-      <p className="text-small text-arang-500">
-        Kamar {k.nama}
-        {k.ukuran ? `, ${k.ukuran}` : ""}
-      </p>
+      {!biaya.lengkap && (
+        <p className="mt-1 rounded-xl bg-merah-100 px-3 py-2 text-small text-merah-700">
+          Belum termasuk {biaya.belumDiketahui.join(" dan ").toLowerCase()}: nominalnya belum diketahui, jadi total sebenarnya lebih besar dari angka ini. Tanyakan ke pemilik sebelum memutuskan.
+        </p>
+      )}
+      {biaya.estimasi && biaya.lengkap && (
+        <p className="mt-1 text-small text-arang-500">Listrik dibayar sesuai pemakaian; angkanya estimasi surveyor untuk pemakaian normal.</p>
+      )}
+      {k.harga_dikonfirmasi_pada && <p className="mt-1 text-micro text-arang-500">Harga dicek {formatTanggal(k.harga_dikonfirmasi_pada)}.</p>}
 
       <Accordion className="mt-3">
         <AccordionItem title="Apa saja yang masuk hitungan" defaultOpen>
           <dl className="divide-y divide-biru-100">
-            <Baris label="Sewa kamar">{formatRupiah(k.harga_bulanan)}</Baris>
-            <Baris label="Listrik">
-              <span className="block font-bold">{LISTRIK[k.model_listrik] ?? k.model_listrik}</span>
-              {k.model_listrik !== "termasuk" && (
-                <span className="block">
-                  {k.estimasi_listrik != null ? `${k.model_listrik === "flat" ? "" : "estimasi "}${formatRupiah(k.estimasi_listrik)}` : <BelumDicatat />}
-                </span>
-              )}
-            </Baris>
-            <Baris label="Air">{k.biaya_air ? formatRupiah(k.biaya_air) : "Termasuk"}</Baris>
-            {k.boleh_ac && (
-              <Baris label="Biaya AC">{k.biaya_ac ? formatRupiah(k.biaya_ac) : "Tidak ada tambahan"}</Baris>
-            )}
-            {biayaLain.filter((b) => b.wajib !== false).map((b) => (
-              <Baris key={b.nama} label={b.nama}>{formatRupiah(b.jumlah)}</Baris>
+            {biaya.bulanan.map((item) => (
+              <div key={item.nama} className="flex items-start justify-between gap-4 py-2">
+                <dt className="text-small text-arang-500"><LabelItem item={item} /></dt>
+                <dd className="text-right text-small text-arang-900"><Nilai item={item} /></dd>
+              </div>
             ))}
             <div className="flex items-start justify-between gap-4 py-2">
-              <dt className="text-small font-bold text-arang-900">Total per bulan</dt>
-              <dd className="text-small font-bold text-arang-900 tabular-nums">{formatRupiah(k.total_bulanan ?? 0)}</dd>
+              <dt className="text-small font-bold text-arang-900">{labelTotal(biaya)}</dt>
+              <dd className="text-small font-bold text-arang-900 tabular-nums">{formatRupiah(biaya.total)}</dd>
             </div>
           </dl>
-          {listrikJumlah > 0 && k.model_listrik !== "flat" && (
-            <p className="mt-2 text-micro text-arang-500">Estimasi listrik dari surveyor untuk pemakaian normal; tagihan aslimu bisa beda.</p>
-          )}
+          <p className="mt-2 text-micro text-arang-500">
+            Biaya di luar sewa: {Math.round(biaya.porsiTambahan * 100)}% dari total. Ini informasi saja; Skor Bahagia menilai seberapa jelas biayanya disebutkan, bukan seberapa besar.
+          </p>
         </AccordionItem>
-        <AccordionItem title="Biaya lain yang tidak masuk total">
+
+        <AccordionItem title="Uang yang perlu disiapkan untuk masuk" defaultOpen>
           <dl className="divide-y divide-biru-100">
-            <Baris label="Parkir motor">
-              {k.parkir_motor ? (k.biaya_parkir_motor ? `${formatRupiah(k.biaya_parkir_motor)}/bulan` : "Ada, gratis") : "Tidak ada"}
+            <Baris label={masuk.bulanDimuka == null ? "Bayar di muka (bulan belum diketahui, dihitung 1 bulan)" : `Bayar di muka ${masuk.bulanDimuka} bulan`}>
+              <span className="tabular-nums">
+                {masuk.bulanDimuka != null && masuk.bulanDimuka > 1 ? `${masuk.bulanDimuka} × ${formatRupiah(biaya.total)} = ` : ""}
+                {formatRupiah(masuk.bayarDimuka)}
+              </span>
             </Baris>
-            <Baris label="Parkir mobil">
-              {k.parkir_mobil ? (k.biaya_parkir_mobil ? `${formatRupiah(k.biaya_parkir_mobil)}/bulan` : "Ada, gratis") : "Tidak ada"}
-            </Baris>
-            <Baris label="Laundry">
-              {LAUNDRY[k.laundry] ?? k.laundry}
-              {k.laundry === "berbayar" && k.biaya_laundry ? `, ${formatRupiah(k.biaya_laundry)}/kg` : ""}
-            </Baris>
-            {biayaLain.filter((b) => b.wajib === false).map((b) => (
-              <Baris key={b.nama} label={b.nama}>{formatRupiah(b.jumlah)}</Baris>
-            ))}
             <Baris label="Deposit">
-              {k.deposit > 0 ? (
-                <>
-                  {formatRupiah(k.deposit)}
-                  {k.deposit_kembali ? `, ${DEPOSIT[k.deposit_kembali]}` : ""}
-                </>
+              {masuk.deposit > 0 ? (
+                <span className="tabular-nums">
+                  {formatRupiah(masuk.deposit)}
+                  {masuk.depositKembali && <span className="block text-micro text-arang-500">{DEPOSIT[masuk.depositKembali]}</span>}
+                </span>
               ) : (
                 "Tidak ada"
               )}
             </Baris>
-            <Baris label="Durasi minimal">{k.durasi_minimal} bulan</Baris>
-            {k.harga_tahunan != null && <Baris label="Bayar tahunan">{formatRupiah(k.harga_tahunan)}/tahun</Baris>}
+            {masuk.sekali.map((s) => (
+              <Baris key={s.nama} label={`${s.nama} (sekali bayar)`}>
+                {s.jumlah == null ? <span className="font-bold text-merah-700">Belum diketahui</span> : <span className="tabular-nums">{formatRupiah(s.jumlah)}</span>}
+              </Baris>
+            ))}
+            <div className="flex items-start justify-between gap-4 py-2">
+              <dt className="text-small font-bold text-arang-900">
+                {masuk.lengkap ? (masuk.estimasi ? "Estimasi uang masuk" : "Total uang masuk") : "Uang masuk, paling sedikit"}
+              </dt>
+              <dd className="text-small font-bold text-arang-900 tabular-nums">{formatRupiah(masuk.total)}</dd>
+            </div>
           </dl>
+          <ul className="mt-2 flex flex-col gap-1 text-micro text-arang-500">
+            <li>Kontrak minimal {masuk.durasiMinimal} bulan. Ini lama tinggal, bukan jumlah bulan yang dibayar di muka.</li>
+            {masuk.deposit > 0 && <li>Pengembalian deposit: {masuk.ketentuanDeposit ?? "ketentuannya belum kami catat, tanyakan ke pemilik."}</li>}
+            {!masuk.lengkap && <li>Belum diketahui: {masuk.belumDiketahui.join(", ")}.</li>}
+            <li>Setiap komponen dihitung sekali; deposit tidak termasuk sewa.</li>
+          </ul>
         </AccordionItem>
+
+        {biaya.opsional.length > 0 && (
+          <AccordionItem title="Biaya kalau dipakai (tidak masuk total)">
+            <dl className="divide-y divide-biru-100">
+              {biaya.opsional.map((item) => (
+                <div key={item.nama} className="flex items-start justify-between gap-4 py-2">
+                  <dt className="text-small text-arang-500">{item.nama}</dt>
+                  <dd className="text-right text-small text-arang-900"><Nilai item={item} /></dd>
+                </div>
+              ))}
+              {k.harga_tahunan != null && <Baris label="Bayar tahunan">{formatRupiah(k.harga_tahunan)}/tahun</Baris>}
+            </dl>
+          </AccordionItem>
+        )}
       </Accordion>
     </Blok>
   );

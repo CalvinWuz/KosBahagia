@@ -6,6 +6,13 @@
 // Deterministic (seeded PRNG) so the output is stable in git. Prices, rules,
 // scores and notes vary on purpose; rubric fields that were "not measured"
 // stay NULL and are never filled with a middle value.
+//
+// Consistency rule (audit 2026-10): the surveyor's narrative is derived from
+// the measured and recorded fields of the same kos, so a note can never say
+// "bata plester, nyaris tidak terdengar" next to a gypsum wall scored 1/5.
+// Every candidate note carries a condition; notes that state numbers take
+// them from the rows written below. Fields added later draw from their own
+// PRNG streams so earlier values (and the pgTAP literals) never shift.
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -51,14 +58,13 @@ const antara = (min: number, max: number) => min + Math.floor(rand() * (max - mi
 // so new fields never shift the values earlier tests pinned down.
 const rand2 = mulberry32(20260914);
 const antara2 = (min: number, max: number) => min + Math.floor(rand2() * (max - min + 1));
+// Third stream (audit 2026-10): entry costs, deposit terms, note selection.
+const rand3 = mulberry32(20261003);
+const pilih3 = <T>(arr: readonly T[]): T => arr[Math.floor(rand3() * arr.length)];
+const peluang3 = (p: number) => rand3() < p;
+const rupiah = (x: number) => `Rp${new Intl.NumberFormat("id-ID").format(x)}`;
 const pilih = <T>(arr: readonly T[]): T => arr[Math.floor(rand() * arr.length)];
 const peluang = (p: number) => rand() < p;
-const ambil = <T>(arr: readonly T[], n: number): T[] => {
-  const salinan = [...arr];
-  const hasil: T[] = [];
-  while (hasil.length < n && salinan.length) hasil.push(salinan.splice(Math.floor(rand() * salinan.length), 1)[0]);
-  return hasil;
-};
 const bulatkan = (n: number, ke: number) => Math.round(n / ke) * ke;
 
 function uuid(): string {
@@ -143,78 +149,147 @@ const KELURAHAN: Record<string, { lat: number; lng: number; kota: "jakarta" | "m
 const SURVEYOR = ["Dina Anggraeni", "Rafi Pratama", "Sari Wulandari", "Yoga Prasetyo"];
 const BLURHASH = ["LEHV6nWB2yk8pyo0adR*.7kCMdnj", "LGF5]+Yk^6#M@-5c,1J5@[or[Q6.", "L6PZfSi_.AyE_3t7t7R**0o#DgR4", "LKO2?U%2Tw=w]~RBVZRi};RPxuwH", "L5H2EC=PM+yV0g-mq.wG9c010J}I", "LhKUZWbHt7of.AoffQj[Wnfkjtoe"];
 
-const HAL_BAIK = [
-  "Kamar mandi dikuras setiap hari oleh petugas, tidak ada bau.",
-  "Dinding bata plester, suara TV kamar sebelah nyaris tidak terdengar.",
-  "Pemilik tinggal di lantai 1, balas WhatsApp dalam 10 menit saat kami tes.",
-  "Air PAM lancar 24 jam, tekanan bagus sampai lantai atas.",
-  "Ada CCTV di gerbang dan koridor tiap lantai.",
-  "Gang cukup lebar, mobil bisa masuk sampai depan kos.",
-  "Dapur bersama luas, kompor 2 tungku, kulkas 2 pintu.",
-  "Kasur dan lemari masih baru, diganti awal 2026.",
-  "Jemuran atap beratap, cucian tetap kering saat hujan.",
-  "WiFi kami tes 42 Mbps di kamar paling ujung lantai 2.",
-  "Ada dispenser dan galon gratis di tiap lantai.",
-  "Penjaga 24 jam, gerbang digembok jam 23.00 tapi penghuni pegang kunci.",
-  "Ventilasi silang di semua kamar, tidak pengap siang hari.",
-  "Parkir motor beratap, muat sekitar 20 motor.",
-  "Listrik token: penghuni isi sendiri, tidak ada tagihan kejutan.",
-  "Lantai koridor keramik, tidak ada bau lembap.",
-  "Halaman depan ada pohon mangga rindang, sore hari adem.",
-  "Kunci kamar ganda, pemilik tidak pegang duplikat tanpa izin.",
-  "Water heater gas di semua kamar mandi.",
-  "Ruang tamu ber-AC, tamu nyaman menunggu.",
-  "Mesin cuci 2 unit gratis, jarang antre.",
-  "Lampu koridor sensor gerak, terang sampai pagi.",
-  "Sampah diangkut tiap pagi, tidak ada tumpukan di depan.",
-  "Kamar mandi dalam berkeramik penuh, tidak ada nat menghitam.",
+// ---------------------------------------------------------------- surveyor notes
+// Each note states a condition on the facts recorded for the same kos. A
+// note is only a candidate when its condition holds; `grup` keeps two notes
+// about the same thing (parking, drying racks) from both appearing.
+type FaktaKos = {
+  tembok: string | null;
+  kedap: number | null;
+  skorKamarMandi: number | null;
+  skorKoridor: number | null;
+  pembersih: string | null;
+  frekuensiBersih: string | null;
+  frekuensiSampah: string | null;
+  bising: string[];
+  hadapJalan: boolean;
+  penjaga: string;
+  fasilitas: Set<string>;
+  jumlahLantai: number;
+  lift: boolean;
+  dapur: boolean;
+  listrik: "termasuk" | "token" | "flat" | "meteran";
+  listrikDiketahui: boolean;
+  estimasiListrikAc: number | null;
+  kamar: Array<{ nama: string; ac: boolean; kmDalam: boolean; ukuran: string; durasi: number }>;
+  wifiBayar: number | null;
+  galonOpsional: boolean;
+  parkirMotor: boolean;
+  akses: string | null;
+  warung: boolean;
+  jamMalam: string | null;
+  tamu: string;
+  mayoritas: string;
+  air: "pam" | "sumur";
+  bayarDimuka: number | null;
+  deposit: number;
+  depositKembali: string | null;
+};
+type CalonCatatan = { teks: string | ((f: FaktaKos) => string); syarat: (f: FaktaKos) => boolean; grup?: string };
+const jam = (t: string) => t.slice(0, 5).replace(":", ".");
+
+const HAL_BAIK: CalonCatatan[] = [
+  { teks: "Kamar mandi dikuras setiap hari oleh petugas, tidak ada bau.", syarat: (f) => (f.skorKamarMandi ?? 0) >= 4 && f.pembersih === "petugas" && f.frekuensiBersih === "harian" },
+  { teks: (f) => `Tembok ${f.tembok} plester; saat tes kami, suara TV kamar sebelah nyaris tidak terdengar.`, syarat: (f) => (f.kedap ?? 0) >= 4 && (f.tembok === "bata" || f.tembok === "hebel") },
+  { teks: "Pemilik tinggal di lantai 1, balas WhatsApp dalam 10 menit saat kami tes.", syarat: (f) => f.penjaga === "pemilik" },
+  { teks: "Air PAM lancar 24 jam, tekanan bagus sampai lantai atas.", syarat: (f) => f.air === "pam" && f.jumlahLantai >= 2, grup: "air" },
+  { teks: "Ada CCTV di gerbang dan koridor tiap lantai.", syarat: (f) => f.fasilitas.has("cctv") },
+  { teks: "Gang cukup lebar, mobil bisa masuk sampai depan kos.", syarat: (f) => f.akses === "mobil" },
+  { teks: "Dapur bersama luas, kompor 2 tungku, kulkas 2 pintu.", syarat: (f) => f.dapur && f.fasilitas.has("kulkas-bersama") },
+  { teks: "Kasur dan lemari masih baru, diganti awal 2026.", syarat: () => true },
+  { teks: "Jemuran atap beratap, cucian tetap kering saat hujan.", syarat: (f) => f.fasilitas.has("jemuran"), grup: "jemuran" },
+  { teks: "WiFi kami tes 42 Mbps di kamar paling ujung lantai 2.", syarat: (f) => f.fasilitas.has("wifi") && f.jumlahLantai >= 2 },
+  { teks: "Ada dispenser dan galon gratis di tiap lantai.", syarat: (f) => f.fasilitas.has("dispenser") && !f.galonOpsional },
+  { teks: "Penjaga 24 jam; gerbang dikunci malam hari, penghuni pegang kunci sendiri.", syarat: (f) => f.fasilitas.has("penjaga-24-jam") && f.jamMalam === null },
+  { teks: "Ventilasi silang di semua kamar, tidak pengap siang hari.", syarat: (f) => f.fasilitas.has("jendela-luar") },
+  { teks: "Parkir motor beratap, muat sekitar 20 motor.", syarat: (f) => f.parkirMotor, grup: "parkir" },
+  { teks: "Listrik token: penghuni isi sendiri, tidak ada tagihan kejutan.", syarat: (f) => f.listrik === "token" },
+  { teks: "Lantai koridor keramik, tidak ada bau lembap.", syarat: (f) => (f.skorKoridor ?? 0) >= 4 },
+  { teks: "Halaman depan ada pohon mangga rindang, sore hari adem.", syarat: () => true },
+  { teks: "Kunci kamar ganda, pemilik tidak pegang duplikat tanpa izin.", syarat: () => true },
+  { teks: "Water heater gas di semua kamar mandi.", syarat: (f) => f.fasilitas.has("water-heater") },
+  { teks: "Ruang tamu ber-AC, tamu nyaman menunggu.", syarat: (f) => f.fasilitas.has("ruang-tamu") },
+  { teks: "Mesin cuci 2 unit gratis, jarang antre.", syarat: (f) => f.fasilitas.has("mesin-cuci") },
+  { teks: "Lampu koridor sensor gerak, terang sampai pagi.", syarat: () => true },
+  { teks: "Sampah diangkut tiap pagi, tidak ada tumpukan di depan.", syarat: (f) => f.frekuensiSampah === "harian" },
+  { teks: (f) => `Kamar mandi dalam (tipe ${f.kamar.find((k) => k.kmDalam)?.nama}) berkeramik penuh, nat tidak menghitam.`, syarat: (f) => f.kamar.some((k) => k.kmDalam) && (f.skorKamarMandi ?? 0) >= 4 },
 ];
-const PERLU_DIKETAHUI = [
-  "Kamar lantai 1 dekat dapur, agak berisik saat jam masak malam.",
-  "Jam malam 23.00 dan gerbang digembok; telat harus telepon penjaga.",
-  "Listrik token, estimasi kami Rp180.000 kalau pakai AC 8 jam sehari.",
-  "Kamar mandi luar dipakai bersama 4 kamar.",
-  "Air kadang keruh setelah hujan deras, pemilik bilang sedang pasang filter.",
-  "Tidak ada dapur, penghuni biasanya beli makan di warung depan.",
-  "Sinyal Telkomsel lemah di kamar belakang, XL aman.",
-  "Tangga curam dan tidak ada lift, bawa barang berat repot.",
-  "Sebelah kos ada bengkel motor, ramai jam 09.00–17.00.",
-  "Deposit hanya kembali kalau kamar tidak rusak; foto kondisi saat serah terima.",
-  "Mayoritas penghuni karyawan shift, koridor sepi siang hari.",
-  "Motor parkir di gang depan, tidak beratap.",
-  "Kamar ukuran 2,5×3 m, lemari built-in tapi tidak ada meja.",
-  "WiFi bayar sendiri Rp75.000 per bulan ke pemilik.",
-  "Harga sudah termasuk listrik, tapi remote AC dikunci maksimal 22°C.",
-  "Tamu hanya boleh sampai ruang tamu, tidak boleh masuk kamar.",
-  "Sumur bor, rasa air sedikit payau; untuk minum beli galon.",
-  "Kamar belakang menghadap tembok, cahaya matahari kurang.",
-  "Cucian dijemur di atap, tangga ke atap agak licin saat hujan.",
-  "Jalan depan macet jam pulang kerja, motor tetap bisa lewat.",
-  "Kamar mandi dalam hanya untuk tipe AC.",
-  "Pembayaran hanya transfer, tidak terima tunai.",
-  "Kontrak minimal 3 bulan, bayar di muka bulan pertama.",
-  "Tetangga punya 3 anjing, menggonggong tiap ada motor lewat.",
+
+const PERLU_DIKETAHUI: CalonCatatan[] = [
+  { teks: "Kamar lantai 1 dekat dapur, agak berisik saat jam masak malam.", syarat: (f) => f.dapur },
+  { teks: (f) => `Jam malam ${jam(f.jamMalam ?? "")} dan gerbang dikunci; telat harus telepon penjaga.`, syarat: (f) => f.jamMalam !== null },
+  { teks: (f) => `Listrik token; untuk kamar AC kami perkirakan ${rupiah(f.estimasiListrikAc ?? 0)} per bulan dengan AC 8 jam sehari.`, syarat: (f) => f.listrik === "token" && f.estimasiListrikAc !== null },
+  { teks: (f) => `Kamar mandi luar dipakai bersama untuk tipe ${f.kamar.filter((k) => !k.kmDalam).map((k) => k.nama).join(" dan ")}.`, syarat: (f) => f.kamar.some((k) => !k.kmDalam) },
+  { teks: "Air kadang keruh setelah hujan deras, pemilik bilang sedang pasang filter.", syarat: (f) => f.air === "pam", grup: "air" },
+  { teks: "Tidak ada dapur, penghuni biasanya beli makan di warung dekat kos.", syarat: (f) => !f.dapur && f.warung },
+  { teks: "Sinyal Telkomsel lemah di kamar belakang, XL aman.", syarat: () => true },
+  { teks: "Tangga curam dan tidak ada lift, bawa barang berat repot.", syarat: (f) => !f.lift && f.jumlahLantai >= 2 },
+  { teks: "Sebelah kos ada bengkel motor, ramai jam 09.00–17.00.", syarat: (f) => f.bising.includes("bengkel") },
+  { teks: "Deposit hanya kembali kalau kamar tidak rusak; foto kondisi saat serah terima.", syarat: (f) => f.deposit > 0 && (f.depositKembali === "ya" || f.depositKembali === "sebagian") },
+  { teks: "Mayoritas penghuni karyawan, koridor sepi siang hari.", syarat: (f) => f.mayoritas === "karyawan" },
+  { teks: "Mayoritas penghuni mahasiswa, koridor ramai menjelang malam.", syarat: (f) => f.mayoritas === "mahasiswa" },
+  { teks: "Motor parkir di gang depan, tidak beratap.", syarat: (f) => !f.parkirMotor, grup: "parkir" },
+  { teks: (f) => `Kamar tipe ${f.kamar.find((k) => k.ukuran === "2,5×3 m")?.nama} berukuran 2,5×3 m dan tidak ada meja belajar.`, syarat: (f) => f.kamar.some((k) => k.ukuran === "2,5×3 m") && !f.fasilitas.has("meja-belajar") },
+  { teks: (f) => `WiFi ditagih terpisah ${rupiah(f.wifiBayar ?? 0)} per bulan ke pemilik; sudah kami masukkan ke total.`, syarat: (f) => f.wifiBayar !== null },
+  { teks: "Listrik termasuk sewa, tapi remote AC dikunci minimal 22°C.", syarat: (f) => f.listrik === "termasuk" && f.kamar.some((k) => k.ac) },
+  { teks: "Tamu hanya boleh sampai ruang tamu, tidak boleh masuk kamar.", syarat: (f) => f.tamu === "ruang_tamu" },
+  { teks: "Air dari sumur bor, rasanya sedikit payau; untuk minum beli galon.", syarat: (f) => f.air === "sumur", grup: "air" },
+  { teks: "Kamar belakang menghadap tembok, cahaya matahari kurang.", syarat: () => true },
+  { teks: "Cucian dijemur di atap, tangga ke atap agak licin saat hujan.", syarat: (f) => f.fasilitas.has("jemuran") && f.jumlahLantai >= 2, grup: "jemuran" },
+  { teks: "Jalan depan macet jam pulang kerja, motor tetap bisa lewat.", syarat: (f) => f.hadapJalan },
+  { teks: "Kamar mandi dalam hanya untuk tipe AC.", syarat: (f) => f.kamar.some((k) => k.ac && k.kmDalam) && f.kamar.some((k) => !k.ac && !k.kmDalam) },
+  { teks: "Pembayaran hanya transfer, tidak terima tunai.", syarat: () => true },
+  { teks: (f) => `Kontrak minimal ${f.kamar[0].durasi} bulan untuk tipe ${f.kamar[0].nama}; sewa dibayar ${Math.min(f.bayarDimuka ?? 1, f.kamar[0].durasi)} bulan di muka.`, syarat: (f) => f.bayarDimuka !== null && f.kamar[0].durasi > 1 },
+  { teks: "Tetangga punya 3 anjing, menggonggong tiap ada motor lewat.", syarat: () => true },
 ];
-const KESAN_PEMILIK = [
-  "Ramah, tapi tegas soal jam malam dan tamu.",
-  "Santai, tidak banyak aturan, tapi tidak suka tamu menginap.",
-  "Dikelola anak pemilik, cepat tanggap soal kerusakan.",
-  "Pemilik tinggal di luar kota, semua urusan lewat penjaga harian.",
-  "Sangat rapi, punya buku catatan kerusakan tiap kamar.",
-  "Agak sulit dihubungi siang hari, balas WhatsApp malam.",
-  "Pensiunan yang senang mengobrol, hafal nama semua penghuni.",
-  "Profesional, ada resepsionis dan aturan tertulis di lobi.",
-  "Pemilik muda, terbuka dengan saran, sedang renovasi lantai atas.",
-  "Ibu kos zaman dulu: perhatian, sesekali bawakan makanan.",
+
+// Notes that must appear when the measurement is extreme, so the narrative
+// always backs the number the page shows next to it.
+function catatanWajib(f: FaktaKos): { baik: string[]; perlu: string[] } {
+  const baik: string[] = [];
+  const perlu: string[] = [];
+  if (f.kedap !== null && f.kedap <= 2 && f.tembok) perlu.push(`Tembok antarkamar ${f.tembok}; saat tes kami, obrolan dari kamar sebelah ikut terdengar.`);
+  if (!f.listrikDiketahui) perlu.push("Listrik meteran; pemilik belum bisa menyebut rata-rata tagihan, jadi total di sini belum termasuk listrik.");
+  return { baik, perlu };
+}
+
+function pilihCatatan(calon: CalonCatatan[], fakta: FaktaKos, wajib: string[], n: number): string[] {
+  const hasil = [...wajib];
+  const grupTerpakai = new Set<string>();
+  const tersisa = calon.filter((c) => c.syarat(fakta));
+  while (hasil.length < n && tersisa.length) {
+    const c = tersisa.splice(Math.floor(rand3() * tersisa.length), 1)[0];
+    if (c.grup && grupTerpakai.has(c.grup)) continue;
+    if (c.grup) grupTerpakai.add(c.grup);
+    hasil.push(typeof c.teks === "function" ? c.teks(fakta) : c.teks);
+  }
+  return hasil.slice(0, n);
+}
+
+const KESAN_PEMILIK: CalonCatatan[] = [
+  { teks: "Ramah, tapi tegas soal jam malam dan tamu.", syarat: (f) => f.jamMalam !== null },
+  { teks: "Santai, tidak banyak aturan, tapi tidak suka tamu menginap.", syarat: (f) => f.jamMalam === null },
+  { teks: "Dikelola anak pemilik, cepat tanggap soal kerusakan.", syarat: () => true },
+  { teks: "Pemilik tinggal di luar kota, semua urusan lewat penjaga harian.", syarat: (f) => f.penjaga === "harian" },
+  { teks: "Sangat rapi, punya buku catatan kerusakan tiap kamar.", syarat: () => true },
+  { teks: "Agak sulit dihubungi siang hari, balas WhatsApp malam.", syarat: (f) => f.penjaga !== "pemilik" },
+  { teks: "Pensiunan yang senang mengobrol, hafal nama semua penghuni.", syarat: (f) => f.penjaga === "pemilik" },
+  { teks: "Profesional, ada resepsionis dan aturan tertulis di lobi.", syarat: (f) => f.lift },
+  { teks: "Pemilik muda, terbuka dengan saran, sedang renovasi lantai atas.", syarat: (f) => f.jumlahLantai >= 2 && !f.lift },
+  { teks: "Ibu kos zaman dulu: perhatian, sesekali bawakan makanan.", syarat: (f) => f.penjaga === "pemilik" },
 ];
 const RED_FLAG = [
-  "Instalasi listrik terbuka di koridor lantai 2, kabel menjuntai dekat pipa air.",
+  "Instalasi listrik terbuka di koridor, kabel menjuntai dekat pipa air.",
   "Bekas banjir setinggi 30 cm di lantai 1 (Februari 2025), belum ada tanggul.",
   "Tangga darurat digembok saat survei; hanya satu jalan keluar.",
   "Gerbang tidak dikunci malam hari dan tidak ada penjaga.",
-  "Kamar lantai 2 tidak punya jendela ke luar, ventilasi hanya ke koridor.",
+  "Sebagian kamar tidak punya jendela ke luar; ventilasi hanya ke koridor.",
   "Tabung gas dapur bersama diletakkan di koridor sempit tanpa ventilasi.",
 ];
+const KETENTUAN_DEPOSIT: Record<string, string> = {
+  ya: "Kembali penuh paling lambat 7 hari setelah kunci diserahkan; dipotong biaya perbaikan bila ada kerusakan.",
+  tidak: "Tidak dikembalikan saat keluar.",
+};
 
 // ---------------------------------------------------------------- kos profiles
 type Listrik = "termasuk" | "token" | "flat" | "meteran";
@@ -225,6 +300,8 @@ type Profil = {
   ac?: boolean; kmDalam?: boolean; dapur?: boolean; lift?: boolean;
   redFlags?: number[]; nilaiNull?: "kedap" | "kebersihan" | "semua" | "dapur";
   basiHari?: number; tanpaSekitar?: boolean; peneranganNull?: boolean;
+  /** Owner could not state an electricity estimate: the total stays incomplete. */
+  listrikBelumDiketahui?: boolean;
 };
 
 const PROFIL: Profil[] = [
@@ -251,7 +328,7 @@ const PROFIL: Profil[] = [
   { nama: "Kos Ibu Lastri", jalan: "Jl. Jatipulo I", kel: "Jatipulo", tipe: "putri", sewa: 780000, listrik: "flat", tanpaSekitar: true },
   { nama: "Kost Kota Bambu", jalan: "Jl. Kota Bambu Utara", kel: "Kota Bambu Utara", tipe: "putra", sewa: 950000, listrik: "token", dapur: true },
   { nama: "Pondok Mahasiswa Palmerah", jalan: "Jl. Palmerah Selatan", kel: "Palmerah", tipe: "putra", sewa: 1050000, listrik: "termasuk", basiHari: 120 },
-  { nama: "Kos Om Deddy", jalan: "Jl. Slipi Gg. Kelapa", kel: "Slipi", tipe: "campur", sewa: 1150000, listrik: "meteran" },
+  { nama: "Kos Om Deddy", jalan: "Jl. Slipi Gg. Kelapa", kel: "Slipi", tipe: "campur", sewa: 1150000, listrik: "meteran", listrikBelumDiketahui: true },
   { nama: "Kost Batusari Hijau", jalan: "Jl. Batusari Raya", kel: "Palmerah", tipe: "putri", sewa: 1400000, listrik: "token", tier: "premium", ac: true, kmDalam: true },
   { nama: "Rumah Kos Bu Endang", jalan: "Jl. Kemanggisan Ilir IV", kel: "Kemanggisan", tipe: "putri", sewa: 850000, listrik: "termasuk", nilaiNull: "semua" },
   { nama: "Kos Jatipulo Indah", jalan: "Jl. Jatipulo Raya", kel: "Jatipulo", tipe: "campur", sewa: 1000000, listrik: "flat" },
@@ -332,11 +409,19 @@ for (const p of PROFIL) {
   const totalKamar = antara(6, 14) + (p.lift ? 12 : 0);
   const kontak = p.nama.replace(/^(Kos|Kost|Wisma|Griya|Rumah Kos|Pondok)\s+/, "").split(" ").slice(0, 3).join(" ");
   const whatsapp = `628${antara(11, 99)}${String(antara(1000000, 9999999))}`;
+  // Same PRNG order as the original inline template.
+  const rt = String(antara(1, 12)).padStart(2, "0");
+  const rw = String(antara(1, 9)).padStart(2, "0");
+  const tahunBangunan = antara(1995, 2023);
+  const namaKontak = kontak.startsWith("Bu") || kontak.startsWith("Pak") || kontak.startsWith("Ibu") || kontak.startsWith("Mas") || kontak.startsWith("Om") || kontak.startsWith("Bapak") || kontak.startsWith("Mbak") ? kontak : pilih(["Bu Rina", "Pak Agus", "Mbak Fitri", "Pak Herman", "Bu Lina", "Mas Andi"]);
+  const penjagaAcak = p.lift ? "harian" : pilih(["pemilik", "harian", "tidak_tetap", "tidak_ada"]);
+  // Red flag 3 says there is no guard; the record must agree.
+  const penjaga = p.redFlags?.includes(3) ? "tidak_ada" : penjagaAcak;
 
-  kosRows.push(`  (${q(id)}, ${q(slug)}, ${q(p.nama)}, ${q(`${p.jalan}, ${p.kel}, ${jakarta ? "Palmerah, Jakarta Barat" : "Lowokwaru, Malang"}`)}, ${q(`RT ${String(antara(1, 12)).padStart(2, "0")}/RW ${String(antara(1, 9)).padStart(2, "0")}`)}, ${titik(lat, lng)}, ${q(areaId(jakarta ? "palmerah" : "lowokwaru"))}, ${q(p.tipe)}, ${totalKamar}, ${jumlahLantai}, ${b(!!p.lift)}, ${antara(1995, 2023)}, ${q(kontak.startsWith("Bu") || kontak.startsWith("Pak") || kontak.startsWith("Ibu") || kontak.startsWith("Mas") || kontak.startsWith("Om") || kontak.startsWith("Bapak") || kontak.startsWith("Mbak") ? kontak : pilih(["Bu Rina", "Pak Agus", "Mbak Fitri", "Pak Herman", "Bu Lina", "Mas Andi"]))}, ${q(whatsapp)}, ${q(p.lift ? "harian" : pilih(["pemilik", "harian", "tidak_tetap", "tidak_ada"]))}, ${q(status)}, ${q(tier)}, null, (now() - interval '${disurveiHari} days')::date, ${q(surveyor)}, now() - interval '${basi} days')`);
+  kosRows.push(`  (${q(id)}, ${q(slug)}, ${q(p.nama)}, ${q(`${p.jalan}, ${p.kel}, ${jakarta ? "Palmerah, Jakarta Barat" : "Lowokwaru, Malang"}`)}, ${q(`RT ${rt}/RW ${rw}`)}, ${titik(lat, lng)}, ${q(areaId(jakarta ? "palmerah" : "lowokwaru"))}, ${q(p.tipe)}, ${totalKamar}, ${jumlahLantai}, ${b(!!p.lift)}, ${tahunBangunan}, ${q(namaKontak)}, ${q(whatsapp)}, ${q(penjaga)}, ${q(status)}, ${q(tier)}, null, (now() - interval '${disurveiHari} days')::date, ${q(surveyor)}, now() - interval '${basi} days')`);
 
   // ---- room types
-  const kamar: Array<{ id: string; nama: string; harga: number; ac: boolean; kmDalam: boolean; tersedia: number; total: number }> = [];
+  const kamar: Array<{ id: string; nama: string; harga: number; ac: boolean; kmDalam: boolean; tersedia: number; total: number; ukuran?: string; durasi?: number }> = [];
   const kamarStandar = p.ac && p.kmDalam && p.sewa >= 2000000 ? null : { nama: p.ac ? "Standar (kipas)" : "Standar", harga: p.sewa, ac: false, kmDalam: !!p.kmDalam && !p.ac };
   if (kamarStandar) kamar.push({ id: uuid(), ...kamarStandar, tersedia: 0, total: 0 });
   if (p.ac) kamar.push({ id: uuid(), nama: p.kmDalam ? "AC + kamar mandi dalam" : "AC", harga: p.sewa + (kamarStandar ? bulatkan(antara(250000, 450000), 50000) : 0), ac: true, kmDalam: !!p.kmDalam, tersedia: 0, total: 0 });
@@ -351,7 +436,8 @@ for (const p of PROFIL) {
   });
 
   const biayaAir = p.listrik === "termasuk" ? null : peluang(0.5) ? null : bulatkan(antara(25000, 75000), 5000);
-  const estimasiListrik = p.listrik === "termasuk" ? null : p.listrik === "flat" ? bulatkan(antara(100000, 200000), 25000) : bulatkan(antara(120000, 220000), 10000);
+  const estimasiListrikAcak = p.listrik === "termasuk" ? null : p.listrik === "flat" ? bulatkan(antara(100000, 200000), 25000) : bulatkan(antara(120000, 220000), 10000);
+  const estimasiListrik = p.listrikBelumDiketahui ? null : estimasiListrikAcak;
   const wifiBayar = peluang(0.3);
   const biayaLain: Array<{ nama: string; jumlah: number; wajib?: boolean }> = [];
   if (peluang(0.6)) biayaLain.push({ nama: "Sampah", jumlah: bulatkan(antara(10000, 25000), 5000) });
@@ -363,14 +449,50 @@ for (const p of PROFIL) {
   const parkirMobil = !!p.lift || peluang(0.15);
   const deposit = pilih([0, 500000, p.sewa]);
 
+  // Entry costs and deposit terms are one policy per kos (third stream).
+  // ~15 % of kos leave one of them unknown, which the transparency score sees.
+  const bayarDimuka = peluang3(0.12) ? null : pilih3([1, 1, 1, 1, 3, 3, 6]);
+  const biayaAdmin = peluang3(0.3) ? (peluang3(0.2) ? null : pilih3([100000, 150000, 200000])) : undefined;
+  const biayaSekali = biayaAdmin === undefined ? [] : [{ nama: "Biaya administrasi", jumlah: biayaAdmin }];
+  const ketentuanDiketahui = !peluang3(0.15);
+  const potonganDeposit = pilih3([100000, 150000]);
+  // Prices were last checked at the survey, or at the latest availability
+  // confirmation when the owner also re-confirmed prices.
+  const hargaDicekHari = peluang3(0.5) ? basi : disurveiHari;
+  let depositKembaliKos: string | null | undefined;
+
   for (const k of kamar) {
     const estimasi = k.ac && estimasiListrik != null && p.listrik !== "flat" ? estimasiListrik + 80000 : estimasiListrik;
-    kamarRows.push(`  (${q(k.id)}, ${q(id)}, ${q(k.nama)}, ${q(pilih(["3×3 m", "3×4 m", "2,5×3 m", "3×3,5 m", "4×4 m"]))}, ${k.harga}, ${peluang(0.5) ? k.harga * 11 : "null"}, ${pilih([1, 1, 3, 6])}, ${deposit}, ${deposit ? q(pilih(["ya", "sebagian", "tidak"])) : "null"}, ${q(p.listrik)}, ${n(estimasi)}, ${b(k.ac)}, ${k.ac && p.listrik === "termasuk" ? bulatkan(antara(100000, 250000), 50000) : k.ac && p.listrik === "flat" ? bulatkan(antara(50000, 150000), 50000) : "null"}, ${n(biayaAir)}, ${q(laundry)}, ${laundry === "berbayar" ? bulatkan(antara(6000, 10000), 1000) : "null"}, ${b(parkirMotor)}, ${parkirMotor && peluang(0.3) ? 50000 : "null"}, ${b(parkirMobil)}, ${parkirMobil ? bulatkan(antara(150000, 300000), 50000) : "null"}, ${js(biayaLain)}, ${k.tersedia}, ${k.total})`);
+    // Same PRNG order as the original inline template.
+    const ukuran = pilih(["3×3 m", "3×4 m", "2,5×3 m", "3×3,5 m", "4×4 m"]);
+    const tahunan = peluang(0.5) ? k.harga * 11 : null;
+    const durasi = pilih([1, 1, 3, 6]);
+    const depositKembaliAcak = deposit ? pilih(["ya", "sebagian", "tidak"]) : null;
+    const biayaAc = k.ac && p.listrik === "termasuk" ? bulatkan(antara(100000, 250000), 50000) : k.ac && p.listrik === "flat" ? bulatkan(antara(50000, 150000), 50000) : null;
+    const biayaLaundry = laundry === "berbayar" ? bulatkan(antara(6000, 10000), 1000) : null;
+    const biayaParkirMotor = parkirMotor && peluang(0.3) ? 50000 : null;
+    const biayaParkirMobil = parkirMobil ? bulatkan(antara(150000, 300000), 50000) : null;
+    // Deposit terms are a kos policy: every room follows the first room's.
+    if (depositKembaliKos === undefined) depositKembaliKos = depositKembaliAcak;
+    const depositKembali = deposit ? depositKembaliKos : null;
+    const ketentuan = !deposit || !ketentuanDiketahui || !depositKembali
+      ? null
+      : depositKembali === "sebagian"
+        ? `Dipotong ${rupiah(potonganDeposit)} untuk biaya bersih-bersih kamar; sisanya kembali paling lambat 7 hari setelah keluar.`
+        : KETENTUAN_DEPOSIT[depositKembali];
+    k.ukuran = ukuran;
+    k.durasi = durasi;
+    // Nobody pays more months up front than the minimum stay of that room.
+    const bayarDimukaKamar = bayarDimuka == null ? null : Math.min(bayarDimuka, durasi);
+    kamarRows.push(`  (${q(k.id)}, ${q(id)}, ${q(k.nama)}, ${q(ukuran)}, ${k.harga}, ${n(tahunan)}, ${durasi}, ${deposit}, ${q(depositKembali)}, ${q(p.listrik)}, ${n(estimasi)}, ${b(k.ac)}, ${n(biayaAc)}, ${n(biayaAir)}, ${q(laundry)}, ${n(biayaLaundry)}, ${b(parkirMotor)}, ${n(biayaParkirMotor)}, ${b(parkirMobil)}, ${n(biayaParkirMobil)}, ${js(biayaLain)}, ${k.tersedia}, ${k.total}, ${b(k.kmDalam)}, ${n(bayarDimukaKamar)}, ${js(biayaSekali)}, ${q(ketentuan)}, now() - interval '${hargaDicekHari} days')`);
     logRows.push(`  (${q(id)}, ${q(k.id)}, ${k.tersedia}, 'survei', now() - interval '${disurveiHari} days')`);
     if (disurveiHari > basi) logRows.push(`  (${q(id)}, ${q(k.id)}, ${k.tersedia}, ${q(pilih(["pemilik", "bot_wa"]))}, now() - interval '${basi} days')`);
   }
 
   // ---- rubric scores (nullable, never defaulted)
+  const ukur: Pick<FaktaKos, "tembok" | "kedap" | "skorKamarMandi" | "skorKoridor" | "pembersih" | "frekuensiBersih" | "frekuensiSampah" | "bising" | "hadapJalan"> = {
+    tembok: null, kedap: null, skorKamarMandi: null, skorKoridor: null, pembersih: null, frekuensiBersih: null, frekuensiSampah: null, bising: [], hadapJalan: false,
+  };
   if (p.nilaiNull !== "semua") {
     const tembok = pilih(["bata", "bata", "bata", "hebel", "hebel", "gypsum", "triplek"]);
     const kedapDasar = tembok === "bata" ? antara(3, 5) : tembok === "hebel" ? antara(3, 4) : antara(1, 2);
@@ -389,7 +511,14 @@ for (const p of PROFIL) {
     if (peluang(0.2)) bising.push("masjid");
     if (peluang(0.15)) bising.push("sekolah");
     if (peluang(0.1)) bising.push("kereta");
-    penilaianRows.push(`  (${q(id)}, ${n(skorKamarMandi)}, ${n(skorDapur)}, ${n(skorKoridor)}, ${q(pilih(["petugas", "petugas", "pemilik", "penghuni"]))}, ${q(pilih(["harian", "harian", "2x seminggu", "mingguan"]))}, ${q(pilih(["harian", "harian", "2 hari sekali", "mingguan"]))}, ${q(tembok)}, ${dbAmbient}, ${skorKedap == null ? "null" : String(dbAmbient + (6 - kedapDasar) * 6 + antara(0, 4))}, ${n(skorKedap)}, ${b(hadapJalan)}, ${arr(bising)})`);
+    // Same PRNG order as the original inline template.
+    const pembersih = pilih(["petugas", "petugas", "pemilik", "penghuni"]);
+    const frekuensiBersih = pilih(["harian", "harian", "2x seminggu", "mingguan"]);
+    const frekuensiSampah = pilih(["harian", "harian", "2 hari sekali", "mingguan"]);
+    const dbTes = skorKedap == null ? null : dbAmbient + (6 - kedapDasar) * 6 + antara(0, 4);
+    const kamarDiukur = skorKedap == null ? null : `Tipe ${kamar[0].nama}, lantai ${1 + Math.floor(rand3() * jumlahLantai)}`;
+    Object.assign(ukur, { tembok, kedap: skorKedap, skorKamarMandi, skorKoridor, pembersih, frekuensiBersih, frekuensiSampah, bising, hadapJalan });
+    penilaianRows.push(`  (${q(id)}, ${n(skorKamarMandi)}, ${n(skorDapur)}, ${n(skorKoridor)}, ${q(pembersih)}, ${q(frekuensiBersih)}, ${q(frekuensiSampah)}, ${q(tembok)}, ${dbAmbient}, ${n(dbTes)}, ${n(skorKedap)}, ${b(hadapJalan)}, ${arr(bising)}, ${q(kamarDiukur)})`);
   }
 
   // ---- facilities
@@ -412,12 +541,23 @@ for (const p of PROFIL) {
   if (peluang(0.2)) fas.add("water-heater");
   if (p.sewa >= 1500000 && peluang(0.5)) fas.add("tv");
   if (p.redFlags?.includes(4)) fas.delete("jendela-luar");
+  if (p.redFlags?.includes(3)) fas.delete("penjaga-24-jam");
   for (const s of fas) kosFasRows.push(`  (${q(id)}, ${q(fasId(s))})`);
 
   // ---- rules
-  const jamMalam = p.lift ? null : pilih([null, null, "22:00", "23:00", "23:00", "00:00"]);
+  const jamMalamAcak = p.lift ? null : pilih([null, null, "22:00", "23:00", "23:00", "00:00"]);
+  const jamMalam = p.redFlags?.includes(3) ? null : jamMalamAcak;
   const pasangan = p.tipe === "campur" ? pilih(["boleh", "surat_nikah", "surat_nikah", "tidak"]) : "tidak";
-  aturanRows.push(`  (${q(id)}, ${q(jamMalam)}, ${q(pilih(["boleh", "ruang_tamu", "ruang_tamu", "tidak"]))}, ${q(p.tipe === "campur" ? pilih(["ruang_tamu", "boleh"]) : pilih(["ruang_tamu", "tidak", "tidak"]))}, ${q(pasangan)}, ${b(pasangan === "boleh" && peluang(0.5))}, ${b(peluang(0.1))}, ${b(peluang(0.35))}, ${q(pilih(["luar", "luar", "dilarang", "kamar"]))}, ${q(jakarta ? pilih(["mahasiswa", "mahasiswa", "karyawan", "campur"]) : pilih(["mahasiswa", "mahasiswa", "campur"]))}, ${q(pilih(["tenang", "tenang", "biasa", "ramai"]))})`);
+  // Same PRNG order as the original inline template.
+  const tamu = pilih(["boleh", "ruang_tamu", "ruang_tamu", "tidak"]);
+  const lawanJenis = p.tipe === "campur" ? pilih(["ruang_tamu", "boleh"]) : pilih(["ruang_tamu", "tidak", "tidak"]);
+  const anak = pasangan === "boleh" && peluang(0.5);
+  const hewan = peluang(0.1);
+  const masak = peluang(0.35);
+  const merokok = pilih(["luar", "luar", "dilarang", "kamar"]);
+  const mayoritas = jakarta ? pilih(["mahasiswa", "mahasiswa", "karyawan", "campur"]) : pilih(["mahasiswa", "mahasiswa", "campur"]);
+  const suasana = pilih(["tenang", "tenang", "biasa", "ramai"]);
+  aturanRows.push(`  (${q(id)}, ${q(jamMalam)}, ${q(tamu)}, ${q(lawanJenis)}, ${q(pasangan)}, ${b(anak)}, ${b(hewan)}, ${b(masak)}, ${q(merokok)}, ${q(mayoritas)}, ${q(suasana)})`);
 
   // ---- media (placeholders with real dimensions; ids are explicit so the
   // route and the tour can reference them)
@@ -459,6 +599,8 @@ for (const p of PROFIL) {
   }
 
   // ---- surroundings
+  let aksesKos: string | null = null;
+  let adaWarung = false;
   if (!p.tanpaSekitar) {
     const landmark = jakarta
       ? (() => { const kampus = AREA[1]; const stasiun = AREA[2]; const dK = jarakMeter(lat, lng, kampus.lat, kampus.lng); const dS = jarakMeter(lat, lng, stasiun.lat, stasiun.lng); return dK <= dS ? { nama: kampus.nama, jarak: dK } : { nama: stasiun.nama, jarak: dS }; })()
@@ -488,18 +630,51 @@ for (const p of PROFIL) {
     const transit = jakarta
       ? (peluang(0.8) ? pilih([{ jenis: "KRL", nama: "Stasiun Palmerah", jarak_m: jarakMeter(lat, lng, AREA[2].lat, AREA[2].lng) }, { jenis: "TransJakarta", nama: "Halte Slipi Kemanggisan", jarak_m: bulatkan(antara(300, 1200), 50) }, { jenis: "Angkot", nama: "M11 Tanah Abang–Meruya", jarak_m: bulatkan(antara(50, 300), 10) }]) : null)
       : (peluang(0.6) ? { jenis: "Angkot", nama: pilih(["ADL", "AL", "GML"]), jarak_m: bulatkan(antara(50, 400), 10) } : null);
+    aksesKos = rute.akses;
+    adaWarung = warung !== null;
     sekitarRows.push(`  (${q(id)}, ${q(landmark.nama)}, ${landmark.jarak}, ${menit}, ${js(rute)}, ${js(minimarket)}, ${js(warung)}, ${js(laundryDekat)}, ${js(transit)}, ${q(rute.akses)}, ${p.peneranganNull ? "null" : String(antara(2, 5))}, ${b(p.redFlags?.includes(1) ? true : peluang(0.15))})`);
   }
 
   // ---- surveyor notes
-  const halBaik = ambil(HAL_BAIK.filter((h) => (p.dapur || !h.includes("Dapur")) && (p.lift || !h.includes("Ruang tamu"))), 3);
-  const perlu = ambil(PERLU_DIKETAHUI.filter((h) => (p.listrik === "token" || !h.includes("token")) && (p.listrik === "termasuk" || !h.includes("termasuk listrik")) && (!p.dapur || !h.includes("Tidak ada dapur")) && (!p.lift || !h.includes("tidak ada lift"))), 3);
-  catatanRows.push(`  (${q(id)}, ${arr(halBaik)}, ${arr(perlu)}, ${q(pilih(KESAN_PEMILIK))}, ${arr((p.redFlags ?? []).map((i) => RED_FLAG[i]))})`);
+  // The old version drew 3 + 3 + 1 values from the main stream here; keep
+  // drawing them so every later kos keeps its prices, ids and scores.
+  for (let i = 0; i < 7; i++) rand();
+  const wifi = biayaLain.find((x) => x.nama === "WiFi");
+  const kamarAc = kamar.find((k) => k.ac);
+  const fakta: FaktaKos = {
+    ...ukur,
+    penjaga,
+    fasilitas: fas,
+    jumlahLantai,
+    lift: !!p.lift,
+    dapur: !!p.dapur,
+    listrik: p.listrik,
+    listrikDiketahui: !p.listrikBelumDiketahui,
+    estimasiListrikAc: kamarAc && estimasiListrik != null && p.listrik === "token" ? estimasiListrik + 80000 : null,
+    kamar: kamar.map((k) => ({ nama: k.nama, ac: k.ac, kmDalam: k.kmDalam, ukuran: k.ukuran ?? "", durasi: k.durasi ?? 1 })),
+    wifiBayar: wifi ? wifi.jumlah : null,
+    galonOpsional: biayaLain.some((x) => x.nama.startsWith("Galon")),
+    parkirMotor,
+    akses: aksesKos,
+    warung: adaWarung,
+    jamMalam,
+    tamu,
+    mayoritas,
+    air: p.listrik === "termasuk" || !peluang3(0.25) ? "pam" : "sumur",
+    bayarDimuka,
+    deposit,
+    depositKembali: deposit ? (depositKembaliKos ?? null) : null,
+  };
+  const wajib = catatanWajib(fakta);
+  const halBaik = pilihCatatan(HAL_BAIK, fakta, wajib.baik, 3);
+  const perlu = pilihCatatan(PERLU_DIKETAHUI, fakta, wajib.perlu, 3);
+  const kesan = pilihCatatan(KESAN_PEMILIK, fakta, [], 1)[0] ?? null;
+  catatanRows.push(`  (${q(id)}, ${arr(halBaik)}, ${arr(perlu)}, ${q(kesan)}, ${arr((p.redFlags ?? []).map((i) => RED_FLAG[i]))})`);
 }
 
 emit(`insert into kos (id, slug, nama, alamat, rt_rw, lokasi, area_id, tipe, jumlah_kamar, jumlah_lantai, ada_lift, tahun_bangunan, kontak_nama, whatsapp, penjaga, status, tier, owner_id, disurvei_pada, surveyor, ketersediaan_dikonfirmasi_pada) values\n${kosRows.join(",\n")};\n`);
-emit(`insert into tipe_kamar (id, kos_id, nama, ukuran, harga_bulanan, harga_tahunan, durasi_minimal, deposit, deposit_kembali, model_listrik, estimasi_listrik, boleh_ac, biaya_ac, biaya_air, laundry, biaya_laundry, parkir_motor, biaya_parkir_motor, parkir_mobil, biaya_parkir_mobil, biaya_lain, kamar_tersedia, total_kamar) values\n${kamarRows.join(",\n")};\n`);
-emit(`insert into kos_penilaian (kos_id, skor_kamar_mandi, skor_dapur, skor_koridor, pembersih, frekuensi_bersih, frekuensi_sampah, material_tembok, db_ambient, db_tes, skor_kedap, hadap_jalan_raya, sumber_bising) values\n${penilaianRows.join(",\n")};\n`);
+emit(`insert into tipe_kamar (id, kos_id, nama, ukuran, harga_bulanan, harga_tahunan, durasi_minimal, deposit, deposit_kembali, model_listrik, estimasi_listrik, boleh_ac, biaya_ac, biaya_air, laundry, biaya_laundry, parkir_motor, biaya_parkir_motor, parkir_mobil, biaya_parkir_mobil, biaya_lain, kamar_tersedia, total_kamar, kamar_mandi_dalam, bayar_dimuka_bulan, biaya_sekali, ketentuan_deposit, harga_dikonfirmasi_pada) values\n${kamarRows.join(",\n")};\n`);
+emit(`insert into kos_penilaian (kos_id, skor_kamar_mandi, skor_dapur, skor_koridor, pembersih, frekuensi_bersih, frekuensi_sampah, material_tembok, db_ambient, db_tes, skor_kedap, hadap_jalan_raya, sumber_bising, kamar_diukur) values\n${penilaianRows.join(",\n")};\n`);
 emit(`insert into kos_fasilitas (kos_id, fasilitas_id) values\n${kosFasRows.join(",\n")};\n`);
 emit(`insert into kos_aturan (kos_id, jam_malam, tamu, lawan_jenis, pasangan, anak, hewan, masak_di_kamar, merokok, mayoritas_penghuni, suasana) values\n${aturanRows.join(",\n")};\n`);
 emit(`insert into kos_sekitar (kos_id, landmark_nama, landmark_jarak_m, landmark_menit_jalan, rute, minimarket, warung, laundry, transit, akses, penerangan, rawan_banjir) values\n${sekitarRows.join(",\n")};\n`);

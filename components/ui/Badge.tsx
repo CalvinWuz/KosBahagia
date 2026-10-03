@@ -17,7 +17,7 @@ export type BadgeProps = HTMLAttributes<HTMLSpanElement> & {
   children: ReactNode;
 };
 
-// Small status label: "Tersedia", "Perlu dikonfirmasi", "Penuh".
+// Small status label: "Tersedia", "Belum dikonfirmasi", "Penuh".
 export function Badge({
   tone = "netral",
   icon,

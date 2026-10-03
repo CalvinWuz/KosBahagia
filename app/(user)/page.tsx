@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { HeroVisual } from "@/components/beranda/HeroVisual";
+import { HeroVisual, type ContohHero } from "@/components/beranda/HeroVisual";
+import { MODE_DEMO } from "@/lib/demo";
 import { IconCheck, IconPin, IconJam } from "@/components/ui/Icon";
 import { BaruDisurvei } from "@/components/beranda/BaruDisurvei";
 import { PenjelasBiaya } from "@/components/beranda/PenjelasBiaya";
@@ -19,10 +20,10 @@ export const revalidate = 600;
 
 async function muatData() {
   const sekarang = new Date();
-  const kosong = { area: [] as AreaRingkas[], kos: [] as KosKartu[], judul: "Baru disurvei", sekarang, jumlahKos: 0 };
+  const kosong = { area: [] as AreaRingkas[], kos: [] as KosKartu[], judul: "Baru disurvei", sekarang, jumlahKos: 0, contoh: null as ContohHero | null };
   try {
     const db = supabaseServer();
-    const [area, kartu, hitung] = await Promise.all([
+    const [area, kartu, hitung, calon] = await Promise.all([
       db.from("area").select("slug, nama, tipe").order("tipe").order("nama"),
       db
         .from("kos_kartu")
@@ -31,7 +32,37 @@ async function muatData() {
         .order("disurvei_pada", { ascending: false })
         .limit(24),
       db.from("kos_kartu").select("id", { count: "exact", head: true }).eq("status", "tayang"),
+      // Hero example: a real, unpaid listing that shows the product at its
+      // best and whose headline room has space right now.
+      db
+        .from("kos_kartu")
+        .select("*")
+        .eq("status", "tayang")
+        .eq("tier", "free")
+        .eq("perlu_dikonfirmasi", false)
+        .gt("kamar_acuan_tersedia", 0)
+        .eq("jumlah_red_flags", 0)
+        .gte("skor_kebersihan", 4)
+        .gte("skor_kedap", 4)
+        .order("skor", { ascending: false })
+        .order("slug")
+        .limit(1)
+        .maybeSingle(),
     ]);
+    let contoh: ContohHero | null = null;
+    if (calon.data?.id) {
+      const [kos, nilai] = await Promise.all([
+        db.from("kos").select("surveyor, disurvei_pada").eq("id", calon.data.id).maybeSingle(),
+        db.from("kos_penilaian").select("db_ambient, db_tes").eq("kos_id", calon.data.id).maybeSingle(),
+      ]);
+      contoh = {
+        kartu: calon.data,
+        surveyor: kos.data?.surveyor ?? null,
+        disurveiPada: kos.data?.disurvei_pada ?? null,
+        dbAmbient: nilai.data?.db_ambient ?? null,
+        dbTes: nilai.data?.db_tes ?? null,
+      };
+    }
     // Always the six newest surveys; the label says how recent they are.
     const kos = (kartu.data ?? []).slice(0, 6);
     const batas = (hari: number) => new Date(sekarang.getTime() - hari * 86_400_000);
@@ -42,14 +73,14 @@ async function muatData() {
       : semuaSejak(30)
         ? "Baru disurvei bulan ini"
         : "Terakhir disurvei";
-    return { area: (area.data ?? []) as AreaRingkas[], kos, judul, sekarang, jumlahKos: hitung.count ?? 0 };
+    return { area: (area.data ?? []) as AreaRingkas[], kos, judul, sekarang, jumlahKos: hitung.count ?? 0, contoh };
   } catch {
     return kosong;
   }
 }
 
 export default async function Beranda() {
-  const { area, kos, judul, sekarang, jumlahKos } = await muatData();
+  const { area, kos, judul, sekarang, jumlahKos, contoh } = await muatData();
   const kampus = area.filter((a) => a.tipe === "kampus");
   const kecamatan = area.filter((a) => a.tipe === "kecamatan");
   const terbaru = kos[0]?.disurvei_pada ? new Date(kos[0].disurvei_pada) : null;
@@ -85,21 +116,21 @@ export default async function Beranda() {
             <ul className="flex flex-wrap gap-x-5 gap-y-2 text-small text-arang-900" aria-label="Fakta singkat">
               <li className="inline-flex items-center gap-1.5">
                 <IconCheck className="size-4 text-daun-700" />
-                <span><b className="tabular-nums">{jumlahKos}</b> kos disurvei</span>
+                <span>{MODE_DEMO ? <><b className="tabular-nums">{jumlahKos}</b> kos contoh (prototipe)</> : <><b className="tabular-nums">{jumlahKos}</b> kos disurvei</>}</span>
               </li>
               <li className="inline-flex items-center gap-1.5">
                 <IconPin className="size-4 text-biru-600" />
-                {kecamatan.length > 0 ? kecamatan.map((k) => k.nama).join(" · ") : "Jakarta Barat · Malang"}
+                {kecamatan.length > 0 ? kecamatan.map((k) => k.nama).join(" dan ") : "Jakarta Barat dan Malang"}
               </li>
               {hariSejak != null && (
                 <li className="inline-flex items-center gap-1.5">
                   <IconJam className="size-4 text-biru-600" />
-                  survei terakhir {hariSejak === 0 ? "hari ini" : `${hariSejak} hari lalu`}
+                  {MODE_DEMO ? "data contoh diperbarui" : "survei terakhir"} {hariSejak === 0 ? "hari ini" : `${hariSejak} hari lalu`}
                 </li>
               )}
             </ul>
           </div>
-          <HeroVisual className="mt-2 lg:mt-0" />
+          <HeroVisual contoh={contoh} className="mt-2 lg:mt-0" />
         </div>
       </section>
 

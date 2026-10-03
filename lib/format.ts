@@ -57,11 +57,28 @@ export function formatSkor(skor: number | null | undefined): string {
   return angkaTepatSatuDesimal.format(skor);
 }
 
-/** Long rupiah for tight spaces: 1.200.000 → "Rp1,2 jt", 850.000 → "Rp850 rb". */
+const angkaDuaDesimal = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 2 });
+
+/**
+ * Short rupiah for tight spaces, never rounded: 1.250.000 → "Rp1,25 jt",
+ * 1.200.000 → "Rp1,2 jt", 850.000 → "Rp850 rb". An amount the short form
+ * cannot state exactly (1.255.000) is written in full, so a short rent can
+ * never look bigger or smaller than the total it is part of.
+ */
 export function formatRupiahRingkas(rupiah: number): string {
-  if (rupiah >= 1_000_000) return `Rp${angkaSatuDesimal.format(rupiah / 1_000_000)} jt`;
-  if (rupiah >= 1_000) return `Rp${angkaBulat.format(rupiah / 1_000)} rb`;
-  return formatRupiah(rupiah);
+  const n = Math.round(rupiah);
+  if (n >= 1_000_000 && n % 10_000 === 0) return `Rp${angkaDuaDesimal.format(n / 1_000_000)} jt`;
+  if (n >= 1_000 && n < 1_000_000 && n % 1_000 === 0) return `Rp${angkaBulat.format(n / 1_000)} rb`;
+  return formatRupiah(n);
+}
+
+const tanggalPanjang = new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta" });
+
+/** "21 September 2026". Empty string for a missing or invalid date. */
+export function formatTanggal(tanggal: Date | string | number | null | undefined): string {
+  if (tanggal == null) return "";
+  const d = new Date(tanggal);
+  return Number.isNaN(d.getTime()) ? "" : tanggalPanjang.format(d);
 }
 
 /** Bytes → "4 MB" / "850 KB", id-ID separators. */

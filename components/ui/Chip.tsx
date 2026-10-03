@@ -23,7 +23,7 @@ export function Chip({
       type="button"
       aria-pressed={selected}
       className={cn(
-        "inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-small font-medium whitespace-nowrap select-none transition-colors duration-150 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-biru-500 disabled:cursor-not-allowed disabled:opacity-50",
+        "sentuh relative inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-small font-medium whitespace-nowrap select-none transition-colors duration-150 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-biru-500 disabled:cursor-not-allowed disabled:opacity-50",
         selected
           ? "border-biru-500 bg-biru-100 font-bold text-biru-600"
           : "border-arang-500/30 bg-putih text-arang-900 hover:border-biru-500 hover:bg-biru-100/50",

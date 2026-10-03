@@ -42,6 +42,8 @@ export default function Tur360({ titik, awalId, fotoCadangan, onClose }: Props) 
   const [status, setStatus] = useState<Status>("pratinjau");
   const [gagalMesin, setGagalMesin] = useState(false);
   const [gyro, setGyro] = useState(false);
+  const [percobaan, setPercobaan] = useState(0);
+  const [pernahGerak, setPernahGerak] = useState(false);
   const [posisi, setPosisi] = useState<Array<{ h: Hotspot; x: number; y: number }>>([]);
 
   const wadah = useRef<HTMLDivElement>(null);
@@ -119,7 +121,7 @@ export default function Tur360({ titik, awalId, fotoCadangan, onClose }: Props) 
     return () => {
       batal = true;
     };
-  }, [aktif, didukung, gambar]);
+  }, [aktif, didukung, gambar, percobaan]);
 
   // Redraw on resize; tear the engine down on unmount.
   useEffect(() => {
@@ -157,7 +159,23 @@ export default function Tur360({ titik, awalId, fotoCadangan, onClose }: Props) 
   };
 
   // Pointer controls: drag to look, pinch or wheel to zoom.
+  // Buttons for people who cannot drag (switch access, screen magnifiers).
+  const putar = (yaw: number, pitch = 0) => {
+    const k = kamera.current;
+    k.yaw += yaw * RAD;
+    k.pitch = Math.max(-PITCH_MAKS, Math.min(PITCH_MAKS, k.pitch + pitch * RAD));
+    setPernahGerak(true);
+    jadwal();
+  };
+  const zoom = (faktor: number) => {
+    const k = kamera.current;
+    k.fov = Math.max(FOV_MIN, Math.min(FOV_MAKS, k.fov * faktor));
+    setPernahGerak(true);
+    jadwal();
+  };
+
   const onPointerDown = (e: React.PointerEvent) => {
+    setPernahGerak(true);
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     jari.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (jari.current.size === 2) {
@@ -203,6 +221,7 @@ export default function Tur360({ titik, awalId, fotoCadangan, onClose }: Props) 
     else if (e.key === "-") k.fov = Math.min(FOV_MAKS, k.fov * 1.1);
     else return;
     e.preventDefault();
+    setPernahGerak(true);
     jadwal();
   };
 
@@ -225,13 +244,24 @@ export default function Tur360({ titik, awalId, fotoCadangan, onClose }: Props) 
             <DialogTitle className="min-w-0 truncate text-small font-bold">
               Tur 360°{aktif ? `: ${aktif.nama}` : ""}
             </DialogTitle>
-            <button type="button" onClick={onClose} aria-label="Tutup tur" className="grid size-10 shrink-0 place-items-center rounded-full hover:bg-putih/20 focus-visible:outline-putih">
+            <button type="button" onClick={onClose} aria-label="Tutup tur 360°" className="grid size-11 shrink-0 place-items-center rounded-full hover:bg-putih/20 focus-visible:outline-putih">
               <IconClose />
             </button>
           </header>
 
           {cadangan ? (
-            <Cadangan foto={fotoCadangan} alasan={status === "gagal" ? "Gambar 360° tidak bisa dimuat." : "Perangkat ini tidak mendukung tampilan 360°."} />
+            <Cadangan
+              foto={fotoCadangan}
+              alasan={status === "gagal" ? "Gambar 360° tidak bisa dimuat. Periksa koneksi, lalu coba lagi." : "Perangkat ini tidak mendukung tampilan 360°."}
+              onCobaLagi={
+                status === "gagal"
+                  ? () => {
+                      setStatus("pratinjau");
+                      setPercobaan((n) => n + 1);
+                    }
+                  : undefined
+              }
+            />
           ) : (
             <div
               ref={wadah}
@@ -259,6 +289,11 @@ export default function Tur360({ titik, awalId, fotoCadangan, onClose }: Props) 
                   {h.label}
                 </button>
               ))}
+              {!pernahGerak && status !== "pratinjau" && (
+                <p className="pointer-events-none absolute bottom-3 left-1/2 w-max max-w-[90%] -translate-x-1/2 rounded-full bg-arang-900/75 px-3 py-1.5 text-center text-small text-putih">
+                  Geser untuk melihat sekeliling, atau pakai tombol di bawah
+                </p>
+              )}
               {status !== "siap" && (
                 <p className="absolute top-3 left-1/2 -translate-x-1/2 rounded-full bg-arang-900/70 px-3 py-1 text-micro text-putih" aria-live="polite">
                   {status === "pratinjau" ? "Memuat pratinjau…" : `Memuat versi penuh${aktif?.ukuranBytes ? ` (${formatUkuran(aktif.ukuranBytes)})` : ""}…`}
@@ -267,7 +302,15 @@ export default function Tur360({ titik, awalId, fotoCadangan, onClose }: Props) 
             </div>
           )}
 
-          <footer className="flex flex-wrap items-center gap-2 px-4 py-3">
+          <footer className="flex flex-wrap items-center gap-2 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            {!cadangan && (
+              <div className="flex gap-1" role="group" aria-label="Kontrol tampilan">
+                <TombolKontrol label="Putar ke kiri" onClick={() => putar(20)}>⟲</TombolKontrol>
+                <TombolKontrol label="Putar ke kanan" onClick={() => putar(-20)}>⟳</TombolKontrol>
+                <TombolKontrol label="Perbesar" onClick={() => zoom(0.85)}>+</TombolKontrol>
+                <TombolKontrol label="Perkecil" onClick={() => zoom(1.18)}>−</TombolKontrol>
+              </div>
+            )}
             {titik.length > 1 && (
               <ul className="flex flex-wrap gap-2" aria-label="Titik tur">
                 {titik.map((t) => (
@@ -296,11 +339,24 @@ export default function Tur360({ titik, awalId, fotoCadangan, onClose }: Props) 
   );
 }
 
+function TombolKontrol({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button type="button" onClick={onClick} aria-label={label} title={label} className="grid size-11 place-items-center rounded-full border border-putih/40 text-h2 leading-none text-putih hover:bg-putih/10 focus-visible:outline-putih">
+      <span aria-hidden="true">{children}</span>
+    </button>
+  );
+}
+
 // Flat photos when WebGL is unavailable or the panorama failed to load.
-function Cadangan({ foto, alasan }: { foto: Array<{ url: string; keterangan: string | null }>; alasan: string }) {
+function Cadangan({ foto, alasan, onCobaLagi }: { foto: Array<{ url: string; keterangan: string | null }>; alasan: string; onCobaLagi?: () => void }) {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-      <p className="mb-3 text-small text-putih/80">{alasan} Ini foto biasanya dari titik yang sama.</p>
+      <p className="mb-3 text-small text-putih/80" role="status">{alasan} Sementara, ini gambar biasa dari kos yang sama.</p>
+      {onCobaLagi && (
+        <button type="button" onClick={onCobaLagi} className="mb-3 inline-flex h-11 items-center rounded-full border border-putih px-4 text-small font-bold text-putih hover:bg-putih/10">
+          Coba muat lagi
+        </button>
+      )}
       {foto.length === 0 ? (
         <p className="text-small text-putih/80">Belum ada foto lain.</p>
       ) : (

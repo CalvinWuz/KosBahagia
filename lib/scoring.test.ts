@@ -1,22 +1,51 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+  cekTransparansi,
   hitungSkorBahagia,
   skorFasilitas,
   skorJalanKaki,
   skorTransparansi,
+  type KamarTransparansi,
   type SkorInput,
 } from "./scoring.ts";
+
+const SEKARANG = new Date("2026-10-03T00:00:00Z");
+
+/** A room type that passes all four disclosure checks. */
+const kamarJelas: KamarTransparansi = {
+  harga_bulanan: 1_200_000,
+  model_listrik: "flat",
+  estimasi_listrik: 150_000,
+  biaya_air: null,
+  boleh_ac: false,
+  biaya_ac: null,
+  biaya_lain: [{ nama: "Sampah", jumlah: 20_000 }],
+  parkir_motor: false,
+  biaya_parkir_motor: null,
+  parkir_mobil: false,
+  biaya_parkir_mobil: null,
+  laundry: "tidak_ada",
+  biaya_laundry: null,
+  bayar_dimuka_bulan: 1,
+  deposit: 500_000,
+  deposit_kembali: "ya",
+  ketentuan_deposit: "Kembali penuh 7 hari setelah keluar.",
+  biaya_sekali: [],
+  harga_dikonfirmasi_pada: "2026-09-20T00:00:00Z",
+};
+/** Same room, deposit terms not recorded: 3 of 4 checks. */
+const kamarTigaPerempat: KamarTransparansi = { ...kamarJelas, ketentuan_deposit: null };
 
 const lengkap: SkorInput = {
   skor_kamar_mandi: 4,
   skor_dapur: 3,
   skor_koridor: 5,
   skor_kedap: 4,
-  harga_bulanan: 1_200_000,
-  total_bulanan: 1_550_000,
+  kamar: [kamarTigaPerempat],
+  sekarang: SEKARANG,
   jumlah_fasilitas: 6,
-  fasilitas_sebaya: [2, 4, 6, 8],
+  fasilitas_sebaya: [2, 4, 8],
   sekitar: { landmark_menit_jalan: 7, penerangan: 4, jumlah_amenitas: 3 },
 };
 
@@ -27,8 +56,8 @@ describe("hitungSkorBahagia", () => {
       skor_dapur: 5,
       skor_koridor: 5,
       skor_kedap: 5,
-      harga_bulanan: 1_000_000,
-      total_bulanan: 1_000_000,
+      kamar: [kamarJelas],
+      sekarang: SEKARANG,
       jumlah_fasilitas: 9,
       fasilitas_sebaya: [1, 2, 3],
       sekitar: { landmark_menit_jalan: 3, penerangan: 5, jumlah_amenitas: 4 },
@@ -49,8 +78,8 @@ describe("hitungSkorBahagia", () => {
       skor_dapur: null,
       skor_koridor: null,
       skor_kedap: null,
-      harga_bulanan: 900_000,
-      total_bulanan: 1_000_000,
+      kamar: [{ ...kamarJelas, bayar_dimuka_bulan: null, harga_dikonfirmasi_pada: "2026-01-01T00:00:00Z" }],
+      sekarang: SEKARANG,
       jumlah_fasilitas: 0,
       fasilitas_sebaya: [],
       sekitar: null,
@@ -60,30 +89,30 @@ describe("hitungSkorBahagia", () => {
     assert.equal(hasil.komponen.kedap, null);
     assert.equal(hasil.komponen.sekitar, null);
     // Components that only need price data are still reported.
-    assert.equal(hasil.komponen.transparansi, 3.57);
+    assert.equal(hasil.komponen.transparansi, 2.5);
     assert.equal(hasil.komponen.fasilitas, 3);
   });
 
   it("computes the documented example", () => {
     const hasil = hitungSkorBahagia(lengkap);
-    // kebersihan 4, kedap 4, transparansi 5(1 − (0.2258/0.35)) = 1.77,
-    // fasilitas: 2 peers below, 1 tie → (2 + 0.5)/4 = 0.625 → 3.5,
+    // kebersihan 4, kedap 4, transparansi 3 of 4 checks = 3.75,
+    // fasilitas: 2 of 3 peers below → 2/3 → 3.67,
     // sekitar: mean(4, 4, 4) = 4
     assert.deepEqual(hasil.komponen, {
       kebersihan: 4,
       kedap: 4,
-      transparansi: 1.77,
-      fasilitas: 3.5,
+      transparansi: 3.75,
+      fasilitas: 3.67,
       sekitar: 4,
     });
-    // 10 × (0.3×0.8 + 0.2×0.8 + 0.2×0.354 + 0.15×0.7 + 0.15×0.8) = 6.96
-    assert.equal(hasil.skor, 7);
+    // 10 × (0.3×0.8 + 0.2×0.8 + 0.2×0.75 + 0.15×0.734 + 0.15×0.8) = 7.80
+    assert.equal(hasil.skor, 7.8);
   });
 
   it("kebersihan uses the mean of two when one cleanliness score is null", () => {
     const hasil = hitungSkorBahagia({ ...lengkap, skor_dapur: null });
     assert.equal(hasil.komponen.kebersihan, 4.5);
-    assert.equal(hasil.skor, 7.3);
+    assert.equal(hasil.skor, 8.1);
   });
 
   it("kebersihan with only one score is null and voids the total", () => {
@@ -105,8 +134,8 @@ describe("hitungSkorBahagia", () => {
   it("missing sekitar drops its weight instead of guessing", () => {
     const hasil = hitungSkorBahagia({ ...lengkap, sekitar: null });
     assert.equal(hasil.komponen.sekitar, null);
-    // 10 × (0.24 + 0.16 + 0.0708 + 0.105) / 0.85 = 6.77
-    assert.equal(hasil.skor, 6.8);
+    // 10 × (0.24 + 0.16 + 0.15 + 0.1101) / 0.85 = 7.77
+    assert.equal(hasil.skor, 7.8);
   });
 
   it("sekitar averages whatever parts were measured", () => {
@@ -120,18 +149,50 @@ describe("hitungSkorBahagia", () => {
   it("rounds the total to one decimal and components to two", () => {
     const hasil = hitungSkorBahagia({ ...lengkap, skor_koridor: 4 });
     assert.equal(hasil.komponen.kebersihan, 3.67);
-    assert.equal(hasil.skor, 6.8);
+    assert.equal(hasil.skor, 7.6);
   });
 });
 
 describe("skorTransparansi", () => {
-  it("is 5 when nothing is hidden and 0 at 35 % or more", () => {
-    assert.equal(skorTransparansi(1_000_000, 1_000_000), 5);
-    assert.equal(skorTransparansi(650_000, 1_000_000), 0);
-    assert.equal(skorTransparansi(500_000, 1_000_000), 0);
+  it("is 5 when all four disclosure checks pass", () => {
+    assert.equal(skorTransparansi([kamarJelas], SEKARANG), 5);
   });
-  it("is linear in between", () => {
-    assert.equal(skorTransparansi(825_000, 1_000_000), 2.5);
+  it("is 0 when none pass, however small the extras are", () => {
+    const kabur: KamarTransparansi = {
+      ...kamarJelas,
+      model_listrik: "token",
+      estimasi_listrik: null,
+      bayar_dimuka_bulan: null,
+      ketentuan_deposit: null,
+      harga_dikonfirmasi_pada: null,
+    };
+    assert.equal(skorTransparansi([kabur], SEKARANG), 0);
+  });
+  it("does not reward or punish a large share of extra fees by itself", () => {
+    const mahal = { ...kamarJelas, biaya_lain: [{ nama: "Iuran", jumlah: 900_000 }] };
+    assert.equal(skorTransparansi([mahal], SEKARANG), 5);
+  });
+  it("averages over room types", () => {
+    const separuh = { ...kamarJelas, bayar_dimuka_bulan: null, harga_dikonfirmasi_pada: "2026-01-01T00:00:00Z" };
+    assert.equal(skorTransparansi([kamarJelas, separuh], SEKARANG), 3.75);
+  });
+  it("is 0 without room types", () => {
+    assert.equal(skorTransparansi([], SEKARANG), 0);
+  });
+});
+
+describe("cekTransparansi", () => {
+  it("no deposit needs no deposit terms", () => {
+    assert.equal(cekTransparansi({ ...kamarJelas, deposit: 0, deposit_kembali: null, ketentuan_deposit: null }, SEKARANG).masuk, true);
+  });
+  it("a one-off fee without an amount fails the entry-cost check", () => {
+    assert.equal(cekTransparansi({ ...kamarJelas, biaya_sekali: [{ nama: "Administrasi", jumlah: null }] }, SEKARANG).masuk, false);
+  });
+  it("an optional extra without an amount does not make the monthly total unclear", () => {
+    assert.equal(cekTransparansi({ ...kamarJelas, biaya_lain: [{ nama: "Galon", jumlah: null, wajib: false }] }, SEKARANG).bulanan, true);
+  });
+  it("prices checked more than 90 days ago fail the recency check", () => {
+    assert.equal(cekTransparansi({ ...kamarJelas, harga_dikonfirmasi_pada: "2026-07-01T00:00:00Z" }, SEKARANG).baru, false);
   });
 });
 

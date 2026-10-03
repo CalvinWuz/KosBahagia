@@ -1,18 +1,21 @@
 import { IconCheck } from "@/components/ui/Icon";
+import { PenandaDemo } from "@/components/ui/PenandaDemo";
+import { formatTanggal } from "@/lib/format";
 import type { Catatan } from "@/lib/kos/detail";
 import { BelumDicatat, Blok } from "./bagian";
 
-function tanggal(iso: string | null): string {
-  if (!iso) return "";
-  return new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "long", year: "numeric" }).format(new Date(iso));
-}
-
 // Block 10. Red flags come first, in a panel that cannot be collapsed and
-// looks the same for every tier.
+// looks the same for every tier. The rest is the surveyor's narrative from
+// the same visit: impressions, not measurements (those are in blocks 3–5).
 export function CatatanSurveyor({ catatan, surveyor, disurveiPada }: { catatan: Catatan | null; surveyor: string | null; disurveiPada: string | null }) {
   const redFlags = catatan?.red_flags ?? [];
   return (
-    <Blok id="catatan" judul="Catatan surveyor" keterangan={surveyor ? `Ditulis oleh ${surveyor}${disurveiPada ? `, survei ${tanggal(disurveiPada)}` : ""}` : undefined}>
+    <Blok
+      id="catatan"
+      judul="Catatan surveyor"
+      keterangan={`${surveyor ? `Ditulis oleh ${surveyor}${disurveiPada ? ` saat survei ${formatTanggal(disurveiPada)}` : ""}. ` : ""}Kesan dan pengamatan saat kunjungan; angka hasil ukur ada di bagian Skor dan Kebersihan & suara.`}
+    >
+      <PenandaDemo className="-mt-1 mb-3" />
       {redFlags.length > 0 && (
         <div role="alert" className="mb-4 rounded-2xl border border-merah-700/30 bg-merah-100 p-4">
           <h3 className="text-body font-bold text-merah-700">Perlu kamu tahu sebelum memutuskan</h3>

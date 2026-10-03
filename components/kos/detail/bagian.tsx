@@ -31,7 +31,7 @@ export function Baris({ label, children }: { label: string; children: ReactNode 
 /** 1–5 rubric score as five dots plus the number, and a word when the scale has one. */
 export function Skala({ nilai, label, kata }: { nilai: number | null | undefined; label: string; kata?: string | null }) {
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
       <span className="text-small text-arang-900">{label}</span>
       {nilai == null ? (
         <BelumDicatat />

@@ -1,14 +1,17 @@
 // Compares the Postgres view `kos_skor` with lib/scoring.ts on every live
-// seeded kos. Run with the local Supabase stack up:
+// seeded kos, and the generated tipe_kamar.total_bulanan / total_lengkap /
+// total_estimasi with lib/biaya.ts on every room type. Run with the local
+// Supabase stack up:
 //
 //   npm run cek:skor-db
 //
-// Exits non-zero on the first mismatch. This is the guard against the two
-// implementations drifting apart.
+// Exits non-zero on any mismatch. This is the guard against the SQL and the
+// TypeScript implementations drifting apart.
 
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { hitungSkorBahagia, type SkorInput } from "../lib/scoring.ts";
+import { hitungSkorBahagia, type KamarTransparansi, type SkorInput } from "../lib/scoring.ts";
+import { hitungBiaya, type TipeKamar } from "../lib/biaya.ts";
 
 const projectId = /^project_id\s*=\s*"([^"]+)"/m.exec(readFileSync("supabase/config.toml", "utf8"))?.[1];
 if (!projectId) throw new Error("project_id tidak ditemukan di supabase/config.toml");
@@ -35,7 +38,8 @@ select json_agg(json_build_object(
   'input', json_build_object(
     'skor_kamar_mandi', p.skor_kamar_mandi, 'skor_dapur', p.skor_dapur,
     'skor_koridor', p.skor_koridor, 'skor_kedap', p.skor_kedap,
-    'harga_bulanan', d.harga_bulanan, 'total_bulanan', d.total_bulanan,
+    'kamar', (select json_agg(t) from tipe_kamar t where t.kos_id = d.kos_id),
+    'sekarang', now(),
     'jumlah_fasilitas', d.n_fasilitas,
     'fasilitas_sebaya', (select coalesce(json_agg(d2.n_fasilitas), '[]'::json)
                          from dasar d2 where d2.ember = d.ember and d2.kos_id <> d.kos_id),
@@ -52,7 +56,7 @@ left join kos_sekitar s on s.kos_id = d.kos_id;`;
 
 type Baris = {
   slug: string;
-  input: SkorInput;
+  input: Omit<SkorInput, "sekarang" | "kamar"> & { sekarang: string; kamar: TipeKamar[] };
   db: { skor: string | null; kebersihan: string | null; kedap: string | null; transparansi: string; fasilitas: string; sekitar: string | null };
 };
 
@@ -61,8 +65,17 @@ const baris: Baris[] = JSON.parse(raw.trim());
 
 const angka = (x: string | null) => (x === null ? null : Number(x));
 let beda = 0;
+let kamarDicek = 0;
 for (const r of baris) {
-  const ts = hitungSkorBahagia(r.input);
+  for (const k of r.input.kamar) {
+    kamarDicek++;
+    const b = hitungBiaya(k);
+    if (b.total !== k.total_bulanan || b.lengkap !== k.total_lengkap || b.estimasi !== k.total_estimasi) {
+      beda++;
+      console.log(`✖ ${r.slug} · ${k.nama}: ts total=${b.total} lengkap=${b.lengkap} estimasi=${b.estimasi} · db ${k.total_bulanan} ${k.total_lengkap} ${k.total_estimasi}`);
+    }
+  }
+  const ts = hitungSkorBahagia({ ...r.input, kamar: r.input.kamar as KamarTransparansi[], sekarang: new Date(r.input.sekarang) });
   const pasangan: Array<[string, number | null, number | null]> = [
     ["skor", ts.skor, angka(r.db.skor)],
     ["kebersihan", ts.komponen.kebersihan, angka(r.db.kebersihan)],
@@ -80,5 +93,5 @@ for (const r of baris) {
   }
 }
 const dinilai = baris.filter((r) => r.db.skor !== null).length;
-console.log(`${baris.length} kos tayang dibandingkan · ${dinilai} punya skor · ${baris.length - dinilai} "Belum dinilai" · ${beda} beda`);
+console.log(`${baris.length} kos tayang dibandingkan · ${dinilai} punya skor · ${baris.length - dinilai} "Belum dinilai" · ${kamarDicek} tipe kamar dicek totalnya · ${beda} beda`);
 process.exit(beda ? 1 : 0);

@@ -440,6 +440,7 @@ export type Database = {
           frekuensi_bersih: string | null
           frekuensi_sampah: string | null
           hadap_jalan_raya: boolean | null
+          kamar_diukur: string | null
           kos_id: string
           material_tembok: string | null
           pembersih: string | null
@@ -455,6 +456,7 @@ export type Database = {
           frekuensi_bersih?: string | null
           frekuensi_sampah?: string | null
           hadap_jalan_raya?: boolean | null
+          kamar_diukur?: string | null
           kos_id: string
           material_tembok?: string | null
           pembersih?: string | null
@@ -470,6 +472,7 @@ export type Database = {
           frekuensi_bersih?: string | null
           frekuensi_sampah?: string | null
           hadap_jalan_raya?: boolean | null
+          kamar_diukur?: string | null
           kos_id?: string
           material_tembok?: string | null
           pembersih?: string | null
@@ -702,6 +705,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "kos_skor"
             referencedColumns: ["kos_id"]
+          },
+          {
+            foreignKeyName: "log_ketersediaan_tipe_kamar_id_fkey"
+            columns: ["tipe_kamar_id"]
+            isOneToOne: false
+            referencedRelation: "kos_kartu"
+            referencedColumns: ["kamar_id"]
           },
           {
             foreignKeyName: "log_ketersediaan_tipe_kamar_id_fkey"
@@ -945,12 +955,14 @@ export type Database = {
       }
       tipe_kamar: {
         Row: {
+          bayar_dimuka_bulan: number | null
           biaya_ac: number | null
           biaya_air: number | null
           biaya_lain: Json
           biaya_laundry: number | null
           biaya_parkir_mobil: number | null
           biaya_parkir_motor: number | null
+          biaya_sekali: Json
           boleh_ac: boolean
           deposit: number
           deposit_kembali:
@@ -959,9 +971,12 @@ export type Database = {
           durasi_minimal: number
           estimasi_listrik: number | null
           harga_bulanan: number
+          harga_dikonfirmasi_pada: string | null
           harga_tahunan: number | null
           id: string
+          kamar_mandi_dalam: boolean | null
           kamar_tersedia: number
+          ketentuan_deposit: string | null
           kos_id: string
           laundry: Database["public"]["Enums"]["opsi_laundry"]
           model_listrik: Database["public"]["Enums"]["model_listrik"]
@@ -969,16 +984,20 @@ export type Database = {
           parkir_mobil: boolean
           parkir_motor: boolean
           total_bulanan: number | null
+          total_estimasi: boolean | null
           total_kamar: number
+          total_lengkap: boolean | null
           ukuran: string | null
         }
         Insert: {
+          bayar_dimuka_bulan?: number | null
           biaya_ac?: number | null
           biaya_air?: number | null
           biaya_lain?: Json
           biaya_laundry?: number | null
           biaya_parkir_mobil?: number | null
           biaya_parkir_motor?: number | null
+          biaya_sekali?: Json
           boleh_ac?: boolean
           deposit?: number
           deposit_kembali?:
@@ -987,9 +1006,12 @@ export type Database = {
           durasi_minimal?: number
           estimasi_listrik?: number | null
           harga_bulanan: number
+          harga_dikonfirmasi_pada?: string | null
           harga_tahunan?: number | null
           id?: string
+          kamar_mandi_dalam?: boolean | null
           kamar_tersedia?: number
+          ketentuan_deposit?: string | null
           kos_id: string
           laundry?: Database["public"]["Enums"]["opsi_laundry"]
           model_listrik: Database["public"]["Enums"]["model_listrik"]
@@ -997,16 +1019,20 @@ export type Database = {
           parkir_mobil?: boolean
           parkir_motor?: boolean
           total_bulanan?: number | null
+          total_estimasi?: boolean | null
           total_kamar?: number
+          total_lengkap?: boolean | null
           ukuran?: string | null
         }
         Update: {
+          bayar_dimuka_bulan?: number | null
           biaya_ac?: number | null
           biaya_air?: number | null
           biaya_lain?: Json
           biaya_laundry?: number | null
           biaya_parkir_mobil?: number | null
           biaya_parkir_motor?: number | null
+          biaya_sekali?: Json
           boleh_ac?: boolean
           deposit?: number
           deposit_kembali?:
@@ -1015,9 +1041,12 @@ export type Database = {
           durasi_minimal?: number
           estimasi_listrik?: number | null
           harga_bulanan?: number
+          harga_dikonfirmasi_pada?: string | null
           harga_tahunan?: number | null
           id?: string
+          kamar_mandi_dalam?: boolean | null
           kamar_tersedia?: number
+          ketentuan_deposit?: string | null
           kos_id?: string
           laundry?: Database["public"]["Enums"]["opsi_laundry"]
           model_listrik?: Database["public"]["Enums"]["model_listrik"]
@@ -1025,7 +1054,9 @@ export type Database = {
           parkir_mobil?: boolean
           parkir_motor?: boolean
           total_bulanan?: number | null
+          total_estimasi?: boolean | null
           total_kamar?: number
+          total_lengkap?: boolean | null
           ukuran?: string | null
         }
         Relationships: [
@@ -1103,6 +1134,12 @@ export type Database = {
           harga_bulanan: number | null
           id: string | null
           jumlah_red_flags: number | null
+          jumlah_tipe_kamar: number | null
+          kamar: Json | null
+          kamar_acuan_tersedia: number | null
+          kamar_acuan_total: number | null
+          kamar_id: string | null
+          kamar_nama: string | null
           kamar_tersedia: number | null
           ketersediaan_dikonfirmasi_pada: string | null
           landmark_menit_jalan: number | null
@@ -1120,6 +1157,8 @@ export type Database = {
           tier: Database["public"]["Enums"]["tier_kos"] | null
           tipe: Database["public"]["Enums"]["tipe_kos"] | null
           total_bulanan: number | null
+          total_estimasi: boolean | null
+          total_lengkap: boolean | null
         }
         Relationships: []
       }
@@ -1130,6 +1169,7 @@ export type Database = {
           kedap: number | null
           kos_id: string | null
           n_fasilitas: number | null
+          porsi_biaya_tambahan: number | null
           sekitar: number | null
           skor: number | null
           transparansi: number | null
@@ -1164,6 +1204,7 @@ export type Database = {
           total_kamar: number
         }[]
       }
+      biaya_lain_lengkap: { Args: { biaya: Json }; Returns: boolean }
       biaya_lain_wajib: { Args: { biaya: Json }; Returns: number }
       buat_tautan_ketersediaan: { Args: { p_kos_id: string }; Returns: string }
       cari_kos: {
@@ -1212,6 +1253,59 @@ export type Database = {
           total_count: number
         }[]
       }
+      cari_kos_v3: {
+        Args: {
+          p_aturan?: Json
+          p_fasilitas?: string[]
+          p_harga_max?: number
+          p_harga_min?: number
+          p_lat: number
+          p_limit?: number
+          p_lng: number
+          p_min_kebersihan?: number
+          p_min_kedap?: number
+          p_offset?: number
+          p_q?: string
+          p_radius_m?: number
+          p_tipe?: Database["public"]["Enums"]["tipe_kos"]
+          p_urut?: string
+        }
+        Returns: {
+          ada_360: boolean
+          foto_blurhash: string
+          foto_lebar: number
+          foto_tinggi: number
+          foto_url: string
+          harga_bulanan: number
+          id: string
+          jarak_m: number
+          jumlah_red_flags: number
+          jumlah_tipe_kamar: number
+          kamar: Json
+          kamar_acuan_tersedia: number
+          kamar_acuan_total: number
+          kamar_id: string
+          kamar_nama: string
+          kamar_tersedia: number
+          ketersediaan_dikonfirmasi_pada: string
+          landmark_menit_jalan: number
+          landmark_nama: string
+          lat: number
+          lng: number
+          nama: string
+          perlu_dikonfirmasi: boolean
+          skor: number
+          skor_kebersihan: number
+          skor_kedap: number
+          slug: string
+          tier: Database["public"]["Enums"]["tier_kos"]
+          tipe: Database["public"]["Enums"]["tipe_kos"]
+          total_bulanan: number
+          total_count: number
+          total_estimasi: boolean
+          total_lengkap: boolean
+        }[]
+      }
       cari_saran: {
         Args: { p_limit?: number; q: string }
         Returns: {
@@ -1224,6 +1318,105 @@ export type Database = {
       konfirmasi_ketersediaan: {
         Args: { p_kos_id: string }
         Returns: undefined
+      }
+      kos_cocok: {
+        Args: {
+          p_aturan?: Json
+          p_fasilitas?: string[]
+          p_harga_max?: number
+          p_harga_min?: number
+          p_lat: number
+          p_lng: number
+          p_min_kebersihan?: number
+          p_min_kedap?: number
+          p_q?: string
+          p_radius_m?: number
+          p_tipe?: Database["public"]["Enums"]["tipe_kos"]
+        }
+        Returns: {
+          ada_360: boolean
+          foto_blurhash: string
+          foto_lebar: number
+          foto_tinggi: number
+          foto_url: string
+          harga_bulanan: number
+          id: string
+          jarak_m: number
+          jumlah_red_flags: number
+          jumlah_tipe_kamar: number
+          kamar: Json
+          kamar_acuan_tersedia: number
+          kamar_acuan_total: number
+          kamar_id: string
+          kamar_nama: string
+          kamar_tersedia: number
+          ketersediaan_dikonfirmasi_pada: string
+          landmark_menit_jalan: number
+          landmark_nama: string
+          lat: number
+          lng: number
+          nama: string
+          perlu_dikonfirmasi: boolean
+          skor: number
+          skor_kebersihan: number
+          skor_kedap: number
+          slug: string
+          tier: Database["public"]["Enums"]["tier_kos"]
+          tipe: Database["public"]["Enums"]["tipe_kos"]
+          total_bulanan: number
+          total_estimasi: boolean
+          total_lengkap: boolean
+        }[]
+      }
+      kos_promosi: {
+        Args: {
+          p_aturan?: Json
+          p_fasilitas?: string[]
+          p_harga_max?: number
+          p_harga_min?: number
+          p_lat: number
+          p_limit?: number
+          p_lng: number
+          p_min_kebersihan?: number
+          p_min_kedap?: number
+          p_q?: string
+          p_radius_m?: number
+          p_tipe?: Database["public"]["Enums"]["tipe_kos"]
+        }
+        Returns: {
+          ada_360: boolean
+          foto_blurhash: string
+          foto_lebar: number
+          foto_tinggi: number
+          foto_url: string
+          harga_bulanan: number
+          id: string
+          jarak_m: number
+          jumlah_red_flags: number
+          jumlah_tipe_kamar: number
+          kamar: Json
+          kamar_acuan_tersedia: number
+          kamar_acuan_total: number
+          kamar_id: string
+          kamar_nama: string
+          kamar_tersedia: number
+          ketersediaan_dikonfirmasi_pada: string
+          landmark_menit_jalan: number
+          landmark_nama: string
+          lat: number
+          lng: number
+          nama: string
+          perlu_dikonfirmasi: boolean
+          skor: number
+          skor_kebersihan: number
+          skor_kedap: number
+          slug: string
+          tier: Database["public"]["Enums"]["tier_kos"]
+          tipe: Database["public"]["Enums"]["tipe_kos"]
+          total_bulanan: number
+          total_estimasi: boolean
+          total_lengkap: boolean
+        }[]
       }
       kos_tayang: { Args: { p_kos_id: string }; Returns: boolean }
       median_area_bulan_ini: {

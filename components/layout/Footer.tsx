@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MODE_DEMO } from "@/lib/demo";
 import { Logo } from "@/components/ui/Logo";
 import { MITRA_URL } from "@/lib/site";
 
@@ -20,8 +21,9 @@ export function Footer() {
             <span className="text-h2 text-biru-600">Kos Bahagia</span>
           </div>
           <p className="mt-3 text-small text-arang-500">
-            Setiap kos di sini sudah kami datangi dan cek langsung. Biaya
-            bulanan yang kamu lihat adalah biaya sebenarnya.
+            {MODE_DEMO
+              ? "Prototipe dengan data contoh. Di versi asli, setiap kos sudah kami datangi dan cek langsung, dan biaya bulanan yang kamu lihat adalah biaya sebenarnya."
+              : "Setiap kos di sini sudah kami datangi dan cek langsung. Biaya bulanan yang kamu lihat adalah biaya sebenarnya."}
           </p>
         </div>
 

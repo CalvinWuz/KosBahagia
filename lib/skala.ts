@@ -1,7 +1,9 @@
 // Plain-language labels for the survey scales. The numbers stay (they are
 // the evidence); the words say what they mean to someone who has never
-// seen the rubric. One source for the card, the detail page, the filter
-// sheet and /cara-kami-menilai.
+// seen the rubric. The ONLY source of these words: the card chips, the hero,
+// the detail page, the compare table, the filter sheet and
+// /cara-kami-menilai all call kataKebersihan / kataKedap, so one listing can
+// never be "Sangat bersih" in one place and "Bersih" in another.
 
 export type Tingkat = { min: number; kata: string; keterangan: string };
 
@@ -15,15 +17,19 @@ export const SKALA_KEBERSIHAN: Tingkat[] = [
 
 /** Kedap suara 1–5 (material tembok + tes desibel). */
 export const SKALA_KEDAP: Tingkat[] = [
-  { min: 4, kata: "Kedap", keterangan: "Suara TV kamar sebelah nyaris tidak terdengar." },
-  { min: 3, kata: "Lumayan", keterangan: "Terdengar samar kalau kamar sebelah ramai." },
-  { min: 0, kata: "Berisik", keterangan: "Obrolan kamar sebelah ikut terdengar." },
+  { min: 4, kata: "Kedap suara", keterangan: "Saat tes, suara TV kamar sebelah nyaris tidak terdengar." },
+  { min: 3, kata: "Cukup kedap", keterangan: "Saat tes, suara kamar sebelah terdengar samar." },
+  { min: 0, kata: "Berisik", keterangan: "Saat tes, obrolan kamar sebelah ikut terdengar." },
 ];
 
-/** Selisih dB antara sunyi dan saat tes suara dari kamar sebelah. */
+/**
+ * Selisih dB antara sunyi dan saat tes suara dari kamar sebelah. Thresholds
+ * line up with the kedap rubric so the two words never disagree: kedap 4–5
+ * tests below 18 dB, kedap 3 between 18 and 23, kedap 1–2 at 24 or more.
+ */
 export const SKALA_SELISIH_DB: Tingkat[] = [
-  { min: 30, kata: "Tembus jelas", keterangan: "Suara tetangga terdengar seperti di ruangan yang sama." },
-  { min: 15, kata: "Terdengar samar", keterangan: "Ada suara, tapi kata-katanya tidak jelas." },
+  { min: 24, kata: "Tembus jelas", keterangan: "Suara tetangga terdengar seperti di ruangan yang sama." },
+  { min: 18, kata: "Terdengar samar", keterangan: "Ada suara, tapi kata-katanya tidak jelas." },
   { min: 0, kata: "Hampir tidak terdengar", keterangan: "Tembok menahan sebagian besar suara." },
 ];
 
@@ -49,9 +55,25 @@ export const PILIHAN_KEBERSIHAN = [
   { nilai: 4.5, label: "Sangat bersih 4,5+" },
 ] as const;
 export const PILIHAN_KEDAP = [
-  { nilai: 3, label: "Lumayan 3+" },
-  { nilai: 4, label: "Kedap 4+" },
+  { nilai: 3, label: "Cukup kedap 3+" },
+  { nilai: 4, label: "Kedap suara 4+" },
 ] as const;
 
-/** Below this the card says so; the red-flag panel is a separate thing. */
-export const BATAS_BERISIK = 2.5;
+/** Card chips: the good word from the scale (4+), or "Berisik" when measured low. Null otherwise. */
+export function chipKebersihan(nilai: number | null | undefined): string | null {
+  return nilai != null && nilai >= 4 ? kataKebersihan(nilai) : null;
+}
+export function chipKedap(nilai: number | null | undefined): { kata: string; baik: boolean } | null {
+  const kata = kataKedap(nilai);
+  if (kata === null || nilai == null) return null;
+  if (nilai >= 4) return { kata, baik: true };
+  if (kata === "Berisik") return { kata, baik: false };
+  return null;
+}
+
+/** Mean of the measured cleanliness areas (needs two), same rule as kos_skor.kebersihan. */
+export function skorKebersihanRata(p: { skor_kamar_mandi: number | null; skor_dapur: number | null; skor_koridor: number | null }): number | null {
+  const ada = [p.skor_kamar_mandi, p.skor_dapur, p.skor_koridor].filter((x): x is number => x != null);
+  if (ada.length < 2) return null;
+  return Math.round((ada.reduce((a, b) => a + b, 0) / ada.length) * 100) / 100;
+}

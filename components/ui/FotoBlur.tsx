@@ -12,6 +12,9 @@ type Props = Omit<ComponentProps<typeof Image>, "placeholder" | "blurDataURL"> &
 // next/image with a BlurHash painted on a canvas underneath. The canvas is
 // drawn after hydration (no extra bytes in the HTML), the image fades in
 // when it lands, and the box never changes size — no layout shift.
+// Priority images (above the fold, usually the LCP element) skip the fade:
+// they are visible as soon as the browser decodes them, without waiting for
+// JavaScript to hydrate and flip the opacity.
 export function FotoBlur({ blurhash, className, alt, onLoad, ...rest }: Props) {
   const kanvas = useRef<HTMLCanvasElement>(null);
   const [siap, setSiap] = useState(false);
@@ -37,7 +40,7 @@ export function FotoBlur({ blurhash, className, alt, onLoad, ...rest }: Props) {
           setSiap(true);
           onLoad?.(e);
         }}
-        className={cn(className, "transition-opacity duration-200 ease-out", siap ? "opacity-100" : "opacity-0")}
+        className={rest.priority ? className : cn(className, "transition-opacity duration-200 ease-out", siap ? "opacity-100" : "opacity-0")}
       />
     </>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Map as MapLibre, Marker, NavigationControl, LngLatBounds, setWorkerUrl } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -24,6 +24,8 @@ function pinKos(warna: string, putih: string): HTMLElement {
 
 export default function PetaInset({ kos, landmark, namaLandmark }: { kos: { lat: number; lng: number }; landmark: { lat: number; lng: number } | null; namaLandmark?: string | null }) {
   const wadah = useRef<HTMLDivElement>(null);
+  const [status, setStatus] = useState<"memuat" | "siap" | "gagal">("memuat");
+  const [percobaan, setPercobaan] = useState(0);
 
   useEffect(() => {
     const el = wadah.current;
@@ -34,8 +36,14 @@ export default function PetaInset({ kos, landmark, namaLandmark }: { kos: { lat:
     const map = new MapLibre({ container: el, style: STYLE, center: [kos.lng, kos.lat], zoom: 15, attributionControl: { compact: true } });
     map.addControl(new NavigationControl({ showCompass: false }), "top-right");
     const raf = requestAnimationFrame(() => map.resize());
+    let dimuat = false;
+    const batasWaktu = window.setTimeout(() => !dimuat && setStatus("gagal"), 12_000);
+    map.on("error", () => !dimuat && setStatus("gagal"));
 
     map.on("load", () => {
+      dimuat = true;
+      window.clearTimeout(batasWaktu);
+      setStatus("siap");
       new Marker({ element: pinKos(biru, putih), anchor: "bottom" }).setLngLat([kos.lng, kos.lat]).addTo(map);
       if (landmark) {
         new Marker({ color: biruTua }).setLngLat([landmark.lng, landmark.lat]).addTo(map);
@@ -52,14 +60,35 @@ export default function PetaInset({ kos, landmark, namaLandmark }: { kos: { lat:
 
     return () => {
       cancelAnimationFrame(raf);
+      window.clearTimeout(batasWaktu);
       map.remove();
     };
-  }, [kos.lat, kos.lng, landmark]);
+  }, [kos.lat, kos.lng, landmark, percobaan]);
 
   return (
     <div className="relative">
       <div ref={wadah} className="h-64 w-full rounded-2xl bg-biru-100" role="region" aria-label={`Peta lokasi kos${namaLandmark ? ` dan ${namaLandmark}` : ""}`} />
-      {landmark && namaLandmark && (
+      {status === "memuat" && (
+        <p className="pointer-events-none absolute top-2 left-2 rounded-full bg-putih/90 px-2.5 py-1 text-micro text-arang-900 shadow-sm" role="status">Memuat peta…</p>
+      )}
+      {status === "gagal" && (
+        <div className="absolute inset-0 grid place-items-center rounded-2xl bg-biru-100 p-4" role="alert">
+          <div className="flex flex-col items-center gap-2 text-center">
+            <p className="text-small font-bold text-arang-900">Peta tidak bisa dimuat. Periksa koneksi.</p>
+            <button
+              type="button"
+              onClick={() => {
+                setStatus("memuat");
+                setPercobaan((n) => n + 1);
+              }}
+              className="inline-flex h-11 items-center rounded-xl border-2 border-biru-500 bg-putih px-4 text-small font-bold text-biru-600 hover:bg-biru-100"
+            >
+              Coba lagi
+            </button>
+          </div>
+        </div>
+      )}
+      {landmark && namaLandmark && status === "siap" && (
         <p className="pointer-events-none absolute bottom-2 left-2 rounded-full bg-putih/90 px-2.5 py-1 text-micro text-arang-900 shadow-sm">
           Garis putus-putus: arah lurus dari {namaLandmark.split(" (")[0]}, bukan rute jalan
         </p>

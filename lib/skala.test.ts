@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { kataKebersihan, kataKedap, kataSelisihDb } from "./skala.ts";
+import { chipKebersihan, chipKedap, kataKebersihan, kataKedap, kataSelisihDb } from "./skala.ts";
 
 describe("kataKebersihan", () => {
   it("maps the rubric thresholds", () => {
@@ -20,9 +20,23 @@ describe("kataKebersihan", () => {
 
 describe("kataKedap", () => {
   it("maps 1–5 to three words", () => {
-    assert.equal(kataKedap(4), "Kedap");
-    assert.equal(kataKedap(3.5), "Lumayan");
+    assert.equal(kataKedap(4), "Kedap suara");
+    assert.equal(kataKedap(3.5), "Cukup kedap");
     assert.equal(kataKedap(2), "Berisik");
+  });
+});
+
+describe("card chips use the same words as the detail page", () => {
+  it("kebersihan 5 is Sangat bersih everywhere, 4 is Bersih, below 4 no chip", () => {
+    assert.equal(chipKebersihan(5), "Sangat bersih");
+    assert.equal(chipKebersihan(4), "Bersih");
+    assert.equal(chipKebersihan(3.9), null);
+  });
+  it("kedap: 4+ is a good chip, a measured low score says Berisik, the middle says nothing", () => {
+    assert.deepEqual(chipKedap(4), { kata: "Kedap suara", baik: true });
+    assert.deepEqual(chipKedap(1), { kata: "Berisik", baik: false });
+    assert.equal(chipKedap(3), null);
+    assert.equal(chipKedap(null), null);
   });
 });
 

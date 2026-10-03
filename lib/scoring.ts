@@ -6,9 +6,18 @@
 // decimal. Kebersihan or kedap missing → null ("Belum dinilai"). Sekitar
 // missing → its weight is dropped, never guessed.
 //
-// The Postgres view `kos_skor` (supabase/migrations/…_skor_dan_cari.sql)
+// Transparansi (since the 2026-10 audit) measures how completely the costs
+// are disclosed, not how large the extras are: four checks per room type
+// (KRITERIA_TRANSPARANSI), 1,25 points each, averaged over the kos's room
+// types. The old "share of the total that is not rent" survives as
+// information only (RingkasanBiaya.porsiTambahan / kos_skor.porsi_biaya_tambahan).
+//
+// The Postgres view `kos_skor` (supabase/migrations/…_biaya_kamar_skor.sql)
 // implements the same formula for search ranking. Change both or neither.
 // `tier` must never influence anything in this file.
+
+import { hitungBiaya, type KamarBiaya, type TipeKamar } from "./biaya.ts";
+import type { Json } from "./supabase/types.ts";
 
 export const BOBOT = {
   kebersihan: 0.3,
@@ -24,9 +33,10 @@ export type SkorInput = {
   skor_dapur: number | null;
   skor_koridor: number | null;
   skor_kedap: number | null;
-  /** Rent and real total of the headline (cheapest) room type, in rupiah. */
-  harga_bulanan: number;
-  total_bulanan: number;
+  /** Every room type of the kos, for the transparency checks. */
+  kamar: KamarTransparansi[];
+  /** Clock for the "prices checked in the last 90 days" check. */
+  sekarang: Date;
   /** Filterable facilities this kos has. */
   jumlah_fasilitas: number;
   /** Filterable-facility counts of the OTHER live kos in the same Rp250k bucket. */
@@ -72,13 +82,44 @@ export function skorKebersihan(
   return bulat(ada.reduce((a, b) => a + b, 0) / ada.length, 2);
 }
 
-/** 5 when the total equals the rent; 0 once hidden costs reach 35 % of the total. */
-export function skorTransparansi(
-  hargaBulanan: number,
-  totalBulanan: number,
-): number {
-  const tersembunyi = (totalBulanan - hargaBulanan) / totalBulanan;
-  return bulat(5 * (1 - Math.min(tersembunyi / 0.35, 1)), 2);
+export type KamarTransparansi = KamarBiaya &
+  Pick<TipeKamar, "bayar_dimuka_bulan" | "deposit" | "deposit_kembali" | "ketentuan_deposit" | "biaya_sekali" | "harga_dikonfirmasi_pada">;
+
+export const KRITERIA_TRANSPARANSI = [
+  { kunci: "periode", label: "Lama kontrak minimal dan jumlah bulan yang dibayar di muka disebutkan" },
+  { kunci: "bulanan", label: "Setiap biaya wajib bulanan punya nominal; listrik berbasis pemakaian punya estimasi" },
+  { kunci: "masuk", label: "Ketentuan deposit dan semua biaya sekali bayar jelas" },
+  { kunci: "baru", label: "Harga dicek dalam 90 hari terakhir" },
+] as const;
+export type KunciTransparansi = (typeof KRITERIA_TRANSPARANSI)[number]["kunci"];
+export const HARI_HARGA_SEGAR = 90;
+
+function semuaBernominal(json: Json | null | undefined): boolean {
+  if (!Array.isArray(json)) return true;
+  return json.every((x) => {
+    if (!x || typeof x !== "object" || Array.isArray(x)) return true;
+    const o = x as Record<string, Json | undefined>;
+    return o.wajib === false || typeof o.jumlah === "number";
+  });
+}
+
+/** Which of the four disclosure checks one room type meets. */
+export function cekTransparansi(k: KamarTransparansi, sekarang: Date): Record<KunciTransparansi, boolean> {
+  const dicek = k.harga_dikonfirmasi_pada ? new Date(k.harga_dikonfirmasi_pada).getTime() : NaN;
+  return {
+    periode: k.bayar_dimuka_bulan != null,
+    bulanan: hitungBiaya(k).lengkap,
+    masuk:
+      (k.deposit === 0 || (k.deposit_kembali != null && Boolean(k.ketentuan_deposit?.trim()))) && semuaBernominal(k.biaya_sekali),
+    baru: Number.isFinite(dicek) && dicek >= sekarang.getTime() - HARI_HARGA_SEGAR * 86_400_000,
+  };
+}
+
+/** 0–5: mean over room types of 1,25 × checks met. No room types → 0. */
+export function skorTransparansi(kamar: KamarTransparansi[], sekarang: Date): number {
+  if (kamar.length === 0) return 0;
+  const per = kamar.map((k) => 1.25 * Object.values(cekTransparansi(k, sekarang)).filter(Boolean).length);
+  return bulat(per.reduce((a, b) => a + b, 0) / per.length, 2);
 }
 
 /**
@@ -125,7 +166,7 @@ export function hitungSkorBahagia(input: SkorInput): HasilSkor {
       input.skor_koridor,
     ),
     kedap: input.skor_kedap,
-    transparansi: skorTransparansi(input.harga_bulanan, input.total_bulanan),
+    transparansi: skorTransparansi(input.kamar, input.sekarang),
     fasilitas: skorFasilitas(input.jumlah_fasilitas, input.fasilitas_sebaya),
     sekitar: skorSekitar(input.sekitar),
   };

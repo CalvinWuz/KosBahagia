@@ -141,3 +141,49 @@ export function jumlahFilterAktif(p: CariParams): number {
 export function tanpaFilter(p: CariParams): CariParams {
   return { q: p.q, area: p.area, radius: p.radius, lat: p.lat, lng: p.lng, urut: p.urut, tampil: p.tampil };
 }
+
+// ---------------------------------------------------------------- price input
+// One reader for every price box. Accepts what people type: "1500000",
+// "1.500.000", "Rp 1.500.000", "1,5 jt", "1500rb". A negative or non-numeric
+// value is an input error, never silently turned into "no filter".
+
+export const HARGA_MAKS = 50_000_000;
+
+export type HasilBacaRupiah = { nilai?: number; galat?: string };
+
+export function bacaRupiah(teks: string): HasilBacaRupiah {
+  const mentah = teks.trim().toLowerCase().replace(/^rp\.?/, "").replace(/\s+/g, "");
+  if (!mentah) return {};
+  if (mentah.startsWith("-")) return { galat: "Harga tidak boleh negatif." };
+  const satuan = /^(\d+(?:[.,]\d+)?)(jt|juta|rb|ribu|k)$/.exec(mentah);
+  let nilai: number;
+  if (satuan) {
+    const angka = Number(satuan[1].replace(",", "."));
+    nilai = Math.round(angka * (satuan[2].startsWith("j") ? 1_000_000 : 1_000));
+  } else {
+    if (!/^\d{1,3}(?:[.,]\d{3})*$|^\d+$/.test(mentah)) return { galat: "Tulis angka saja, misalnya 1.500.000." };
+    nilai = Number(mentah.replace(/[.,]/g, ""));
+  }
+  if (!Number.isFinite(nilai)) return { galat: "Tulis angka saja, misalnya 1.500.000." };
+  if (nilai > HARGA_MAKS) return { galat: "Paling tinggi Rp50.000.000." };
+  return nilai > 0 ? { nilai } : {};
+}
+
+/** Thousands separators for an input box: 1500000 → "1.500.000". */
+export function tampilRupiahInput(nilai: number | undefined): string {
+  return nilai ? new Intl.NumberFormat("id-ID").format(nilai) : "";
+}
+
+export type GalatRentang = { kolom: "harga_min"; pesan: string };
+
+/**
+ * Minimum above maximum is an input error, not "no results". Equal values
+ * are a valid exact price; either side may be empty.
+ */
+export function validasiRentangHarga(min: number | undefined, max: number | undefined): GalatRentang | null {
+  if (min != null && max != null && min > max) {
+    const f = (n: number) => `Rp${new Intl.NumberFormat("id-ID").format(n)}`;
+    return { kolom: "harga_min", pesan: `Minimal ${f(min)} lebih besar dari maksimal ${f(max)}. Turunkan minimal atau naikkan maksimal.` };
+  }
+  return null;
+}

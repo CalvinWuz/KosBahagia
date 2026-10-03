@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react";
 import { useLapisRiwayat } from "@/lib/navigasi";
+import { useKembalikanFokus } from "@/lib/fokus";
 import { cn } from "@/lib/cn";
 import { IconChevronDown, IconClose } from "./Icon";
 
@@ -29,6 +30,7 @@ export function Lightbox({ open, onClose, foto, indeks = 0, src, alt, keterangan
   const [aktif, setAktif] = useState(indeks);
   const rel = useRef<HTMLUListElement>(null);
   useLapisRiwayat({ open, onClose });
+  useKembalikanFokus(open);
 
   // Reopen on the photo that was tapped.
   const [bukaSebelumnya, setBukaSebelumnya] = useState<{ open: boolean; indeks: number }>({ open, indeks });
@@ -58,17 +60,22 @@ export function Lightbox({ open, onClose, foto, indeks = 0, src, alt, keterangan
   if (!ini) return null;
 
   return (
-    <Dialog open={open} onClose={onClose} className="relative z-50">
+    <Dialog
+      open={open}
+      onClose={onClose}
+      className="relative z-50"
+      // On the dialog itself: focus starts on the dialog, outside the panel.
+      onKeyDown={(e: React.KeyboardEvent) => {
+        if (e.key === "ArrowRight") geser(1);
+        else if (e.key === "ArrowLeft") geser(-1);
+        else return;
+        e.preventDefault();
+      }}
+    >
       <DialogBackdrop transition className="fixed inset-0 bg-arang-900 transition-opacity duration-200 ease-out data-closed:opacity-0" />
       <div className="fixed inset-0 flex flex-col">
         <DialogPanel
           transition
-          onKeyDown={(e) => {
-            if (e.key === "ArrowRight") geser(1);
-            else if (e.key === "ArrowLeft") geser(-1);
-            else return;
-            e.preventDefault();
-          }}
           className="flex h-full w-full flex-col transition-opacity duration-200 ease-out data-closed:opacity-0"
         >
           <header className="flex items-center justify-between gap-3 px-4 py-3 text-putih">
@@ -79,7 +86,7 @@ export function Lightbox({ open, onClose, foto, indeks = 0, src, alt, keterangan
                   {aktif + 1}/{daftar.length}
                 </span>
               )}
-              <button type="button" onClick={onClose} aria-label="Tutup" className="grid size-10 place-items-center rounded-full text-putih hover:bg-putih/20 focus-visible:outline-putih">
+              <button type="button" onClick={onClose} aria-label="Tutup foto" className="grid size-11 place-items-center rounded-full text-putih hover:bg-putih/20 focus-visible:outline-putih">
                 <IconClose />
               </button>
             </div>
@@ -132,7 +139,7 @@ function TombolGeser({ arah, onClick, disabled }: { arah: -1 | 1; onClick: () =>
       disabled={disabled}
       aria-label={arah < 0 ? "Foto sebelumnya" : "Foto berikutnya"}
       className={cn(
-        "absolute top-1/2 hidden size-11 -translate-y-1/2 place-items-center rounded-full bg-putih/15 text-putih backdrop-blur transition-opacity duration-150 hover:bg-putih/30 disabled:opacity-0 sm:grid",
+        "absolute top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-putih/15 text-putih backdrop-blur transition-opacity duration-150 hover:bg-putih/30 disabled:opacity-0",
         arah < 0 ? "left-3" : "right-3",
       )}
     >

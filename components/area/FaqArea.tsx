@@ -31,7 +31,7 @@ export function faqArea(nama: string, s: StatistikArea): Faq[] {
     {
       q: `Listrik di kos ${nama} biasanya termasuk?`,
       a: s.model_listrik_umum
-        ? `Yang paling umum di ${nama}, listrik ${LISTRIK[s.model_listrik_umum] ?? s.model_listrik_umum}. Di setiap halaman kos kami tulis modelnya dan estimasi biayanya, dan angka itu sudah masuk ke total bulanan.`
+        ? `Yang paling umum di ${nama}, listrik ${LISTRIK[s.model_listrik_umum] ?? s.model_listrik_umum}. Di setiap halaman kos kami tulis modelnya dan estimasi biayanya; kalau estimasinya ada, angka itu sudah masuk ke total bulanan, dan kalau belum diketahui kami tulis begitu.`
         : `Kami mencatat model listrik tiap kos di halaman detailnya.`,
     },
     {

@@ -1,5 +1,8 @@
+import Link from "next/link";
 import type { Penilaian } from "@/lib/kos/detail";
-import { kataKebersihan, kataKedap, kataSelisihDb } from "@/lib/skala";
+import { PenandaDemo } from "@/components/ui/PenandaDemo";
+import { formatTanggal } from "@/lib/format";
+import { kataKebersihan, kataKedap, kataSelisihDb, skorKebersihanRata } from "@/lib/skala";
 import { Baris, BelumDicatat, Blok, Skala } from "./bagian";
 import { ArtiSkala } from "./ArtiSkala";
 
@@ -9,8 +12,12 @@ const PEMBERSIH: Record<string, string> = {
   penghuni: "Penghuni bergantian",
 };
 
-// Block 5: evidence, not just a number.
-export function BuktiKebersihan({ penilaian }: { penilaian: Penilaian | null }) {
+// Block 5: evidence, not just a number. Measured values only; the
+// surveyor's impressions live in "Catatan surveyor". The word next to a
+// number comes from lib/skala and is only shown where the scale defines it:
+// once for the cleanliness average (the same word the card and the score
+// use) and once for soundproofing; the three areas show their raw 1–5.
+export function BuktiKebersihan({ penilaian, disurveiPada }: { penilaian: Penilaian | null; disurveiPada: string | null }) {
   if (!penilaian) {
     return (
       <Blok id="kebersihan" judul="Kebersihan & kedap suara">
@@ -20,15 +27,18 @@ export function BuktiKebersihan({ penilaian }: { penilaian: Penilaian | null }) 
   }
   const p = penilaian;
   const beda = p.db_ambient != null && p.db_tes != null ? p.db_tes - p.db_ambient : null;
+  const rata = skorKebersihanRata(p);
   return (
-    <Blok id="kebersihan" judul="Kebersihan & kedap suara" keterangan="Dinilai di lokasi dengan rubrik tetap dan desibel meter.">
-      <p className="-mt-1 mb-3 text-small"><ArtiSkala /></p>
+    <Blok id="kebersihan" judul="Kebersihan & kedap suara" keterangan={`Hasil ukur di lokasi${disurveiPada ? ` saat survei ${formatTanggal(disurveiPada)}` : ""}, dengan rubrik tetap.`}>
+      <p className="-mt-1 mb-3 flex flex-wrap items-center gap-2 text-small"><ArtiSkala /><PenandaDemo /></p>
       <div className="grid gap-6 sm:grid-cols-2">
         <div className="flex flex-col gap-3">
-          <h3 className="text-small font-bold text-arang-900">Kebersihan</h3>
-          <Skala nilai={p.skor_kamar_mandi} label="Kamar mandi" kata={kataKebersihan(p.skor_kamar_mandi)} />
-          <Skala nilai={p.skor_dapur} label="Dapur" kata={kataKebersihan(p.skor_dapur)} />
-          <Skala nilai={p.skor_koridor} label="Koridor" kata={kataKebersihan(p.skor_koridor)} />
+          <h3 className="text-small font-bold text-arang-900">
+            Kebersihan{rata != null && <span className="font-medium text-arang-500">: rata-rata {String(rata).replace(".", ",")}/5, {kataKebersihan(rata)?.toLowerCase()}</span>}
+          </h3>
+          <Skala nilai={p.skor_kamar_mandi} label="Kamar mandi" />
+          <Skala nilai={p.skor_dapur} label="Dapur bersama" />
+          <Skala nilai={p.skor_koridor} label="Koridor" />
           <dl className="divide-y divide-biru-100 border-t border-biru-100">
             <Baris label="Yang membersihkan">{p.pembersih ? (PEMBERSIH[p.pembersih] ?? p.pembersih) : null}</Baris>
             <Baris label="Frekuensi bersih-bersih">{p.frekuensi_bersih}</Baris>
@@ -62,10 +72,15 @@ export function BuktiKebersihan({ penilaian }: { penilaian: Penilaian | null }) 
             </p>
           )}
           <dl className="divide-y divide-biru-100 border-t border-biru-100">
+            <Baris label="Diukur di">{p.kamar_diukur}</Baris>
             <Baris label="Material tembok">{p.material_tembok}</Baris>
             <Baris label="Menghadap jalan raya">{p.hadap_jalan_raya == null ? null : p.hadap_jalan_raya ? "Ya" : "Tidak"}</Baris>
             <Baris label="Sumber bising">{p.sumber_bising.length ? p.sumber_bising.join(", ") : "Tidak ada yang menonjol"}</Baris>
           </dl>
+          <p className="text-micro text-arang-500">
+            Satu kali tes di satu kamar pada jam survei. Kamar lain, lantai lain, atau jam ramai bisa berbeda; angka ini bukan pengukuran akustik laboratorium.{" "}
+            <Link href="/cara-kami-menilai#batas" className="font-bold text-biru-600 hover:underline">Batas pengukuran</Link>
+          </p>
         </div>
       </div>
     </Blok>

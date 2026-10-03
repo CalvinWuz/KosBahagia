@@ -9,6 +9,7 @@ import {
 } from "@headlessui/react";
 import { cn } from "@/lib/cn";
 import { useLapisRiwayat } from "@/lib/navigasi";
+import { useKembalikanFokus } from "@/lib/fokus";
 import { IconClose } from "./Icon";
 
 export type SheetProps = {
@@ -46,6 +47,7 @@ export function Sheet({
   className,
 }: SheetProps) {
   useLapisRiwayat({ open, onClose, hrefTerakhir, pertahankan });
+  useKembalikanFokus(open);
   return (
     <Dialog open={open} onClose={onClose} className="relative z-50">
       <DialogBackdrop
@@ -73,8 +75,8 @@ export function Sheet({
             <button
               type="button"
               onClick={onClose}
-              aria-label="Tutup"
-              className="grid size-10 shrink-0 place-items-center rounded-full text-arang-500 transition-colors duration-150 ease-out hover:bg-biru-100 hover:text-biru-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-biru-500"
+              aria-label={`Tutup ${title.toLowerCase()}`}
+              className="grid size-11 shrink-0 place-items-center rounded-full text-arang-500 transition-colors duration-150 ease-out hover:bg-biru-100 hover:text-biru-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-biru-500"
             >
               <IconClose />
             </button>

@@ -7,10 +7,11 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
 import { IconChevronDown, IconClose, IconDaftar, IconFilter, IconKembali, IconPeta, IconPutar } from "@/components/ui/Icon";
-import { KosCard, KosCardSkeleton } from "@/components/kos/KosCard";
+import { KosCard, KosCardSkeleton, type AcuanJarak } from "@/components/kos/KosCard";
 import { restKlien } from "@/lib/supabase/rest";
-import { bacaCariParams, hrefCari, jumlahFilterAktif, tanpaFilter, type CariParams, type UrutCari } from "@/lib/cari-params";
-import { ambilHasil, type HasilKos } from "@/lib/cari/ambil";
+import { bacaCariParams, hrefCari, jumlahFilterAktif, tanpaFilter, validasiRentangHarga, type CariParams, type UrutCari } from "@/lib/cari-params";
+import { ambilHasil, ambilPromosi, type HasilKos, type KosPromosi } from "@/lib/cari/ambil";
+import { formatRupiah } from "@/lib/format";
 import { saranLonggar, terdekatDiLuar, type SaranLonggar, type Terdekat } from "@/lib/cari/longgar";
 import { tentukanPusat, type AreaPublik } from "@/lib/cari/pusat";
 import { lepasLapisAktif, useKembali } from "@/lib/navigasi";
@@ -29,7 +30,7 @@ const PetaHasil = dynamic(() => import("./PetaHasil"), {
   loading: () => <div className="grid h-full w-full place-items-center bg-biru-100 text-small text-arang-500">Memuat peta…</div>,
 });
 
-export type DataHasil = { kunci: string; hasil: HasilKos[]; total: number; error?: string };
+export type DataHasil = { kunci: string; hasil: HasilKos[]; total: number; promosi: KosPromosi[]; error?: string };
 export type ModeRiwayat = "push" | "replace";
 
 type Props = {
@@ -40,11 +41,15 @@ type Props = {
   sekarang: string;
 };
 
-const URUT: Array<{ nilai: UrutCari; label: string }> = [
-  { nilai: "relevan", label: "Paling relevan" },
-  { nilai: "termurah", label: "Termurah" },
-  { nilai: "terdekat", label: "Terdekat" },
-  { nilai: "skor", label: "Skor tertinggi" },
+const URUT: Array<{ nilai: UrutCari; label: string; arti: string }> = [
+  {
+    nilai: "relevan",
+    label: "Paling relevan",
+    arti: "Yang masih ada kamar dan datanya segar di atas, lalu mitra berbayar, lalu Skor Bahagia, lalu jarak.",
+  },
+  { nilai: "termurah", label: "Termurah", arti: "Total per bulan dari yang paling murah. Kos yang biayanya belum lengkap ditaruh paling bawah." },
+  { nilai: "terdekat", label: "Terdekat", arti: "Jarak garis lurus dari titik pencarian, paling dekat di atas." },
+  { nilai: "skor", label: "Skor tertinggi", arti: "Skor Bahagia dari yang tertinggi. Yang belum dinilai di paling bawah." },
 ];
 
 const langgananDesktop = (cb: () => void) => {
@@ -84,7 +89,15 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
   const [saran, setSaran] = useState<{ kunci: string; longgar: SaranLonggar | null; terdekat: Terdekat } | null>(null);
 
   const peta = params.tampil === "peta";
-  const memuat = data.kunci !== kunci;
+  // A minimum above the maximum is an input error: say so, do not search.
+  const galatRentang = validasiRentangHarga(params.harga_min, params.harga_max);
+  const memuat = !galatRentang && data.kunci !== kunci;
+  // Distances on cards point at the campus or station the renter picked.
+  const areaPusat = pusat.slug ? areas.find((a) => a.slug === pusat.slug) : undefined;
+  const acuanJarak = (k: HasilKos): AcuanJarak | undefined =>
+    (areaPusat && (areaPusat.tipe === "kampus" || areaPusat.tipe === "stasiun")) || (params.lat != null && params.lng != null)
+      ? { nama: areaPusat?.nama ?? "titik di peta", meter: k.jarak_m }
+      : undefined;
   const { hasil, total } = data;
   const jumlahFilter = jumlahFilterAktif(params);
   const adaLagi = hasil.length < total;
@@ -93,21 +106,21 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
     [areas],
   );
 
-  // URL changed (chip, sheet, back button) → fetch page one.
+  // URL changed (chip, sheet, back button) → fetch page one and the promotions.
   useEffect(() => {
-    if (data.kunci === kunci) return;
+    if (data.kunci === kunci || galatRentang) return;
     let batal = false;
-    ambilHasil(restKlien, params, pusat)
-      .then((r) => !batal && setData({ kunci, ...r }))
-      .catch((e: unknown) => !batal && setData({ kunci, hasil: [], total: 0, error: e instanceof Error ? e.message : String(e) }));
+    Promise.all([ambilHasil(restKlien, params, pusat), ambilPromosi(restKlien, params, pusat)])
+      .then(([r, promosi]) => !batal && setData({ kunci, ...r, promosi }))
+      .catch((e: unknown) => !batal && setData({ kunci, hasil: [], total: 0, promosi: [], error: e instanceof Error ? e.message : String(e) }));
     return () => {
       batal = true;
     };
-  }, [kunci, params, pusat, data.kunci]);
+  }, [kunci, params, pusat, data.kunci, galatRentang]);
 
   // Zero results → work out which single filter to relax, plus 3 nearest beyond the radius.
   useEffect(() => {
-    if (memuat || data.error || total > 0 || saran?.kunci === kunci) return;
+    if (galatRentang || memuat || data.error || total > 0 || saran?.kunci === kunci) return;
     let batal = false;
     Promise.all([saranLonggar(restKlien, params, pusat), terdekatDiLuar(restKlien, params, pusat)])
       .then(([longgar, terdekat]) => !batal && setSaran({ kunci, longgar, terdekat }))
@@ -115,7 +128,7 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
     return () => {
       batal = true;
     };
-  }, [memuat, data.error, total, saran?.kunci, kunci, params, pusat]);
+  }, [galatRentang, memuat, data.error, total, saran?.kunci, kunci, params, pusat]);
 
   // One history entry per real change from the chips, so the back button
   // walks through filter states. While the filter sheet is open every
@@ -182,6 +195,12 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
   }, []);
 
   const cobaLagi = () => setData((d) => ({ ...d, kunci: `${d.kunci}#ulang${Date.now()}`, error: undefined }));
+  const bukaFilterSheet = () => {
+    berubahDiSheet.current = false;
+    setPernahBukaFilter(true);
+    setBukaFilter(true);
+  };
+  const urutAktif = URUT.find((u) => u.nilai === (params.urut ?? "relevan")) ?? URUT[0];
 
   const fas = new Set(params.fasilitas ?? []);
   const cepat = [
@@ -220,7 +239,7 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
             type="button"
             onClick={() => setTerpilih(null)}
             aria-label="Tutup kartu"
-            className="absolute -top-3 -right-1 grid size-8 place-items-center rounded-full border border-biru-100 bg-putih text-arang-500 shadow hover:text-biru-600"
+            className="sentuh absolute -top-3 -right-1 grid size-8 place-items-center rounded-full border border-biru-100 bg-putih text-arang-500 shadow hover:text-biru-600"
           >
             <IconClose className="size-4" />
           </button>
@@ -270,11 +289,8 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
           <div className="flex items-center gap-2 px-4 pb-2">
             <button
               type="button"
-              onClick={() => {
-                berubahDiSheet.current = false;
-                setPernahBukaFilter(true);
-                setBukaFilter(true);
-              }}
+              onClick={bukaFilterSheet}
+              aria-haspopup="dialog"
               className={cn(
                 "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-small font-bold whitespace-nowrap transition-colors duration-150 ease-out",
                 jumlahFilter > 0 ? "border-biru-500 bg-biru-100 text-biru-600" : "border-arang-500/30 bg-putih text-arang-900 hover:border-biru-500",
@@ -301,16 +317,17 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
         {peta && !desktop && <div className="h-[calc(100dvh-6.5rem)] lg:hidden">{petaBlok}</div>}
 
         <div className={cn("px-4 py-3", peta && "hidden lg:block")}>
-          <div className="flex items-center justify-between gap-3 pb-3">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pb-1">
             <p className="text-small text-arang-900 tabular-nums" aria-live="polite" aria-atomic="true">
-              {data.error ? "Gagal memuat" : memuat ? "Menghitung…" : `${total} kos`}
+              {galatRentang ? "Rentang harga perlu diperbaiki" : data.error ? "Gagal memuat" : memuat ? "Menghitung…" : `${total} kos`}
             </p>
-            <label className="flex items-center gap-1 text-small text-arang-500">
-              <span className="sr-only">Urutkan</span>
+            <label className="flex items-center gap-1.5 text-small text-arang-500">
+              Urutkan
               <select
                 value={params.urut ?? "relevan"}
                 onChange={(e) => terapkan((p) => ({ ...p, urut: e.target.value as UrutCari }))}
-                className="h-9 rounded-lg border border-transparent bg-putih pr-1 text-small font-bold text-biru-600 hover:border-biru-100"
+                aria-describedby="arti-urutan"
+                className="h-11 rounded-lg border border-arang-500/30 bg-putih px-2 text-small font-bold text-biru-600 hover:border-biru-500"
               >
                 {URUT.map((u) => (
                   <option key={u.nilai} value={u.nilai}>{u.label}</option>
@@ -318,8 +335,23 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
               </select>
             </label>
           </div>
+          <p id="arti-urutan" className="pb-3 text-micro text-arang-500">{urutAktif.arti}</p>
 
-          {data.error ? (
+          {galatRentang ? (
+            <div className="flex flex-col items-start gap-3 rounded-2xl border border-merah-700/30 bg-putih p-6" role="alert">
+              <p className="text-body font-bold text-arang-900">Rentang harga tidak valid.</p>
+              <p className="text-small text-arang-900">{galatRentang.pesan}</p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="primary"
+                  onClick={() => terapkan((p) => ({ ...p, harga_min: p.harga_max, harga_max: p.harga_min }), "replace")}
+                >
+                  Tukar jadi {formatRupiah(params.harga_max ?? 0)} sampai {formatRupiah(params.harga_min ?? 0)}
+                </Button>
+                <Button variant="secondary" onClick={bukaFilterSheet}>Ubah di filter</Button>
+              </div>
+            </div>
+          ) : data.error ? (
             <div className="flex flex-col items-start gap-3 rounded-2xl border border-merah-100 bg-putih p-6">
               <p className="text-body font-bold text-arang-900">Hasil tidak bisa dimuat.</p>
               <p className="text-small text-arang-500">Koneksi ke server pencarian gagal. Cek internet kamu, lalu coba lagi.</p>
@@ -333,11 +365,26 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
             <Kosong kunci={kunci} saran={saran} params={params} sekarang={sekarangDate} />
           ) : (
             <>
-              <h2 className="sr-only">Hasil pencarian</h2>
+              {data.promosi.length > 0 && !memuat && (
+                <section aria-labelledby="promosi-judul" className="mb-5 rounded-2xl border border-dashed border-arang-500/40 bg-putih p-3">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <h2 id="promosi-judul" className="text-small font-bold text-arang-900">Promosi berbayar</h2>
+                    <p className="text-micro text-arang-500">Pemilik membayar untuk tampil di sini. Tetap sesuai filtermu; tidak mengubah urutan atau skor.</p>
+                  </div>
+                  <ul className="mt-2 grid gap-4 sm:grid-cols-2">
+                    {data.promosi.map((k) => (
+                      <li key={`promosi-${k.id}`}>
+                        <KosCard kos={k} sekarang={sekarangDate} jarak={acuanJarak(k as HasilKos)} />
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+              <h2 className="sr-only">Hasil pencarian, urut {urutAktif.label.toLowerCase()}</h2>
               <ul className={cn("grid gap-4 sm:grid-cols-2", memuat && "opacity-60")} aria-busy={memuat}>
                 {hasil.map((k, i) => (
                   <li key={k.id}>
-                    <KosCard kos={k} sekarang={sekarangDate} prioritas={i < 2} onSorot={desktop ? setDisorot : undefined} />
+                    <KosCard kos={k} sekarang={sekarangDate} prioritas={i < 2} jarak={acuanJarak(k)} onSorot={desktop ? setDisorot : undefined} />
                   </li>
                 ))}
                 {memuatLagi && Array.from({ length: 4 }, (_, i) => (

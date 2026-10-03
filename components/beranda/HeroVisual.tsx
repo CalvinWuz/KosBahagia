@@ -1,85 +1,149 @@
+import Link from "next/link";
 import { IconCheck, IconSuara } from "@/components/ui/Icon";
+import type { KosKartu } from "@/components/kos/KosCard";
+import { bacaKamar, hitungBiaya, komponenSingkat, labelTotal } from "@/lib/biaya";
+import { formatRupiah, formatRupiahRingkas, formatSkor, formatTanggal } from "@/lib/format";
+import { chipKebersihan, chipKedap, kataSelisihDb } from "@/lib/skala";
+import { MODE_DEMO } from "@/lib/demo";
 import { cn } from "@/lib/cn";
+
+/** One real listing, chosen on the server, with the survey facts the chips quote. */
+export type ContohHero = {
+  kartu: KosKartu;
+  surveyor: string | null;
+  disurveiPada: string | null;
+  dbAmbient: number | null;
+  dbTes: number | null;
+};
+
+const TIPE: Record<string, string> = { putra: "Putra", putri: "Putri", campur: "Campur" };
 
 // The hero's right-hand side: the product itself, not a metaphor. One kos
 // card the way it appears in search results, with the three things only we
 // show pinned around it: the survey stamp, the measured soundproofing, and
-// the real monthly total. Everything is drawn inline (SVG + CSS), so it
-// paints with the HTML and needs no image request.
-export function HeroVisual({ className }: { className?: string }) {
+// the real monthly total. Every number and word comes from one listing in
+// the database through the same functions the card and the detail page
+// use, so the hero can never claim 8,1 and "Kedap suara" for a kos that the
+// listing shows as 6,9 and "Berisik". The room picture is a drawn
+// illustration (inline SVG, no image request) and says so.
+export function HeroVisual({ contoh, className }: { contoh: ContohHero | null; className?: string }) {
+  if (!contoh) {
+    return (
+      <div className={cn("relative mx-auto w-full max-w-md select-none", className)} aria-hidden="true">
+        <div className="relative mx-auto w-[min(100%,22rem)] overflow-hidden rounded-3xl border border-biru-100 bg-putih shadow-2xl shadow-biru-600/25">
+          <div className="relative aspect-[4/3] w-full overflow-hidden bg-langit-100">
+            <Kamar />
+          </div>
+        </div>
+      </div>
+    );
+  }
+  const { kartu } = contoh;
+  const kamar = bacaKamar(kartu.kamar);
+  const biaya = kamar ? hitungBiaya(kamar) : null;
+  const bersih = chipKebersihan(kartu.skor_kebersihan);
+  const kedap = chipKedap(kartu.skor_kedap);
+  const selisih = contoh.dbAmbient != null && contoh.dbTes != null ? contoh.dbTes - contoh.dbAmbient : null;
+  const href = `/kos/${kartu.slug}${kartu.kamar_id ? `?kamar=${kartu.kamar_id}` : ""}`;
+
   return (
-    <div className={cn("relative mx-auto w-full max-w-md select-none", className)} aria-hidden="true">
-      {/* Backdrop: a soft block and a dot grid, the "vibrant block" note under the card. */}
-      <div className="absolute inset-x-6 top-10 bottom-0 -z-10 rounded-[2.5rem] bg-biru-500/10 [background-image:radial-gradient(var(--color-biru-500)_1px,transparent_1px)] [background-size:18px_18px] opacity-70 [mask-image:linear-gradient(to_bottom,black,transparent_95%)]" />
+    <figure className={cn("mx-auto w-full max-w-md select-none", className)}>
+      <div className="relative">
+        {/* Backdrop: a soft block and a dot grid, the "vibrant block" note under the card. */}
+        <div aria-hidden="true" className="absolute inset-x-6 top-10 bottom-0 -z-10 rounded-[2.5rem] bg-biru-500/10 [background-image:radial-gradient(var(--color-biru-500)_1px,transparent_1px)] [background-size:18px_18px] opacity-70 [mask-image:linear-gradient(to_bottom,black,transparent_95%)]" />
 
-      {/* The card */}
-      <div className="relative mx-auto w-[min(100%,22rem)] overflow-hidden rounded-3xl border border-biru-100 bg-putih shadow-2xl shadow-biru-600/25 motion-safe:animate-muncul">
-        <div className="relative aspect-[4/3] w-full overflow-hidden bg-langit-100">
-          <Kamar />
-          <div className="absolute top-3 left-3 flex gap-1.5">
-            <span className="rounded-lg bg-daun-100 px-2 py-0.5 text-small font-bold text-daun-700 tabular-nums">
-              8,1<span className="text-micro font-medium">/10</span>
+        {/* The card */}
+        <div className="relative mx-auto w-[min(100%,22rem)] overflow-hidden rounded-3xl border border-biru-100 bg-putih shadow-2xl shadow-biru-600/25 motion-safe:animate-muncul">
+          <div className="relative aspect-[4/3] w-full overflow-hidden bg-langit-100">
+            <Kamar />
+            <div className="absolute top-3 left-3 flex gap-1.5">
+              <span className={cn("rounded-lg px-2 py-0.5 text-small font-bold tabular-nums", kartu.skor != null && kartu.skor >= 8 ? "bg-daun-100 text-daun-700" : "bg-biru-100 text-biru-600")}>
+                {kartu.skor != null ? (
+                  <>
+                    {formatSkor(kartu.skor)}
+                    <span className="text-micro font-medium">/10</span>
+                  </>
+                ) : (
+                  "Belum dinilai"
+                )}
+              </span>
+              {kartu.ada_360 && <span className="rounded-full bg-putih px-2 py-0.5 text-micro font-bold text-biru-600 shadow-sm">360°</span>}
+            </div>
+            <span className="absolute right-3 bottom-3 rounded-md bg-arang-900/70 px-1.5 py-0.5 text-micro text-putih">Ilustrasi</span>
+          </div>
+          <div className="flex flex-col gap-0.5 p-4 pb-9">
+            <div className="flex items-start justify-between gap-2">
+              <Link href={href} prefetch={false} className="rounded-sm text-body leading-5 font-bold text-arang-900 hover:text-biru-600 hover:underline">
+                {kartu.nama}
+              </Link>
+              <span className="shrink-0 rounded-md bg-kertas-50 px-1.5 py-0.5 text-micro text-arang-500">{TIPE[kartu.tipe ?? ""] ?? kartu.tipe}</span>
+            </div>
+            {kartu.landmark_menit_jalan != null && kartu.landmark_nama && (
+              <p className="text-small text-arang-500">{kartu.landmark_menit_jalan} mnt jalan ke {kartu.landmark_nama.split(" (")[0]}</p>
+            )}
+            <p className="mt-1 text-price text-arang-900 tabular-nums">
+              {formatRupiah(biaya?.total ?? kartu.total_bulanan ?? 0)}
+              <span className="ml-1 text-small font-normal text-arang-500">/bln</span>
+            </p>
+            <p className="text-micro text-arang-500">
+              {biaya && biaya.estimasi ? "estimasi, " : ""}sewa {formatRupiahRingkas(kartu.harga_bulanan ?? 0)}
+              {biaya && komponenSingkat(biaya).length > 0 && ` + ${komponenSingkat(biaya).join(" + ")}`}
+              {kartu.kamar_nama ? `, kamar ${kartu.kamar_nama}` : ""}
+            </p>
+            {(bersih || kedap) && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {bersih && <span className="rounded-full bg-daun-100 px-2 py-0.5 text-micro font-bold text-daun-700">{bersih}</span>}
+                {kedap && <span className={cn("rounded-full px-2 py-0.5 text-micro font-bold", kedap.baik ? "bg-daun-100 text-daun-700" : "bg-arang-500/10 text-arang-900")}>{kedap.kata}</span>}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Proof chips, quoted from the same listing */}
+        {contoh.disurveiPada && (
+          <div className="absolute -top-4 -right-1 flex items-center gap-2 rounded-2xl border border-biru-100 bg-putih px-3 py-2 shadow-lg motion-safe:animate-muncul motion-safe:[animation-delay:220ms] sm:-right-6">
+            <span className="grid size-8 place-items-center rounded-full bg-daun-100 text-daun-700" aria-hidden="true">
+              <IconCheck className="size-4" />
             </span>
-            <span className="rounded-full bg-putih px-2 py-0.5 text-micro font-bold text-biru-600 shadow-sm">360°</span>
-          </div>
-        </div>
-        <div className="flex flex-col gap-0.5 p-4 pb-9">
-          <div className="flex items-start justify-between gap-2">
-            <p className="text-body leading-5 font-bold text-arang-900">Kost Anggrek Cakra</p>
-            <span className="shrink-0 rounded-md bg-kertas-50 px-1.5 py-0.5 text-micro text-arang-500">Putri</span>
-          </div>
-          <p className="text-small text-arang-500">12 mnt jalan ke BINUS Kampus Anggrek</p>
-          <p className="mt-1 text-price text-arang-900 tabular-nums">
-            Rp1.645.000<span className="ml-1 text-small font-normal text-arang-500">/bln</span>
-          </p>
-          <p className="text-micro text-arang-500">sewa Rp1,45 jt + listrik + air + sampah</p>
-          <div className="mt-2 flex gap-1.5">
-            <span className="rounded-full bg-daun-100 px-2 py-0.5 text-micro font-bold text-daun-700">Sangat bersih</span>
-            <span className="rounded-full bg-daun-100 px-2 py-0.5 text-micro font-bold text-daun-700">Kedap suara</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Proof chips */}
-      <div className="absolute -top-4 -right-1 flex items-center gap-2 rounded-2xl border border-biru-100 bg-putih px-3 py-2 shadow-lg motion-safe:animate-muncul motion-safe:[animation-delay:220ms] sm:-right-6">
-        <span className="grid size-8 place-items-center rounded-full bg-daun-100 text-daun-700">
-          <IconCheck className="size-4" />
-        </span>
-        <div className="leading-tight">
-          <p className="text-small font-bold text-arang-900">Disurvei 5 September</p>
-          <p className="text-micro text-arang-500">oleh Dina Anggraeni</p>
-        </div>
-      </div>
-
-      <div className="absolute top-[50%] -left-1 motion-safe:animate-muncul motion-safe:[animation-delay:340ms] sm:-left-8">
-        <div className="flex items-center gap-2 rounded-2xl border border-biru-100 bg-putih px-3 py-2 shadow-lg motion-safe:animate-melayang">
-          <span className="grid size-8 place-items-center rounded-full bg-biru-100 text-biru-600">
-            <IconSuara className="size-4" />
-          </span>
-          <div className="leading-tight">
-            <p className="text-small font-bold text-arang-900 tabular-nums">Selisih 15 dB</p>
-            <div className="mt-1 flex items-end gap-0.5" aria-hidden="true">
-              {[3, 5, 8, 6, 4, 7, 3].map((h, i) => (
-                <span key={i} className={cn("w-1 rounded-full", i < 4 ? "bg-biru-500" : "bg-biru-100")} style={{ height: `${h * 2}px` }} />
-              ))}
-              <span className="ml-1 text-micro text-arang-500">terdengar samar</span>
+            <div className="leading-tight">
+              <p className="text-small font-bold text-arang-900">Disurvei {formatTanggal(contoh.disurveiPada).replace(/ \d{4}$/, "")}</p>
+              {contoh.surveyor && <p className="text-micro text-arang-500">oleh {contoh.surveyor}</p>}
             </div>
           </div>
-        </div>
-      </div>
+        )}
 
-      <div className="absolute -bottom-6 right-3 rounded-2xl border border-biru-100 bg-putih px-3 py-2 shadow-lg motion-safe:animate-muncul motion-safe:[animation-delay:460ms] sm:-right-4">
-        <p className="text-micro font-bold text-arang-500">Total per bulan</p>
-        <p className="text-small font-bold text-arang-900">sudah semua, bukan sewa saja</p>
+        {selisih != null && (
+          <div className="absolute top-[50%] -left-1 motion-safe:animate-muncul motion-safe:[animation-delay:340ms] sm:-left-8">
+            <div className="flex items-center gap-2 rounded-2xl border border-biru-100 bg-putih px-3 py-2 shadow-lg motion-safe:animate-melayang">
+              <span className="grid size-8 place-items-center rounded-full bg-biru-100 text-biru-600" aria-hidden="true">
+                <IconSuara className="size-4" />
+              </span>
+              <div className="leading-tight">
+                <p className="text-small font-bold text-arang-900 tabular-nums">Selisih {selisih} dB</p>
+                <p className="text-micro text-arang-500">{kataSelisihDb(selisih)?.toLowerCase()} saat tes suara</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="absolute -bottom-6 right-3 rounded-2xl border border-biru-100 bg-putih px-3 py-2 shadow-lg motion-safe:animate-muncul motion-safe:[animation-delay:460ms] sm:-right-4">
+          <p className="text-micro font-bold text-arang-500">{biaya ? labelTotal(biaya) : "Total per bulan"}</p>
+          <p className="text-small font-bold text-arang-900">sudah semua biaya wajib, bukan sewa saja</p>
+        </div>
+
       </div>
-    </div>
+      <figcaption className="mt-12 text-center text-micro text-arang-500">
+        {MODE_DEMO ? "Contoh tampilan dari data demo: " : "Contoh dari listing: "}
+        <Link href={href} prefetch={false} className="font-bold text-biru-600 hover:underline">lihat {kartu.nama}</Link>
+      </figcaption>
+    </figure>
   );
 }
 
 // A flat, geometric room: window with sky, curtain, bed, desk, plant.
 function Kamar() {
   return (
-    <svg viewBox="0 0 320 240" className="absolute inset-0 h-full w-full" preserveAspectRatio="xMidYMid slice" fill="none">
+    <svg viewBox="0 0 320 240" className="absolute inset-0 h-full w-full" preserveAspectRatio="xMidYMid slice" fill="none" aria-hidden="true">
       {/* wall + floor */}
       <rect width="320" height="240" className="fill-langit-100" />
       <rect y="170" width="320" height="70" className="fill-kayu-100" />

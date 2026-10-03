@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GeoJSONSource, LngLatBounds, Map as MapLibre, NavigationControl, setWorkerUrl, type MapGeoJSONFeature, type MapMouseEvent } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { HasilKos } from "@/lib/cari/ambil";
@@ -65,6 +65,10 @@ export default function PetaHasil({ pusat, kos, terpilih, onPilih, disorot = nul
   const disorotRef = useRef(disorot);
   const onPilihRef = useRef(onPilih);
   const onGeserRef = useRef(onGeser);
+  // Tiles come from a free public server; when it is unreachable the list
+  // still works and the map says so, with a retry.
+  const [status, setStatus] = useState<"memuat" | "siap" | "gagal">("memuat");
+  const [percobaan, setPercobaan] = useState(0);
 
   useEffect(() => {
     kosRef.current = kos;
@@ -91,7 +95,12 @@ export default function PetaHasil({ pusat, kos, terpilih, onPilih, disorot = nul
       attributionControl: { compact: true },
     });
     map.addControl(new NavigationControl({ showCompass: false }), "top-right");
-    map.on("error", (e) => console.error("peta:", e.error?.message ?? e));
+    let dimuat = false;
+    const batasWaktu = window.setTimeout(() => !dimuat && setStatus("gagal"), 12_000);
+    map.on("error", (e) => {
+      console.error("peta:", e.error?.message ?? e);
+      if (!dimuat) setStatus("gagal");
+    });
 
     // The container is often still being laid out when the map mounts
     // (mobile: it appears on tap). Without this the canvas stays blank
@@ -113,6 +122,9 @@ export default function PetaHasil({ pusat, kos, terpilih, onPilih, disorot = nul
     };
 
     map.on("load", () => {
+      dimuat = true;
+      window.clearTimeout(batasWaktu);
+      setStatus("siap");
       map.addSource("kos", { type: "geojson", data: keGeoJson([], null, null), cluster: true, clusterRadius: 44, clusterMaxZoom: 16 });
       map.addLayer({
         id: "klaster",
@@ -206,8 +218,9 @@ export default function PetaHasil({ pusat, kos, terpilih, onPilih, disorot = nul
       map.remove();
       peta.current = null;
       siap.current = false;
+      window.clearTimeout(batasWaktu);
     };
-  }, [pusat.lat, pusat.lng]);
+  }, [pusat.lat, pusat.lng, percobaan]);
 
   // New results → new pins, refit.
   useEffect(() => {
@@ -228,5 +241,30 @@ export default function PetaHasil({ pusat, kos, terpilih, onPilih, disorot = nul
     (map.getSource("kos") as GeoJSONSource).setData(keGeoJson(kosRef.current, terpilih, disorot));
   }, [terpilih, disorot]);
 
-  return <div ref={wadah} className="h-full w-full bg-biru-100" role="region" aria-label="Peta hasil pencarian" />;
+  return (
+    <div className="relative h-full w-full">
+      <div ref={wadah} className="h-full w-full bg-biru-100" role="region" aria-label="Peta hasil pencarian" />
+      {status === "memuat" && (
+        <p className="pointer-events-none absolute top-3 left-3 rounded-full bg-putih/90 px-3 py-1 text-micro text-arang-900 shadow" role="status">Memuat peta…</p>
+      )}
+      {status === "gagal" && (
+        <div className="absolute inset-0 grid place-items-center bg-biru-100/90 p-6" role="alert">
+          <div className="flex max-w-xs flex-col items-center gap-3 text-center">
+            <p className="text-body font-bold text-arang-900">Peta tidak bisa dimuat.</p>
+            <p className="text-small text-arang-900">Periksa koneksi. Daftar kos tetap bisa dipakai tanpa peta.</p>
+            <button
+              type="button"
+              onClick={() => {
+                setStatus("memuat");
+                setPercobaan((n) => n + 1);
+              }}
+              className="inline-flex h-11 items-center rounded-xl border-2 border-biru-500 bg-putih px-4 text-small font-bold text-biru-600 hover:bg-biru-100"
+            >
+              Coba muat peta lagi
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

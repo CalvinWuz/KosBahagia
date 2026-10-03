@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { jsonAman } from "@/lib/seo";
+import { MODE_DEMO } from "@/lib/demo";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { KosCard } from "@/components/kos/KosCard";
@@ -68,11 +70,16 @@ export default async function HalamanArea({ params }: Params) {
         name: k.nama,
       })),
     },
-    {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      mainEntity: faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
-    },
+    // FAQ answers quote area statistics; sample data must not be published as fact.
+    ...(MODE_DEMO
+      ? []
+      : [
+          {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+          },
+        ]),
     {
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
@@ -85,7 +92,7 @@ export default async function HalamanArea({ params }: Params) {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-6 pb-16">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonAman(jsonLd) }} />
 
       <header className="flex flex-col gap-3">
         <p className="text-micro font-bold text-arang-500">{TIPE[area.tipe ?? ""] ?? "Area"}</p>

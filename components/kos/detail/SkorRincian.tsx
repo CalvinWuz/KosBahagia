@@ -1,16 +1,36 @@
 import { Accordion, AccordionItem } from "@/components/ui/Accordion";
 import { SkorBadge } from "@/components/kos/SkorBadge";
-import { BOBOT } from "@/lib/scoring";
+import { PenandaDemo } from "@/components/ui/PenandaDemo";
+import { BOBOT, cekTransparansi, KRITERIA_TRANSPARANSI } from "@/lib/scoring";
 import { kataKebersihan, kataKedap } from "@/lib/skala";
+import type { TipeKamar } from "@/lib/biaya";
 import type { Penilaian, Sekitar, SkorKos } from "@/lib/kos/detail";
 import { BelumDicatat, Blok } from "./bagian";
 import { ArtiSkala } from "./ArtiSkala";
 
 // Block 3: the number, then every component with its raw measurement.
 // The formula is the same one lib/scoring.ts documents.
-export function SkorRincian({ skor, penilaian, sekitar, nFasilitas }: { skor: SkorKos | null; penilaian: Penilaian | null; sekitar: Sekitar | null; nFasilitas: number }) {
-  const tersembunyi =
-    skor?.transparansi != null ? Math.round((1 - skor.transparansi / 5) * 35) : null;
+export function SkorRincian({
+  skor,
+  penilaian,
+  sekitar,
+  nFasilitas,
+  tipeKamar,
+  kamar,
+  sekarang,
+}: {
+  skor: SkorKos | null;
+  penilaian: Penilaian | null;
+  sekitar: Sekitar | null;
+  nFasilitas: number;
+  tipeKamar: TipeKamar[];
+  kamar: TipeKamar | null;
+  sekarang: Date;
+}) {
+  // Transparency is averaged over every room type; the evidence lists the
+  // checks for the room the renter is looking at.
+  const cek = kamar ? cekTransparansi(kamar, sekarang) : null;
+  const lolos = cek ? KRITERIA_TRANSPARANSI.filter((k) => cek[k.kunci]).length : 0;
   const komponen = [
     {
       nama: "Kebersihan",
@@ -42,7 +62,12 @@ export function SkorRincian({ skor, penilaian, sekitar, nFasilitas }: { skor: Sk
       bobot: BOBOT.transparansi,
       nilai: skor?.transparansi ?? null,
       kata: null as string | null,
-      bukti: tersembunyi != null ? [`Biaya di luar sewa sekitar ${tersembunyi}% dari total`] : [],
+      bukti: cek
+        ? [
+            `Kamar ${kamar?.nama}: ${lolos} dari 4 hal biaya jelas${tipeKamar.length > 1 ? ` (skor = rata-rata ${tipeKamar.length} tipe kamar)` : ""}`,
+            ...KRITERIA_TRANSPARANSI.map((k) => `${cek[k.kunci] ? "Ya" : "Belum"}: ${k.label.charAt(0).toLowerCase()}${k.label.slice(1)}`),
+          ]
+        : [],
     },
     {
       nama: "Fasilitas untuk harganya",
@@ -67,7 +92,8 @@ export function SkorRincian({ skor, penilaian, sekitar, nFasilitas }: { skor: Sk
   ];
 
   return (
-    <Blok id="skor" judul="Skor Bahagia" keterangan="Dihitung dari survei kami, bukan dari ulasan. Tier berbayar tidak memengaruhi angka ini.">
+    <Blok id="skor" judul="Skor Bahagia" keterangan="Dihitung dari survei kami, bukan dari ulasan. Paket berbayar tidak memengaruhi angka ini.">
+      <PenandaDemo className="-mt-1 mb-2" />
       <div className="flex flex-wrap items-center gap-3">
         <SkorBadge skor={skor?.skor ?? null} size="lg" />
         {skor?.skor == null ? (
@@ -106,7 +132,7 @@ export function SkorRincian({ skor, penilaian, sekitar, nFasilitas }: { skor: Sk
                   <div className="h-full rounded-full bg-biru-500" style={{ width: `${((k.nilai ?? 0) / 5) * 100}%` }} />
                 </div>
                 {k.bukti.length > 0 && (
-                  <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-micro text-arang-500">
+                  <ul className={k.nama === "Transparansi biaya" ? "mt-1 flex flex-col gap-0.5 text-micro text-arang-500" : "mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-micro text-arang-500"}>
                     {k.bukti.map((b) => (
                       <li key={b}>{b}</li>
                     ))}

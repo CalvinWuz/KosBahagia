@@ -12,6 +12,7 @@ export function DaftarFasilitas({ semua, dimiliki, kamar }: { semua: Fasilitas[]
   // Room-type specifics override the kos-level flag.
   const ada = (f: Fasilitas) => {
     if (f.slug === "ac" && kamar) return kamar.boleh_ac;
+    if (f.slug === "kamar-mandi-dalam" && kamar && kamar.kamar_mandi_dalam != null) return kamar.kamar_mandi_dalam;
     if (f.slug === "parkir-motor" && kamar) return kamar.parkir_motor;
     if (f.slug === "parkir-mobil" && kamar) return kamar.parkir_mobil;
     return set.has(f.slug);
