@@ -199,9 +199,11 @@ panduan, harga di kartu, dan baris label–nilai melebar saat teks 200%; tombol 
 
 ## 8. Urutan penerapan (dikerjakan Calvin)
 
-Frontend baru memanggil `cari_kos_v4` dan `kos_promosi_v2`. **Migrasi harus lebih dulu**; kalau frontend ter-deploy
-sebelum migrasi, `/cari` menampilkan "Hasil tidak bisa dimuat". Migrasinya hanya menambah fungsi, jadi frontend yang
-sedang live tetap jalan setelah migrasi diterapkan.
+Frontend baru memanggil `cari_kos_v4` dan `kos_promosi_v2`, termasuk saat build (halaman `/area/[slug]` dirender
+statis). **Migrasi harus lebih dulu**: kalau push terjadi sebelum migrasi, build Vercel gagal di prerender `/area/…`
+("Could not find the function public.cari_kos_v4"), dan Production tetap memakai deploy sebelumnya sampai di-redeploy.
+Ini yang terjadi pada commit `1eee9ae` (7 Oktober 2026). Migrasinya hanya menambah fungsi, jadi frontend yang sedang
+live tetap jalan setelah migrasi diterapkan.
 
 1. Review perubahan di lokal (`npm run dev`, Supabase lokal sudah berisi migrasi baru).
 2. Terapkan migrasi ke Supabase cloud (`db push` membaca file migrasi lokal, tidak perlu commit dulu):
