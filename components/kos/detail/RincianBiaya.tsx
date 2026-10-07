@@ -2,7 +2,7 @@
 
 import { Accordion, AccordionItem } from "@/components/ui/Accordion";
 import { formatRupiah, formatTanggal } from "@/lib/format";
-import { hitungBiaya, hitungUangMasuk, labelTotal, type ItemBiaya, type SifatBiaya, type TipeKamar } from "@/lib/biaya";
+import { hitungBiaya, hitungUangMasuk, labelTotal, teksKomponen, type ItemBiaya, type SifatBiaya, type TipeKamar } from "@/lib/biaya";
 import { Baris, BelumDicatat, Blok } from "./bagian";
 import { PilihKamar } from "./PilihKamar";
 
@@ -76,30 +76,31 @@ export function RincianBiaya({
       <PilihKamar tipeKamar={tipeKamar} terpilihId={k.id} onPilih={onPilih} dikonfirmasiPada={dikonfirmasiPada} sekarang={sekarang} className="mb-4" />
 
       <p className="text-small font-bold text-arang-500">{labelTotal(biaya)}</p>
-      <p className="text-price text-arang-900 tabular-nums">
+      <p className="text-price text-arang-900 tabular-nums wrap-anywhere">
         {formatRupiah(biaya.total)}
         <span className="ml-1 text-small font-normal text-arang-500">/bulan</span>
       </p>
+      <p className="text-small text-arang-500">{teksKomponen(biaya)}.</p>
       {!biaya.lengkap && (
         <p className="mt-1 rounded-xl bg-merah-100 px-3 py-2 text-small text-merah-700">
           Belum termasuk {biaya.belumDiketahui.join(" dan ").toLowerCase()}: nominalnya belum diketahui, jadi total sebenarnya lebih besar dari angka ini. Tanyakan ke pemilik sebelum memutuskan.
         </p>
       )}
       {biaya.estimasi && biaya.lengkap && (
-        <p className="mt-1 text-small text-arang-500">Listrik dibayar sesuai pemakaian; angkanya estimasi surveyor untuk pemakaian normal.</p>
+        <p className="mt-1 text-small text-arang-500">Listrik dibayar sesuai pemakaian; angkanya estimasi surveyor untuk pemakaian normal, bukan tarif tetap atau jumlah yang dijamin.</p>
       )}
       {k.harga_dikonfirmasi_pada && <p className="mt-1 text-micro text-arang-500">Harga dicek {formatTanggal(k.harga_dikonfirmasi_pada)}.</p>}
 
       <Accordion className="mt-3">
-        <AccordionItem title="Apa saja yang masuk hitungan" defaultOpen>
+        <AccordionItem id="rincian-biaya" bukaUntuk={["biaya"]} title="Lihat rincian biaya bulanan" ringkasan={`${biaya.bulanan.length} komponen, termasuk yang sudah masuk sewa`}>
           <dl className="divide-y divide-biru-100">
             {biaya.bulanan.map((item) => (
-              <div key={item.nama} className="flex items-start justify-between gap-4 py-2">
+              <div key={item.nama} className="flex flex-wrap items-start justify-between gap-x-4 py-2">
                 <dt className="text-small text-arang-500"><LabelItem item={item} /></dt>
                 <dd className="text-right text-small text-arang-900"><Nilai item={item} /></dd>
               </div>
             ))}
-            <div className="flex items-start justify-between gap-4 py-2">
+            <div className="flex flex-wrap items-start justify-between gap-x-4 py-2">
               <dt className="text-small font-bold text-arang-900">{labelTotal(biaya)}</dt>
               <dd className="text-small font-bold text-arang-900 tabular-nums">{formatRupiah(biaya.total)}</dd>
             </div>
@@ -109,7 +110,11 @@ export function RincianBiaya({
           </p>
         </AccordionItem>
 
-        <AccordionItem title="Uang yang perlu disiapkan untuk masuk" defaultOpen>
+        <AccordionItem
+          id="uang-masuk"
+          title="Lihat uang yang perlu disiapkan untuk masuk"
+          ringkasan={`${masuk.lengkap ? "" : "Paling sedikit "}${formatRupiah(masuk.total)}: ${masuk.bulanDimuka ? `${masuk.bulanDimuka} bulan di muka` : "bulan di muka belum diketahui"}${masuk.deposit > 0 ? " + deposit" : ""}${masuk.sekali.length ? " + biaya sekali bayar" : ""}`}
+        >
           <dl className="divide-y divide-biru-100">
             <Baris label={masuk.bulanDimuka == null ? "Bayar di muka (bulan belum diketahui, dihitung 1 bulan)" : `Bayar di muka ${masuk.bulanDimuka} bulan`}>
               <span className="tabular-nums">
@@ -132,7 +137,7 @@ export function RincianBiaya({
                 {s.jumlah == null ? <span className="font-bold text-merah-700">Belum diketahui</span> : <span className="tabular-nums">{formatRupiah(s.jumlah)}</span>}
               </Baris>
             ))}
-            <div className="flex items-start justify-between gap-4 py-2">
+            <div className="flex flex-wrap items-start justify-between gap-x-4 py-2">
               <dt className="text-small font-bold text-arang-900">
                 {masuk.lengkap ? (masuk.estimasi ? "Estimasi uang masuk" : "Total uang masuk") : "Uang masuk, paling sedikit"}
               </dt>
@@ -148,10 +153,10 @@ export function RincianBiaya({
         </AccordionItem>
 
         {biaya.opsional.length > 0 && (
-          <AccordionItem title="Biaya kalau dipakai (tidak masuk total)">
+          <AccordionItem id="biaya-opsional" title="Lihat biaya kalau dipakai (tidak masuk total)" ringkasan={biaya.opsional.map((o) => o.nama).join(", ")}>
             <dl className="divide-y divide-biru-100">
               {biaya.opsional.map((item) => (
-                <div key={item.nama} className="flex items-start justify-between gap-4 py-2">
+                <div key={item.nama} className="flex flex-wrap items-start justify-between gap-x-4 py-2">
                   <dt className="text-small text-arang-500">{item.nama}</dt>
                   <dd className="text-right text-small text-arang-900"><Nilai item={item} /></dd>
                 </div>

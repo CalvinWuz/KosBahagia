@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { chipKebersihan, chipKedap, kataKebersihan, kataKedap, kataSelisihDb } from "./skala.ts";
+import { artiKedap, chipKebersihan, chipKedap, kataKebersihan, kataKedap, kataSelisihDb } from "./skala.ts";
 
 describe("kataKebersihan", () => {
   it("maps the rubric thresholds", () => {
@@ -46,5 +46,24 @@ describe("kataSelisihDb", () => {
     assert.equal(kataSelisihDb(20), "Terdengar samar");
     assert.equal(kataSelisihDb(8), "Hampir tidak terdengar");
     assert.equal(kataSelisihDb(null), null);
+  });
+});
+
+describe("artiKedap", () => {
+  it("says what the number means, higher = holds back more sound", () => {
+    assert.equal(artiKedap(5), "suara kamar sebelah nyaris tidak terdengar");
+    assert.equal(artiKedap(4), "suara kamar sebelah nyaris tidak terdengar");
+    assert.equal(artiKedap(3), "suara kamar sebelah terdengar samar");
+    assert.equal(artiKedap(1), "obrolan kamar sebelah ikut terdengar");
+    assert.equal(artiKedap(null), null);
+  });
+  it("agrees with the kedap word on every step", () => {
+    for (const n of [1, 2, 2.5, 3, 3.5, 4, 4.5, 5]) {
+      const kata = kataKedap(n);
+      const arti = artiKedap(n) ?? "";
+      if (kata === "Kedap suara") assert.match(arti, /nyaris tidak/);
+      if (kata === "Cukup kedap") assert.match(arti, /samar/);
+      if (kata === "Berisik") assert.match(arti, /ikut terdengar/);
+    }
   });
 });

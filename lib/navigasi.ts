@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { usePathname, useRouter } from "next/navigation";
 // Side effect: start tracking the last focused element outside dialogs from
 // the first page load (see lib/fokus.ts). PelacakRiwayat keeps this module in
@@ -40,6 +40,41 @@ export function PelacakRiwayat() {
     }
   }, [pathname]);
   return null;
+}
+
+// The last /cari URL in this tab, so "Cari kos" in the menu returns to the
+// same place, filters and view instead of starting over.
+const KUNCI_CARI = "kb:cari-terakhir";
+const pendengarCari = new Set<() => void>();
+
+export function simpanCariTerakhir(href: string) {
+  try {
+    if (sessionStorage.getItem(KUNCI_CARI) === href) return;
+    sessionStorage.setItem(KUNCI_CARI, href);
+  } catch {
+    // Storage blocked: the menu falls back to /cari.
+  }
+  pendengarCari.forEach((fn) => fn());
+}
+
+function bacaCariTerakhir(): string {
+  try {
+    const href = sessionStorage.getItem(KUNCI_CARI);
+    return href && href.startsWith("/cari") ? href : "/cari";
+  } catch {
+    return "/cari";
+  }
+}
+
+function langgananCari(fn: () => void) {
+  pendengarCari.add(fn);
+  return () => {
+    pendengarCari.delete(fn);
+  };
+}
+
+export function useHrefCariTerakhir(): string {
+  return useSyncExternalStore(langgananCari, bacaCariTerakhir, () => "/cari");
 }
 
 type NavigasiApi = {

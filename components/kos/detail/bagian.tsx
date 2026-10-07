@@ -21,7 +21,7 @@ export function BelumDicatat({ className }: { className?: string }) {
 /** Definition row: label left, value right. */
 export function Baris({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex items-start justify-between gap-4 py-2">
+    <div className="flex flex-wrap items-start justify-between gap-x-4 py-2">
       <dt className="text-small text-arang-500">{label}</dt>
       <dd className="text-right text-small text-arang-900">{children ?? <BelumDicatat />}</dd>
     </div>

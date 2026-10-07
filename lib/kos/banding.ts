@@ -25,8 +25,8 @@ export type KosBanding = {
   /** The room being compared; null only when asalKamar is "hilang". */
   kamar: TipeKamar | null;
   asalKamar: AsalKamar;
-  /** Room-level when recorded, else the kos facility. */
-  kmDalam: boolean;
+  /** From the compared room type; null = belum dicatat (never borrowed from the kos record). */
+  kmDalam: boolean | null;
   aturan: Aturan | null;
   /** For the per-column contact button. */
   whatsapp: string | null;
@@ -45,9 +45,8 @@ export async function ambilBanding(db: Klien, kunci: KunciBanding[]): Promise<Ko
   const kosIds = [...new Set(semua.map((k) => k.id as string))];
   if (kosIds.length === 0) return [];
 
-  const [kamarRes, fasRes, aturanRes, kosRes] = await Promise.all([
+  const [kamarRes, aturanRes, kosRes] = await Promise.all([
     db.from("tipe_kamar").select("*").in("kos_id", kosIds).order("total_bulanan"),
-    db.from("kos_fasilitas").select("kos_id, fasilitas!inner(slug)").in("kos_id", kosIds).eq("fasilitas.slug", "kamar-mandi-dalam"),
     db.from("kos_aturan").select("kos_id, jam_malam, pasangan, tamu, lawan_jenis").in("kos_id", kosIds),
     db.from("kos").select("id, whatsapp").in("id", kosIds),
   ]);
@@ -61,14 +60,13 @@ export async function ambilBanding(db: Klien, kunci: KunciBanding[]): Promise<Ko
     const dipilih = k.kamar ? semuaKamar.find((t) => t.id === k.kamar) ?? null : null;
     const asalKamar: AsalKamar = k.kamar ? (dipilih ? "dipilih" : "hilang") : "otomatis";
     const kamar = asalKamar === "otomatis" ? kamarAcuan(semuaKamar) : dipilih;
-    const kmKos = (fasRes.data ?? []).some((f) => f.kos_id === kartu.id);
     return [{
       kunci: { kos: kartu.slug ?? k.kos, kamar: k.kamar },
       kartu,
       semuaKamar,
       kamar,
       asalKamar,
-      kmDalam: kamar?.kamar_mandi_dalam ?? kmKos,
+      kmDalam: kamar?.kamar_mandi_dalam ?? null,
       aturan: (aturanRes.data ?? []).find((a) => a.kos_id === kartu.id) ?? null,
       whatsapp: (kosRes.data ?? []).find((x) => x.id === kartu.id)?.whatsapp ?? null,
     }];

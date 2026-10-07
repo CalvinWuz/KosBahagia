@@ -57,7 +57,7 @@ export function DaftarSimpanan({ dariTautan = [] }: { dariTautan?: string[] }) {
     return (
       <div className="flex flex-col items-start gap-3 rounded-2xl border border-biru-100 bg-putih p-6">
         <p className="text-h2 text-arang-900">Belum ada kos tersimpan.</p>
-        <p className="text-small text-arang-500">Tekan ikon hati di kartu kos mana pun. Simpanan tersimpan di perangkat ini saja, tanpa perlu akun, dan tidak dikirim ke server kami.</p>
+        <p className="text-small text-arang-500">Tekan tombol <b className="text-arang-900">Simpan</b> di kartu atau halaman kos mana pun; tombolnya berubah menjadi <b className="text-arang-900">Tersimpan</b>. Simpanan tersimpan di perangkat ini saja, tanpa perlu akun, dan tidak dikirim ke server kami.</p>
         <div className="flex flex-wrap gap-3">
           <Link href="/#preset" className={buttonClasses({ variant: "primary" })}>Mulai dari preset</Link>
           <Link href="/cari" className={buttonClasses({ variant: "secondary" })}>Cari kos</Link>

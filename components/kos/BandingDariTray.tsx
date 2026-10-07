@@ -4,13 +4,16 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { buttonClasses } from "@/components/ui/Button";
-import { useBanding } from "@/lib/simpan";
+import { useBanding, useSimpanan } from "@/lib/simpan";
+import { useHrefCariTerakhir } from "@/lib/navigasi";
 import { hrefBanding } from "@/lib/kos/kunci-banding";
 
 // /banding with no ?kos= — fill the URL from the tray on this device (kos and
 // room type) so the page becomes shareable, or explain how to start.
 export function BandingDariTray() {
   const tray = useBanding();
+  const simpanan = useSimpanan();
+  const hrefCari = useHrefCariTerakhir();
   const router = useRouter();
   const href = hrefBanding(tray.map((b) => ({ kos: b.slug || b.id, kamar: b.kamarId })));
   useEffect(() => {
@@ -21,8 +24,18 @@ export function BandingDariTray() {
   return (
     <div className="flex flex-col items-start gap-3 rounded-2xl border border-biru-100 bg-putih p-6">
       <p className="text-h2 text-arang-900">Belum ada kos yang dibandingkan.</p>
-      <p className="text-small text-arang-500">Tekan ikon panah bolak-balik di kartu kos atau di halaman kos, sampai tiga pilihan. Tipe kamar yang sedang kamu lihat ikut tersimpan. Tidak perlu akun; daftar ini tersimpan di perangkat ini.</p>
-      <Link href="/cari" className={buttonClasses({ variant: "primary" })}>Cari kos</Link>
+      <ol className="flex list-decimal flex-col gap-1 pl-5 text-small text-arang-900">
+        <li>Buka hasil pencarian atau halaman kos.</li>
+        <li>Tekan tombol <b>Bandingkan</b> di kos yang kamu minati. Tombolnya berubah menjadi <b>Dalam banding</b>.</li>
+        <li>Pilih dua sampai tiga kos, lalu tekan <b>Bandingkan</b> di panel bawah atau buka halaman ini lagi.</li>
+      </ol>
+      <p className="text-small text-arang-500">Tipe kamar yang sedang kamu lihat ikut dibandingkan. Tidak perlu akun; daftarnya tersimpan di perangkat ini.</p>
+      <div className="flex flex-wrap gap-3">
+        <Link href={hrefCari} className={buttonClasses({ variant: "primary" })}>Cari kos</Link>
+        {simpanan.length > 0 && (
+          <Link href="/disimpan" className={buttonClasses({ variant: "secondary", bungkus: true })}>Pilih dari simpanan ({simpanan.length})</Link>
+        )}
+      </div>
     </div>
   );
 }

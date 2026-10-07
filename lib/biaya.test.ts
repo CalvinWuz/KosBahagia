@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { hitungBiaya, hitungUangMasuk, komponenSingkat, labelTotal, type KamarUangMasuk } from "./biaya.ts";
+import { hitungBiaya, hitungUangMasuk, komponenSingkat, labelTotal, teksKomponen, type KamarUangMasuk } from "./biaya.ts";
 
 const dasar: KamarUangMasuk = {
   harga_bulanan: 1_250_000,
@@ -132,5 +132,21 @@ describe("hitungUangMasuk", () => {
   it("an estimated monthly total makes the move-in sum an estimate", () => {
     const u = hitungUangMasuk({ ...dasar, model_listrik: "token", estimasi_listrik: 150_000 });
     assert.equal(u.estimasi, true);
+  });
+});
+
+describe("teksKomponen", () => {
+  it("names what the total is made of and what is already in the rent", () => {
+    assert.equal(teksKomponen(hitungBiaya(dasar)), "Sewa + iuran keamanan; listrik dan air termasuk sewa");
+  });
+  it("marks usage-based electricity as an estimate and keeps acronyms", () => {
+    const b = hitungBiaya({ ...dasar, model_listrik: "token", estimasi_listrik: 150_000, biaya_air: 25_000, boleh_ac: true, biaya_ac: 100_000 });
+    assert.equal(teksKomponen(b, { sewa: "sewa Rp1,25 jt" }), "sewa Rp1,25 jt + listrik (estimasi) + air + AC + iuran keamanan");
+    assert.equal(teksKomponen(hitungBiaya(dasar), { termasuk: false }), "Sewa + iuran keamanan");
+  });
+  it("never lists an unknown amount as part of the total", () => {
+    const b = hitungBiaya({ ...dasar, model_listrik: "meteran", estimasi_listrik: null });
+    assert.equal(b.lengkap, false);
+    assert.doesNotMatch(teksKomponen(b), /listrik/);
   });
 });

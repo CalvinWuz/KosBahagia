@@ -14,9 +14,13 @@ import { ambilHasil, ambilPromosi, type HasilKos, type KosPromosi } from "@/lib/
 import { formatRupiah } from "@/lib/format";
 import { saranLonggar, terdekatDiLuar, type SaranLonggar, type Terdekat } from "@/lib/cari/longgar";
 import { tentukanPusat, type AreaPublik } from "@/lib/cari/pusat";
-import { lepasLapisAktif, useKembali } from "@/lib/navigasi";
+import { lepasLapisAktif, simpanCariTerakhir, useKembali } from "@/lib/navigasi";
+import { BantuanJarak } from "@/components/kos/BantuanJarak";
+import { TombolMenu } from "@/components/layout/Navigasi";
 import { cn } from "@/lib/cn";
-import type { FasilitasFilter } from "./FilterSheet";
+import { namaFasilitas, type FasilitasFilter } from "@/lib/cari/fasilitas";
+import { FilterAktif } from "./FilterAktif";
+import { PetunjukPanduan } from "@/components/panduan/PanduanSingkat";
 import type { AreaPeta } from "./PetaHasil";
 import type { AreaRingkas, PilihanCari } from "./saran";
 
@@ -86,7 +90,8 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
   const [geserState, setGeserState] = useState<{ kunci: string; area: AreaPeta } | null>(null);
   const geser = geserState?.kunci === kunciPusat ? geserState.area : null;
   const setGeser = useCallback((a: AreaPeta | null) => setGeserState(a ? { kunci: kunciPusat, area: a } : null), [kunciPusat]);
-  const [saran, setSaran] = useState<{ kunci: string; longgar: SaranLonggar | null; terdekat: Terdekat } | null>(null);
+  const [saran, setSaran] = useState<{ kunci: string; longgar: SaranLonggar[]; terdekat: Terdekat } | null>(null);
+  const nama = useMemo(() => namaFasilitas(fasilitas), [fasilitas]);
 
   const peta = params.tampil === "peta";
   // A minimum above the maximum is an input error: say so, do not search.
@@ -94,10 +99,9 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
   const memuat = !galatRentang && data.kunci !== kunci;
   // Distances on cards point at the campus or station the renter picked.
   const areaPusat = pusat.slug ? areas.find((a) => a.slug === pusat.slug) : undefined;
+  const jarakGarisLurus = (areaPusat && (areaPusat.tipe === "kampus" || areaPusat.tipe === "stasiun")) || (params.lat != null && params.lng != null);
   const acuanJarak = (k: HasilKos): AcuanJarak | undefined =>
-    (areaPusat && (areaPusat.tipe === "kampus" || areaPusat.tipe === "stasiun")) || (params.lat != null && params.lng != null)
-      ? { nama: areaPusat?.nama ?? "titik di peta", meter: k.jarak_m }
-      : undefined;
+    jarakGarisLurus ? { nama: areaPusat?.nama ?? "titik di peta", meter: k.jarak_m } : undefined;
   const { hasil, total } = data;
   const jumlahFilter = jumlahFilterAktif(params);
   const adaLagi = hasil.length < total;
@@ -105,6 +109,11 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
     () => areas.filter((a) => a.slug && a.nama).map((a) => ({ slug: a.slug as string, nama: a.nama as string, tipe: a.tipe ?? "" })),
     [areas],
   );
+
+  // "Cari kos" in the menu comes back to exactly this search.
+  useEffect(() => {
+    simpanCariTerakhir(hrefCari({ ...params, hal: undefined }));
+  }, [params]);
 
   // URL changed (chip, sheet, back button) → fetch page one and the promotions.
   useEffect(() => {
@@ -122,13 +131,13 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
   useEffect(() => {
     if (galatRentang || memuat || data.error || total > 0 || saran?.kunci === kunci) return;
     let batal = false;
-    Promise.all([saranLonggar(restKlien, params, pusat), terdekatDiLuar(restKlien, params, pusat)])
+    Promise.all([saranLonggar(restKlien, params, pusat, nama), terdekatDiLuar(restKlien, params, pusat)])
       .then(([longgar, terdekat]) => !batal && setSaran({ kunci, longgar, terdekat }))
-      .catch(() => !batal && setSaran({ kunci, longgar: null, terdekat: { hasil: [], tanpaFilter: true } }));
+      .catch(() => !batal && setSaran({ kunci, longgar: [], terdekat: { hasil: [], tanpaFilter: true } }));
     return () => {
       batal = true;
     };
-  }, [galatRentang, memuat, data.error, total, saran?.kunci, kunci, params, pusat]);
+  }, [galatRentang, memuat, data.error, total, saran?.kunci, kunci, params, pusat, nama]);
 
   // One history entry per real change from the chips, so the back button
   // walks through filter states. While the filter sheet is open every
@@ -253,7 +262,8 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
       <div className="min-w-0">
         {/* Sticky top: back · area (tap to change) · map toggle / filter + chips */}
         <div className="sticky top-0 z-30 border-b border-biru-100 bg-putih lg:top-16">
-          <div className="flex h-14 items-center gap-1 px-2 sm:px-4">
+          {/* Wraps instead of overflowing when text is enlarged; one row otherwise. */}
+          <div className="flex min-h-14 flex-wrap items-center gap-1 px-2 py-1 sm:px-4">
             <button
               type="button"
               onClick={kembali}
@@ -285,6 +295,7 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
               {peta ? <IconDaftar className="size-4" /> : <IconPeta className="size-4" />}
               {peta ? "Daftar" : "Peta"}
             </button>
+            <TombolMenu className="lg:hidden" />
           </div>
           <div className="flex items-center gap-2 px-4 pb-2">
             <button
@@ -316,7 +327,9 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
         {/* Mobile: map replaces the list under the same header */}
         {peta && !desktop && <div className="h-[calc(100dvh-6.5rem)] lg:hidden">{petaBlok}</div>}
 
-        <div className={cn("px-4 py-3", peta && "hidden lg:block")}>
+        <div id="hasil-pencarian" tabIndex={-1} className={cn("px-4 py-3 focus:outline-none", peta && "hidden lg:block")}>
+          <PetunjukPanduan fokusKe="hasil-pencarian" />
+          <FilterAktif params={params} namaFasilitas={nama} terapkan={terapkan} className="pb-3" />
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pb-1">
             <p className="text-small text-arang-900 tabular-nums" aria-live="polite" aria-atomic="true">
               {galatRentang ? "Rentang harga perlu diperbaiki" : data.error ? "Gagal memuat" : memuat ? "Menghitung…" : `${total} kos`}
@@ -335,7 +348,11 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
               </select>
             </label>
           </div>
-          <p id="arti-urutan" className="pb-3 text-micro text-arang-500">{urutAktif.arti}</p>
+          <p id="arti-urutan" className="text-micro text-arang-500">{urutAktif.arti}</p>
+          <div className="flex flex-wrap items-center gap-x-2 pt-1 pb-3 text-micro text-arang-500">
+            {jarakGarisLurus ? `Jarak: garis lurus ke ${areaPusat?.nama ?? "titik di peta"}.` : "Menit jalan kaki: dicatat surveyor."}
+            <BantuanJarak className="text-micro" />
+          </div>
 
           {galatRentang ? (
             <div className="flex flex-col items-start gap-3 rounded-2xl border border-merah-700/30 bg-putih p-6" role="alert">
@@ -344,6 +361,7 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
               <div className="flex flex-wrap gap-2">
                 <Button
                   variant="primary"
+                  bungkus
                   onClick={() => terapkan((p) => ({ ...p, harga_min: p.harga_max, harga_max: p.harga_min }), "replace")}
                 >
                   Tukar jadi {formatRupiah(params.harga_max ?? 0)} sampai {formatRupiah(params.harga_min ?? 0)}
@@ -439,7 +457,8 @@ export function DaftarSkeleton() {
   );
 }
 
-// Never a dead end: relax the most expensive filter, or show what is nearby.
+// Never a dead end: every one-step relaxation that brings results back, each
+// with its live count (nothing is dropped silently), or what is nearby.
 function Kosong({
   kunci,
   saran,
@@ -447,25 +466,38 @@ function Kosong({
   sekarang,
 }: {
   kunci: string;
-  saran: { kunci: string; longgar: SaranLonggar | null; terdekat: Terdekat } | null;
+  saran: { kunci: string; longgar: SaranLonggar[]; terdekat: Terdekat } | null;
   params: CariParams;
   sekarang: Date;
 }) {
   const siap = saran?.kunci === kunci;
+  const longgar = siap ? (saran?.longgar ?? []) : [];
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col items-start gap-3 rounded-2xl border border-biru-100 bg-putih p-6">
         <p className="text-h2 text-arang-900">Nggak ada yang pas.</p>
-        {siap && saran?.longgar ? (
+        {!siap ? (
+          <p className="text-small text-arang-500" role="status">Mencari filter yang bisa dilonggarkan…</p>
+        ) : longgar.length > 0 ? (
           <>
-            <p className="text-small text-arang-500">Satu perubahan ini paling banyak membuka pilihan:</p>
-            <Link href={hrefCari(saran.longgar.params)} className={buttonClasses({ variant: "primary" })}>
-              {saran.longgar.label} ({saran.longgar.jumlah} kos)
+            <p className="text-small text-arang-500">Ubah satu hal ini supaya ada pilihan. Filter lain tetap seperti sekarang.</p>
+            <ul className="flex w-full flex-col gap-2 sm:w-auto">
+              {longgar.map((l, i) => (
+                <li key={l.label}>
+                  <Link href={hrefCari({ ...l.params, hal: 1 })} className={buttonClasses({ variant: i === 0 ? "primary" : "secondary", bungkus: true, className: "w-full justify-between sm:w-auto" })}>
+                    {l.label}
+                    <span className="shrink-0 font-medium whitespace-nowrap tabular-nums">{l.jumlah} kos</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <Link href={hrefCari(tanpaFilter(params))} className="text-small font-bold text-biru-600 hover:underline">
+              Hapus semua filter
             </Link>
           </>
         ) : (
           <>
-            <p className="text-small text-arang-500">{siap ? "Filter mana pun yang dilonggarkan belum cukup. Mulai dari awal:" : "Coba longgarkan filter."}</p>
+            <p className="text-small text-arang-500">Melonggarkan satu filter saja belum cukup. Mulai dari awal tanpa filter:</p>
             <Link href={hrefCari(tanpaFilter(params))} className={buttonClasses({ variant: "primary" })}>
               Hapus semua filter
             </Link>

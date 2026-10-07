@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Accordion, AccordionItem } from "@/components/ui/Accordion";
 import type { Penilaian } from "@/lib/kos/detail";
 import { PenandaDemo } from "@/components/ui/PenandaDemo";
 import { formatTanggal } from "@/lib/format";
@@ -30,7 +31,10 @@ export function BuktiKebersihan({ penilaian, disurveiPada }: { penilaian: Penila
   const rata = skorKebersihanRata(p);
   return (
     <Blok id="kebersihan" judul="Kebersihan & kedap suara" keterangan={`Hasil ukur di lokasi${disurveiPada ? ` saat survei ${formatTanggal(disurveiPada)}` : ""}, dengan rubrik tetap.`}>
-      <p className="-mt-1 mb-3 flex flex-wrap items-center gap-2 text-small"><ArtiSkala /><PenandaDemo /></p>
+      <p className="-mt-1 mb-3 flex flex-wrap items-center gap-2 text-small">
+        <ArtiSkala disurveiPada={disurveiPada} kamarDiukur={p.kamar_diukur} />
+        <PenandaDemo />
+      </p>
       <div className="grid gap-6 sm:grid-cols-2">
         <div className="flex flex-col gap-3">
           <h3 className="text-small font-bold text-arang-900">
@@ -39,14 +43,20 @@ export function BuktiKebersihan({ penilaian, disurveiPada }: { penilaian: Penila
           <Skala nilai={p.skor_kamar_mandi} label="Kamar mandi" />
           <Skala nilai={p.skor_dapur} label="Dapur bersama" />
           <Skala nilai={p.skor_koridor} label="Koridor" />
-          <dl className="divide-y divide-biru-100 border-t border-biru-100">
-            <Baris label="Yang membersihkan">{p.pembersih ? (PEMBERSIH[p.pembersih] ?? p.pembersih) : null}</Baris>
-            <Baris label="Frekuensi bersih-bersih">{p.frekuensi_bersih}</Baris>
-            <Baris label="Sampah diangkut">{p.frekuensi_sampah}</Baris>
-          </dl>
+          <Accordion>
+            <AccordionItem title="Lihat cara kos ini dibersihkan" ringkasan={p.pembersih ? (PEMBERSIH[p.pembersih] ?? p.pembersih) : "Pembersih, frekuensi, sampah"}>
+              <dl className="divide-y divide-biru-100">
+                <Baris label="Yang membersihkan">{p.pembersih ? (PEMBERSIH[p.pembersih] ?? p.pembersih) : null}</Baris>
+                <Baris label="Frekuensi bersih-bersih">{p.frekuensi_bersih}</Baris>
+                <Baris label="Sampah diangkut">{p.frekuensi_sampah}</Baris>
+              </dl>
+            </AccordionItem>
+          </Accordion>
         </div>
         <div className="flex flex-col gap-3">
-          <h3 className="text-small font-bold text-arang-900">Kedap suara</h3>
+          <h3 className="text-small font-bold text-arang-900">
+            Kedap suara<span className="font-medium text-arang-500">: makin tinggi, makin sedikit suara tetangga yang terdengar</span>
+          </h3>
           <Skala nilai={p.skor_kedap} label="Kedap suara" kata={kataKedap(p.skor_kedap)} />
           {p.db_ambient != null && p.db_tes != null ? (
             <div className="rounded-xl bg-kertas-50 p-3">
@@ -73,10 +83,16 @@ export function BuktiKebersihan({ penilaian, disurveiPada }: { penilaian: Penila
           )}
           <dl className="divide-y divide-biru-100 border-t border-biru-100">
             <Baris label="Diukur di">{p.kamar_diukur}</Baris>
-            <Baris label="Material tembok">{p.material_tembok}</Baris>
-            <Baris label="Menghadap jalan raya">{p.hadap_jalan_raya == null ? null : p.hadap_jalan_raya ? "Ya" : "Tidak"}</Baris>
-            <Baris label="Sumber bising">{p.sumber_bising.length ? p.sumber_bising.join(", ") : "Tidak ada yang menonjol"}</Baris>
           </dl>
+          <Accordion>
+            <AccordionItem title="Lihat detail tembok dan sumber bising" ringkasan={p.material_tembok ? `Tembok ${p.material_tembok}` : "Tembok, jalan raya, sumber bising"}>
+              <dl className="divide-y divide-biru-100">
+                <Baris label="Material tembok">{p.material_tembok}</Baris>
+                <Baris label="Menghadap jalan raya">{p.hadap_jalan_raya == null ? null : p.hadap_jalan_raya ? "Ya" : "Tidak"}</Baris>
+                <Baris label="Sumber bising">{p.sumber_bising.length ? p.sumber_bising.join(", ") : "Tidak ada yang menonjol"}</Baris>
+              </dl>
+            </AccordionItem>
+          </Accordion>
           <p className="text-micro text-arang-500">
             Satu kali tes di satu kamar pada jam survei. Kamar lain, lantai lain, atau jam ramai bisa berbeda; angka ini bukan pengukuran akustik laboratorium.{" "}
             <Link href="/cara-kami-menilai#batas" className="font-bold text-biru-600 hover:underline">Batas pengukuran</Link>

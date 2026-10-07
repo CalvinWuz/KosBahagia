@@ -64,7 +64,7 @@ export function TrayBanding() {
               Bandingkan
             </Link>
           ) : (
-            <span className="shrink-0 text-micro text-arang-500">Pilih 1 lagi</span>
+            <span className="shrink-0 text-micro text-arang-500">Tambah 1 kos lagi</span>
           )}
           <button type="button" onClick={() => setDitutup(kunci)} aria-label="Sembunyikan panel perbandingan" className="sentuh relative grid size-9 shrink-0 place-items-center rounded-full text-arang-500 hover:bg-biru-100 hover:text-biru-600">
             <IconClose className="size-4" />

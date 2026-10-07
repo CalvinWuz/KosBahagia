@@ -11,6 +11,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITUS}/`, changeFrequency: "daily", priority: 1 },
     { url: `${SITUS}/cari`, changeFrequency: "daily", priority: 0.8 },
     { url: `${SITUS}/cara-kami-menilai`, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${SITUS}/cara-menggunakan`, changeFrequency: "monthly", priority: 0.5 },
   ];
   try {
     const db = supabaseServer();

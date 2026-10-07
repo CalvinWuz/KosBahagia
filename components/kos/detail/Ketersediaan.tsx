@@ -83,7 +83,7 @@ export function Ketersediaan({ kosId, data, terpilihId, sekarang }: { kosId: str
           ) : (
             <>
               <p className="text-small text-arang-500">Sudah telepon dan ternyata penuh?</p>
-              <Button variant="secondary" size="sm" onClick={lapor} loading={status === "mengirim"}>
+              <Button variant="secondary" size="sm" bungkus onClick={lapor} loading={status === "mengirim"}>
                 Laporkan kamar sudah penuh
               </Button>
               {status === "gagal" && <p className="text-small text-merah-700" role="alert">Laporan belum terkirim. Coba lagi sebentar lagi.</p>}

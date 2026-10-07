@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { IconCheck } from "@/components/ui/Icon";
 import { PenandaDemo } from "@/components/ui/PenandaDemo";
 import { formatRupiah, formatTanggal } from "@/lib/format";
-import { hitungBiaya, hitungUangMasuk, labelTotal, type TipeKamar } from "@/lib/biaya";
+import { hitungBiaya, hitungUangMasuk, labelTotal, teksKomponen, type TipeKamar } from "@/lib/biaya";
+import { lompatKe } from "@/lib/bagian";
 import type { InfoStatus } from "@/lib/kamar";
 import { cn } from "@/lib/cn";
 import { PilihKamar } from "./PilihKamar";
@@ -78,8 +78,19 @@ export function RingkasanKeputusan({
           {biaya ? (
             <>
               <span className="font-bold tabular-nums">{formatRupiah(biaya.total)}</span>
-              {!biaya.lengkap && <span className="block text-micro text-merah-700">{biaya.belumDiketahui.join(" dan ").toLowerCase()} belum diketahui</span>}
-              {biaya.estimasi && biaya.lengkap && <span className="block text-micro text-arang-500">listrik sesuai pemakaian</span>}
+              <span className="block text-micro text-arang-500">{teksKomponen(biaya)}</span>
+              {!biaya.lengkap && <span className="block text-micro font-bold text-merah-700">{biaya.belumDiketahui.join(" dan ")} belum diketahui, jadi total sebenarnya lebih besar</span>}
+              {biaya.estimasi && biaya.lengkap && <span className="block text-micro text-arang-500">Listrik: estimasi surveyor untuk pemakaian normal, bukan tarif tetap</span>}
+              <a
+                href="#rincian-biaya"
+                onClick={(e) => {
+                  e.preventDefault();
+                  lompatKe("rincian-biaya");
+                }}
+                className="sentuh relative mt-0.5 inline-block rounded-sm text-micro font-bold text-biru-600 hover:underline"
+              >
+                Lihat rincian biaya
+              </a>
             </>
           ) : (
             "Belum dicatat"
@@ -150,8 +161,9 @@ export function RingkasanKeputusan({
         </div>
       )}
       <p className="mt-3 text-micro text-arang-500">
-        Disusun otomatis dari data di bawah: <Link href="#biaya" className="font-bold text-biru-600 hover:underline">rincian biaya</Link> dan{" "}
-        <Link href="#catatan" className="font-bold text-biru-600 hover:underline">catatan surveyor</Link>.
+        Disusun otomatis dari data di bawah:{" "}
+        <a href="#rincian-biaya" onClick={(e) => { e.preventDefault(); lompatKe("rincian-biaya"); }} className="font-bold text-biru-600 hover:underline">rincian biaya</a> dan{" "}
+        <a href="#catatan" onClick={(e) => { e.preventDefault(); lompatKe("catatan"); }} className="font-bold text-biru-600 hover:underline">catatan surveyor</a>.
       </p>
     </section>
   );
@@ -159,7 +171,7 @@ export function RingkasanKeputusan({
 
 function Baris({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-t border-biru-100 py-2 first:border-t-0 sm:[&:nth-child(2)]:border-t-0">
+    <div className="flex flex-wrap items-start justify-between gap-x-4 border-t border-biru-100 py-2 first:border-t-0 sm:[&:nth-child(2)]:border-t-0">
       <dt className="text-small text-arang-500">{label}</dt>
       <dd className="text-right text-small text-arang-900">{children}</dd>
     </div>

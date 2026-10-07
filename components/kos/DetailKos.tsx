@@ -30,6 +30,8 @@ import { RingkasanKeputusan } from "./detail/RingkasanKeputusan";
 import { Blok } from "./detail/bagian";
 import { NavBagian, type Bagian } from "./detail/NavBagian";
 import { Tur360Pemicu } from "./tur360/Tur360Pemicu";
+import { BantuanJarak } from "./BantuanJarak";
+import { TombolMenu } from "@/components/layout/Navigasi";
 import { bacaTitik, type TitikTur } from "./tur360/jenis";
 import { CatatKunjungan } from "./CatatKunjungan";
 
@@ -52,6 +54,7 @@ const BAGIAN: Bagian[] = [
   { id: "fasilitas", label: "Fasilitas" },
   { id: "aturan", label: "Aturan" },
   { id: "cara-ke-sini", label: "Lokasi" },
+  { id: "sekitar", label: "Sekitar" },
   { id: "catatan", label: "Catatan surveyor" },
   { id: "ketersediaan", label: "Ketersediaan" },
 ];
@@ -112,7 +115,6 @@ export function DetailKos({ data, sekarang }: { data: DetailKosData; sekarang: s
     sekitar,
     redFlags: catatan?.red_flags.length ?? 0,
     kamar,
-    kmDalamKos: fasilitasKos.includes("kamar-mandi-dalam"),
     status,
   });
 
@@ -131,16 +133,19 @@ export function DetailKos({ data, sekarang }: { data: DetailKosData; sekarang: s
 
   return (
     <>
-      {/* Mobile header: back, name (after scrolling), save, compare */}
+      {/* Mobile header: back, name (after scrolling), labelled save and
+          compare, and the main menu (the global header is hidden here). */}
       <div className="sticky top-0 z-40 border-b border-biru-100 bg-putih lg:hidden">
-        <div className="flex h-14 items-center gap-1 px-2">
-          <button type="button" onClick={kembali} aria-label="Kembali" className="grid size-10 shrink-0 place-items-center rounded-full text-arang-900 hover:bg-biru-100">
+        {/* Wraps instead of overflowing when text is enlarged; one row otherwise. */}
+        <div className="flex min-h-14 flex-wrap items-center justify-end gap-1 px-1">
+          <button type="button" onClick={kembali} aria-label="Kembali" className="grid size-11 shrink-0 place-items-center rounded-full text-arang-900 hover:bg-biru-100">
             <IconKembali />
           </button>
-          <p aria-hidden={!judulLewat} className={cn("min-w-0 flex-1 truncate px-1 text-body font-bold text-arang-900 transition-opacity duration-150", judulLewat ? "opacity-100" : "opacity-0")}>
+          <p aria-hidden={!judulLewat} className={cn("min-w-0 flex-1 basis-0 truncate px-1 text-body font-bold text-arang-900 transition-opacity duration-150", judulLewat ? "opacity-100" : "opacity-0")}>
             {kos.nama}
           </p>
-          <AksiKartu kos={ringkasan} />
+          <AksiKartu kos={ringkasan} tampilan="tumpuk" />
+          <TombolMenu tumpuk />
         </div>
         <NavBagian bagian={bagianTersedia} className={cn("border-t border-biru-100 transition-opacity duration-150", judulLewat ? "opacity-100" : "hidden")} />
       </div>
@@ -179,10 +184,11 @@ export function DetailKos({ data, sekarang }: { data: DetailKosData; sekarang: s
               )}
               <PenandaDemo />
             </div>
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
               <h1 ref={judulRef} className="text-h1 text-arang-900">{kos.nama}</h1>
+              {/* Phones have the same buttons in the sticky bar above. */}
               <div className="hidden lg:block">
-                <AksiKartu kos={ringkasan} />
+                <AksiKartu kos={ringkasan} tampilan="judul" />
               </div>
             </div>
             <p className="text-body text-arang-900">
@@ -197,10 +203,13 @@ export function DetailKos({ data, sekarang }: { data: DetailKosData; sekarang: s
               )}
             </p>
             {sekitar && (
-              <p className="text-small text-arang-500">
-                {formatJarak(sekitar.landmark_jarak_m)} dari {sekitar.landmark_nama}
-                {sekitar.landmark_menit_jalan != null && `, ${sekitar.landmark_menit_jalan} menit jalan kaki`}
-              </p>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-small text-arang-500">
+                <span>
+                  {sekitar.landmark_menit_jalan != null ? `${sekitar.landmark_menit_jalan} menit jalan kaki` : formatJarak(sekitar.landmark_jarak_m)} dari {sekitar.landmark_nama}
+                  {sekitar.landmark_menit_jalan != null ? ` (${formatJarak(sekitar.landmark_jarak_m)})` : ""}, dicatat surveyor
+                </span>
+                <BantuanJarak />
+              </div>
             )}
             {kos.disurvei_pada && kos.surveyor && (
               <p className="text-small text-arang-500">
@@ -227,7 +236,7 @@ export function DetailKos({ data, sekarang }: { data: DetailKosData; sekarang: s
               sekarang={sekarangDate}
             />
             {/* 3 */}
-            <SkorRincian skor={skor} penilaian={penilaian} sekitar={sekitar} nFasilitas={nFasilitas} tipeKamar={tipeKamar} kamar={kamar} sekarang={sekarangDate} />
+            <SkorRincian skor={skor} penilaian={penilaian} sekitar={sekitar} nFasilitas={nFasilitas} tipeKamar={tipeKamar} kamar={kamar} sekarang={sekarangDate} disurveiPada={kos.disurvei_pada} />
             {/* 4 */}
             <RincianBiaya tipeKamar={kamarHidup} terpilih={kamar} onPilih={pilihKamar} dikonfirmasiPada={ketersediaan.dikonfirmasiPada} sekarang={sekarangDate} />
             {/* 5 */}
@@ -239,7 +248,7 @@ export function DetailKos({ data, sekarang }: { data: DetailKosData; sekarang: s
             {/* 8 */}
             <CaraKeSini sekitar={sekitar} patokan={patokan} lat={kartu.lat} lng={kartu.lng} landmark={landmark} nama={kos.nama} />
             {/* 9 */}
-            <SekitarKos sekitar={sekitar} />
+            <SekitarKos sekitar={sekitar} kamar={kamar} disurveiPada={kos.disurvei_pada} />
             {/* 10 */}
             <CatatanSurveyor catatan={catatan} surveyor={kos.surveyor} disurveiPada={kos.disurvei_pada} />
             {/* 11 */}

@@ -8,11 +8,11 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { StatusTaut } from "@/components/ui/StatusTaut";
-import { IconBanding, IconDaun, IconHati, IconSuara } from "@/components/ui/Icon";
+import { IconBanding, IconCheck, IconDaun, IconHati, IconPin, IconSuara } from "@/components/ui/Icon";
 import type { Database } from "@/lib/supabase/types";
 import { cn } from "@/lib/cn";
-import { formatJarak, formatRupiah, formatRupiahRingkas } from "@/lib/format";
-import { bacaKamar, hitungBiaya, komponenSingkat, labelTotal } from "@/lib/biaya";
+import { formatJarak, formatRupiah, formatRupiahRingkas, formatSkala } from "@/lib/format";
+import { bacaKamar, hitungBiaya, labelTotal, teksKomponen } from "@/lib/biaya";
 import { statusKamar } from "@/lib/kamar";
 import { chipKebersihan, chipKedap } from "@/lib/skala";
 import { adalahIlustrasi } from "@/lib/media";
@@ -40,11 +40,13 @@ export type AcuanJarak = { nama: string; meter: number };
 const TIPE_LABEL: Record<string, string> = { putra: "Putra", putri: "Putri", campur: "Campur" };
 
 // Card used in rails, search results and saved/compare pages.
-// Product rule 1: the headline is the room's real monthly total; rent sits
-// below in micro grey. Price, room name and vacancy all describe the SAME
-// room type (the one shown), so a full room never borrows another room's
-// vacancy. The photo and title link to the detail page (stretched link); the
-// save and compare buttons sit above that link.
+// Product rule 1: the headline is the room's real monthly total; what it is
+// made of sits right under it. Price, room name and vacancy all describe the
+// SAME room type (the one shown), so a full room never borrows another
+// room's vacancy. Reading order (UX v3): photo and name, monthly total,
+// place and who it is for, the room's status, short evidence, then labelled
+// Simpan / Bandingkan. The title is a stretched link to the detail page; the
+// buttons sit above it, so pressing them never opens the page.
 export function KosCard({
   kos,
   sekarang = new Date(),
@@ -80,6 +82,22 @@ export function KosCard({
   const href = kos.kamar_id ? `/kos/${kos.slug}?kamar=${kos.kamar_id}` : `/kos/${kos.slug}`;
   // A walking time is only comparable when it is to the place the renter searched for.
   const landmarkSama = jarak && kos.landmark_nama && namaSama(kos.landmark_nama, jarak.nama);
+  const lokasi = jarak
+    ? landmarkSama && kos.landmark_menit_jalan != null
+      ? `${kos.landmark_menit_jalan} mnt jalan kaki ke ${jarak.nama}`
+      : `${formatJarak(jarak.meter)} garis lurus ke ${jarak.nama}`
+    : kos.landmark_nama && kos.landmark_menit_jalan != null
+      ? `${kos.landmark_menit_jalan} mnt jalan kaki ke ${kos.landmark_nama}`
+      : null;
+  const aksi: RingkasanKos = {
+    id,
+    slug: kos.slug ?? "",
+    nama: kos.nama ?? "",
+    kamarId: kos.kamar_id,
+    kamarNama: kos.kamar_nama,
+    total_bulanan: total,
+    kamar_tersedia: kos.kamar_acuan_tersedia,
+  };
 
   return (
     <article
@@ -95,14 +113,14 @@ export function KosCard({
       onMouseLeave={onSorot ? () => onSorot(null) : undefined}
     >
       {/* Phones: a shorter photo so more than one card fits a screen. */}
-      <div className={cn("relative shrink-0 bg-biru-100", ringkas ? "w-32 self-stretch" : "aspect-[16/10] w-full sm:aspect-[4/3]")}>
+      <div className={cn("relative shrink-0 bg-biru-100", ringkas ? "w-28 self-stretch" : "aspect-[16/10] w-full sm:aspect-[4/3]")}>
         {kos.foto_url && (
           <FotoBlur
             src={kos.foto_url}
             alt={adalahIlustrasi(kos.foto_url) ? `Ilustrasi contoh tampak depan ${kos.nama}` : `Foto ${kos.nama}`}
             blurhash={kos.foto_blurhash}
             fill
-            sizes={ringkas ? "128px" : "(min-width: 1024px) 340px, (min-width: 640px) 50vw, 90vw"}
+            sizes={ringkas ? "112px" : "(min-width: 1024px) 340px, (min-width: 640px) 50vw, 90vw"}
             className="object-cover"
             priority={prioritas}
             loading={prioritas ? undefined : "lazy"}
@@ -110,17 +128,18 @@ export function KosCard({
         )}
         {!ringkas && (
           <>
-            <div className="absolute top-2 left-2 flex flex-wrap gap-1">
-              <SkorBadge skor={kos.skor} className="shadow-sm" />
-              {kos.ada_360 && <Badge tone="netral" className="bg-putih shadow-sm">360°</Badge>}
-            </div>
-            {kos.tier && kos.tier !== "free" && (
-              <div className="absolute top-2 right-2">
+            {/* One wrapping row, so the badges never sit on top of each other on a narrow card. */}
+            <div className="absolute inset-x-2 top-2 flex flex-wrap items-start justify-between gap-1">
+              <div className="flex flex-wrap gap-1">
+                <SkorBadge skor={kos.skor} label className="shadow-sm" />
+                {kos.ada_360 && <Badge tone="netral" className="bg-putih shadow-sm">360°</Badge>}
+              </div>
+              {kos.tier && kos.tier !== "free" && (
                 <Badge tone="netral" className="bg-putih shadow-sm" title="Pemilik membayar paket untuk foto dan tur 360°. Skor tidak terpengaruh.">
                   Mitra berbayar
                 </Badge>
-              </div>
-            )}
+              )}
+            </div>
             {adalahIlustrasi(kos.foto_url) && (
               <span className="absolute right-2 bottom-2 rounded-md bg-arang-900/70 px-1.5 py-0.5 text-micro text-putih">Ilustrasi</span>
             )}
@@ -128,93 +147,84 @@ export function KosCard({
         )}
       </div>
 
-      <div className={cn("flex min-w-0 flex-1 flex-col gap-0.5", ringkas ? "p-3" : "p-3")}>
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="min-w-0 text-body leading-5 font-bold text-arang-900">
-            <Link
-              href={href}
-              className="line-clamp-2 rounded-sm after:absolute after:inset-0 after:rounded-2xl focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-biru-500"
-            >
-              {kos.nama}
-              <StatusTaut selubung />
-            </Link>
-          </h3>
-          <span className="shrink-0 rounded-md bg-kertas-50 px-1.5 py-0.5 text-micro text-arang-500">
-            {TIPE_LABEL[kos.tipe ?? ""] ?? kos.tipe}
-          </span>
+      <div className={cn("flex min-w-0 flex-1 flex-col", ringkas ? "gap-1.5 p-3" : "gap-3 p-4")}>
+        {/* 1. name (stretched link to the detail page, room included) */}
+        <h3 className="min-w-0 text-body leading-5 font-bold text-arang-900">
+          <Link
+            href={href}
+            className="line-clamp-2 rounded-sm after:absolute after:inset-0 after:rounded-2xl focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-biru-500"
+          >
+            {kos.nama}
+            <StatusTaut selubung />
+          </Link>
+        </h3>
+
+        {/* 2. the monthly total and what it is made of */}
+        <div>
+          {/* wrap-anywhere: with enlarged text a long price breaks instead of widening the page. */}
+          <p className={cn("text-arang-900 tabular-nums wrap-anywhere", ringkas ? "text-h2" : "text-price")}>
+            {formatRupiah(total)}
+            <span className="ml-1 text-small font-normal text-arang-500">/bln</span>
+          </p>
+          <p className="text-micro text-arang-500">
+            <b className="font-bold text-arang-900">{biaya ? labelTotal(biaya) : "Total per bulan"}</b>
+            {!ringkas && biaya && `: ${teksKomponen(biaya, { sewa: `sewa ${formatRupiahRingkas(kos.harga_bulanan ?? 0)}`, termasuk: false })}`}
+          </p>
+          {biaya && !biaya.lengkap && (
+            <p className="text-micro font-bold text-merah-700">{biaya.belumDiketahui.join(" dan ")} belum diketahui</p>
+          )}
         </div>
 
-        {jarak ? (
-          <p className="text-small text-arang-500">
-            {landmarkSama && kos.landmark_menit_jalan != null
-              ? `${kos.landmark_menit_jalan} mnt jalan ke ${jarak.nama}`
-              : `${formatJarak(jarak.meter)} ke ${jarak.nama} (garis lurus)`}
-          </p>
-        ) : (
-          kos.landmark_nama && kos.landmark_menit_jalan != null && (
-            <p className="text-small text-arang-500">{kos.landmark_menit_jalan} mnt jalan ke {kos.landmark_nama}</p>
-          )
+        {/* 3. where and who for */}
+        {!ringkas && (
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-small text-arang-500">
+            <span className="rounded-md bg-kertas-50 px-1.5 py-0.5 text-micro font-bold text-arang-900">{TIPE_LABEL[kos.tipe ?? ""] ?? kos.tipe}</span>
+            {lokasi && (
+              <span className="inline-flex min-w-0 items-start gap-1">
+                <IconPin className="mt-0.5 size-4 shrink-0 text-biru-600" />
+                {lokasi}
+              </span>
+            )}
+          </div>
         )}
 
-        <p className={cn("text-arang-900 tabular-nums", ringkas ? "text-h2" : "mt-1 text-price")}>
-          {formatRupiah(total)}
-          <span className="ml-1 text-small font-normal text-arang-500">/bln</span>
-        </p>
-        {biaya && (!biaya.lengkap || biaya.estimasi) && (
-          <p className="text-micro font-bold text-arang-900">
-            {biaya.lengkap ? labelTotal(biaya) : `${labelTotal(biaya)}: ${biaya.belumDiketahui.join(", ").toLowerCase()} belum diketahui`}
-          </p>
-        )}
-        <p className="text-micro text-arang-500">
-          sewa {formatRupiahRingkas(kos.harga_bulanan ?? 0)}
-          {biaya && komponenSingkat(biaya).length > 0 && ` + ${komponenSingkat(biaya).join(" + ")}`}
-        </p>
-        {kos.kamar_nama && (
-          <p className="text-micro text-arang-500">
-            Kamar {kos.kamar_nama}
-            {tipeLain > 0 && `, ada ${tipeLain} tipe lain`}
-          </p>
-        )}
+        {/* 4. the shown room and its status */}
+        <div className="flex flex-col gap-0.5">
+          {kos.kamar_nama && (
+            <p className="text-small text-arang-900">
+              Kamar {kos.kamar_nama}
+              {tipeLain > 0 && <span className="text-arang-500">, ada {tipeLain} tipe lain</span>}
+            </p>
+          )}
+          <StatusRingkas status={status} />
+        </div>
 
+        {/* 5. short evidence; safety notes always shown */}
         {!ringkas && (bersih || kedap || redFlags > 0) && (
-          <ul className="mt-1.5 flex flex-wrap gap-1.5">
-            {bersih && (
+          <ul className="flex flex-wrap gap-1.5">
+            {bersih && kos.skor_kebersihan != null && (
               <li className="inline-flex items-center gap-1 rounded-full bg-daun-100 px-2 py-0.5 text-micro font-bold text-daun-700">
                 <IconDaun className="size-3.5" />
-                {bersih}
+                {bersih} {formatSkala(kos.skor_kebersihan)}/5
               </li>
             )}
-            {kedap && (
+            {kedap && kos.skor_kedap != null && (
               <li className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-micro font-bold", kedap.baik ? "bg-daun-100 text-daun-700" : "bg-arang-500/10 text-arang-900")}>
                 <IconSuara className="size-3.5" />
-                {kedap.kata}
+                {kedap.kata} {formatSkala(kos.skor_kedap)}/5
               </li>
             )}
             {redFlags > 0 && (
               <li className="inline-flex items-center rounded-full bg-merah-100 px-2 py-0.5 text-micro font-bold text-merah-700">
-                {redFlags} hal penting
+                {redFlags} catatan keselamatan
               </li>
             )}
           </ul>
         )}
 
-        <div className={cn("flex items-end justify-between gap-2", ringkas ? "mt-1" : "mt-auto pt-2")}>
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <StatusRingkas status={status} />
-          </div>
-          {!ringkas && (
-            <AksiKartu
-              kos={{
-                id,
-                slug: kos.slug ?? "",
-                nama: kos.nama ?? "",
-                kamarId: kos.kamar_id,
-                kamarNama: kos.kamar_nama,
-                total_bulanan: total,
-                kamar_tersedia: kos.kamar_acuan_tersedia,
-              }}
-            />
-          )}
+        {/* 6. labelled actions */}
+        <div className={ringkas ? "" : "mt-auto"}>
+          <AksiKartu kos={aksi} tampilan={ringkas ? "ringkas" : "kartu"} />
         </div>
       </div>
     </article>
@@ -246,23 +256,46 @@ export function StatusRingkas({ status }: { status: ReturnType<typeof statusKama
   );
 }
 
-// Save + compare. Stored on this device only (no login wall); sits above the
-// stretched link. The compare candidate is the kos AND the room type in view.
-// A fourth candidate asks which of the three to drop instead of refusing.
-export function AksiKartu({ kos }: { kos: RingkasanKos }) {
+export type TampilanAksi = "kartu" | "judul" | "tumpuk" | "ringkas";
+
+const KELAS_AKSI: Record<TampilanAksi, { wadah: string; tombol: string; ikon: string }> = {
+  // Result cards: two equal buttons across the card; they stack instead of
+  // overflowing when text is enlarged (200 %).
+  kartu: { wadah: "grid grid-cols-[repeat(auto-fit,minmax(min(100%,8rem),1fr))] gap-2", tombol: "min-h-11 justify-center gap-1.5 rounded-xl px-2 text-small", ikon: "size-4" },
+  // Detail title: side by side, wide enough for the longer state label.
+  judul: { wadah: "flex flex-wrap gap-2", tombol: "h-11 min-w-36 justify-center gap-2 rounded-xl px-4 text-small", ikon: "size-5" },
+  // Mobile detail header: icon over a short label.
+  tumpuk: { wadah: "flex gap-1", tombol: "h-12 min-w-14 flex-col justify-center gap-0.5 rounded-xl px-1.5 text-micro", ikon: "size-5" },
+  // Map mini card.
+  ringkas: { wadah: "flex flex-wrap gap-2", tombol: "sentuh h-9 gap-1 rounded-full px-3 text-micro", ikon: "size-4" },
+};
+
+// Save + compare with visible labels (UX v3: icons alone were not
+// recognised). The word says the state ("Tersimpan", "Dalam banding"); the
+// filled icon, the tint and aria-pressed back it up. Stored on this device
+// only (no login wall); sits above the card's stretched link. The compare
+// candidate is the kos AND the room type in view. A fourth candidate asks
+// which of the three to drop instead of refusing.
+export function AksiKartu({ kos, tampilan = "kartu", className }: { kos: RingkasanKos; tampilan?: TampilanAksi; className?: string }) {
   const tersimpan = useSimpanan().some((s) => s.id === kos.id);
   const banding = useBanding();
   const kandidat = { id: kos.id, kamarId: kos.kamarId ?? null };
   const dibanding = banding.some((b) => samaKandidat(b, kandidat));
   const [tanyaGanti, setTanyaGanti] = useState(false);
   const namaPenuh = kos.kamarNama ? `${kos.nama}, kamar ${kos.kamarNama}` : kos.nama;
+  const k = KELAS_AKSI[tampilan];
 
-  const kelas =
-    "sentuh relative z-10 grid size-9 place-items-center rounded-full border border-biru-100 bg-putih text-arang-500 transition-colors duration-150 ease-out hover:border-biru-500 hover:text-biru-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-biru-500 aria-pressed:border-biru-500 aria-pressed:bg-biru-100 aria-pressed:text-biru-600";
+  const kelas = cn(
+    "relative z-10 inline-flex items-center border font-bold transition-colors duration-150 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-biru-500",
+    tampilan === "kartu" ? "text-center" : "whitespace-nowrap",
+    "border-biru-100 bg-putih text-biru-600 hover:border-biru-500 hover:bg-biru-100/50",
+    "aria-pressed:border-biru-500 aria-pressed:bg-biru-100 aria-pressed:text-biru-600",
+    k.tombol,
+  );
 
   const klikSimpan = () => {
     toggleSimpan(kos);
-    if (tersimpan) tampilkanToast({ teks: `${kos.nama} dihapus dari simpanan di perangkat ini.` });
+    if (tersimpan) tampilkanToast({ teks: `${kos.nama} dihapus dari simpanan.` });
     else tampilkanToast({ teks: `${kos.nama} tersimpan di perangkat ini.`, aksi: { label: "Lihat simpanan", href: "/disimpan" } });
   };
   const klikBanding = () => {
@@ -274,39 +307,48 @@ export function AksiKartu({ kos }: { kos: RingkasanKos }) {
     if (!tambahBanding(kos)) return setTanyaGanti(true);
     const n = banding.length + 1;
     tampilkanToast({
-      teks: n === 1 ? `${namaPenuh} ditambahkan. Pilih 1–2 lagi untuk dibandingkan.` : `${namaPenuh} ditambahkan ke perbandingan (${n} dari 3).`,
+      teks: n === 1 ? `${namaPenuh} masuk perbandingan. Tambah 1–2 kos lagi untuk dibandingkan.` : `${namaPenuh} masuk perbandingan (${n} dari 3).`,
       aksi: n >= 2 ? { label: "Bandingkan", href: "/banding" } : undefined,
     });
   };
 
   return (
-    <div className="flex shrink-0 gap-2">
-      <button type="button" aria-pressed={tersimpan} aria-label={tersimpan ? `Hapus ${kos.nama} dari simpanan` : `Simpan ${kos.nama}`} onClick={klikSimpan} className={kelas}>
-        <IconHati className={cn("size-4", tersimpan && "fill-current")} />
+    <div className={cn(k.wadah, className)}>
+      <button
+        type="button"
+        aria-pressed={tersimpan}
+        aria-label={tersimpan ? `Tersimpan: ${kos.nama}. Tekan untuk menghapus dari simpanan` : `Simpan ${kos.nama}`}
+        onClick={klikSimpan}
+        className={kelas}
+      >
+        <IconHati className={cn(k.ikon, "shrink-0", tersimpan && "fill-current")} />
+        {tersimpan ? "Tersimpan" : "Simpan"}
       </button>
       <button
         type="button"
         aria-pressed={dibanding}
-        aria-label={dibanding ? `Keluarkan ${namaPenuh} dari perbandingan` : `Bandingkan ${namaPenuh}`}
+        aria-label={dibanding ? `Dalam banding: ${namaPenuh}. Tekan untuk mengeluarkan dari perbandingan` : `Bandingkan ${namaPenuh}`}
         onClick={klikBanding}
         className={kelas}
       >
-        <IconBanding className="size-4" />
+        {dibanding ? <IconCheck className={cn(k.ikon, "shrink-0")} /> : <IconBanding className={cn(k.ikon, "shrink-0")} />}
+        {dibanding ? "Dalam banding" : "Bandingkan"}
       </button>
 
       {tanyaGanti && (
         <Sheet open={tanyaGanti} onClose={() => setTanyaGanti(false)} title="Sudah 3 pilihan dibandingkan">
-          <p className="text-body text-arang-900">Ganti yang mana dengan {namaPenuh}?</p>
+          <p className="text-body text-arang-900">Perbandingan paling banyak 3 kos. Ganti yang mana dengan {namaPenuh}?</p>
           <ul className="mt-3 flex flex-col gap-2">
             {banding.map((b) => (
               <li key={`${b.id}:${b.kamarId ?? ""}`}>
                 <Button
                   variant="secondary"
+                  bungkus
                   className="w-full justify-between"
                   onClick={() => {
                     gantiBanding(b, kos);
                     setTanyaGanti(false);
-                    tampilkanToast({ teks: `${namaPenuh} masuk perbandingan.`, aksi: { label: "Bandingkan", href: "/banding" } });
+                    tampilkanToast({ teks: `${namaPenuh} masuk perbandingan menggantikan ${b.nama || "kos sebelumnya"}.`, aksi: { label: "Bandingkan", href: "/banding" } });
                   }}
                 >
                   <span className="truncate">
@@ -318,6 +360,9 @@ export function AksiKartu({ kos }: { kos: RingkasanKos }) {
               </li>
             ))}
           </ul>
+          <Button variant="ghost" bungkus className="mt-3" onClick={() => setTanyaGanti(false)}>
+            Batal, biarkan yang tiga
+          </Button>
         </Sheet>
       )}
     </div>
@@ -329,22 +374,24 @@ export function KosCardSkeleton() {
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-biru-100 bg-putih" aria-hidden="true">
       <Skeleton className="aspect-[16/10] w-full rounded-none sm:aspect-[4/3]" />
-      <div className="flex flex-col gap-2 p-3">
+      <div className="flex flex-col gap-3 p-4">
         <Skeleton className="h-5 w-3/4" />
-        <Skeleton className="h-4 w-1/2" />
-        <Skeleton className="mt-1 h-8 w-2/3" />
-        <Skeleton className="h-3 w-4/5" />
-        <Skeleton className="h-3 w-2/5" />
-        <div className="flex gap-1.5 pt-1">
-          <Skeleton className="h-5 w-16 rounded-full" />
-          <Skeleton className="h-5 w-20 rounded-full" />
+        <div className="flex flex-col gap-1">
+          <Skeleton className="h-8 w-2/3" />
+          <Skeleton className="h-3 w-4/5" />
         </div>
-        <div className="flex items-end justify-between pt-2">
-          <Skeleton className="h-3 w-28" />
-          <div className="flex gap-2">
-            <Skeleton className="size-9 rounded-full" />
-            <Skeleton className="size-9 rounded-full" />
-          </div>
+        <Skeleton className="h-5 w-3/5" />
+        <div className="flex flex-col gap-1">
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-3 w-2/5" />
+        </div>
+        <div className="flex gap-1.5">
+          <Skeleton className="h-5 w-20 rounded-full" />
+          <Skeleton className="h-5 w-24 rounded-full" />
+        </div>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,8rem),1fr))] gap-2">
+          <Skeleton className="h-11 rounded-xl" />
+          <Skeleton className="h-11 rounded-xl" />
         </div>
       </div>
     </div>

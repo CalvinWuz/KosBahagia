@@ -5,9 +5,10 @@ import { MITRA_URL } from "@/lib/site";
 
 const jelajah = [
   { href: "/cari", label: "Cari kos" },
+  { href: "/disimpan", label: "Simpanan" },
+  { href: "/banding", label: "Bandingkan" },
+  { href: "/cara-menggunakan", label: "Cara menggunakan" },
   { href: "/cara-kami-menilai", label: "Cara kami menilai" },
-  { href: "/banding", label: "Bandingkan kos" },
-  { href: "/disimpan", label: "Kos tersimpan" },
 ];
 
 // The single bridge to the mitra surface is the last link in this footer.

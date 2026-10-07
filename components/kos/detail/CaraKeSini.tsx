@@ -37,8 +37,10 @@ export function CaraKeSini({
   const rute = sekitar
     ? bacaRute(sekitar.rute, { landmarkNama: sekitar.landmark_nama, totalMenit: sekitar.landmark_menit_jalan, akses: sekitar.akses })
     : null;
+  // Recorded by the surveyor; the drawing below is an illustration of the
+  // landmarks on the way, not a computed walking route.
   const keterangan = sekitar
-    ? `${formatJarak(sekitar.landmark_jarak_m)} dari ${sekitar.landmark_nama}${sekitar.landmark_menit_jalan != null ? `, sekitar ${sekitar.landmark_menit_jalan} menit jalan kaki` : ""}`
+    ? `Dari ${sekitar.landmark_nama}: ${sekitar.landmark_menit_jalan != null ? `${sekitar.landmark_menit_jalan} menit jalan kaki, ` : ""}${formatJarak(sekitar.landmark_jarak_m)}, dicatat surveyor. Gambar di bawah ilustrasi patokan, bukan peta berskala.`
     : undefined;
   const adaKoordinat = lat != null && lng != null;
 

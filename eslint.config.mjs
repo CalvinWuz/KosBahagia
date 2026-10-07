@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Third-party files copied by scripts/salin-maplibre.mjs.
     "public/maplibre/**",
+    // Node/CommonJS helper that builds the presentation deck; not app code.
+    "docs/presentasi/**",
   ]),
 ]);
 

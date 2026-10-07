@@ -6,7 +6,7 @@ export type ButtonVariant = "primary" | "secondary" | "ghost";
 export type ButtonSize = "sm" | "md" | "lg";
 
 const base =
-  "relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl font-bold select-none transition-colors duration-150 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-biru-500 disabled:cursor-not-allowed disabled:opacity-50";
+  "relative inline-flex items-center justify-center gap-2 rounded-xl font-bold select-none transition-colors duration-150 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-biru-500 disabled:cursor-not-allowed disabled:opacity-50";
 
 // Primary is the one orange element allowed per screen. Text is arang-900
 // rather than white because white on jingga-500 is only 2.6:1.
@@ -23,10 +23,19 @@ const sizes: Record<ButtonSize, string> = {
   md: "h-11 px-4 text-body font-bold",
   lg: "h-13 px-6 text-body font-bold",
 };
+// Long labels (suggestions, reports) may wrap instead of widening the page on
+// a narrow screen or with enlarged text; the height grows with them.
+const tinggiBungkus: Record<ButtonSize, string> = {
+  sm: "sentuh min-h-9 px-3 py-1.5 text-small font-bold",
+  md: "min-h-11 px-4 py-2 text-body font-bold",
+  lg: "min-h-13 px-6 py-3 text-body font-bold",
+};
 
 type ButtonStyleOptions = {
   variant?: ButtonVariant;
   size?: ButtonSize;
+  /** Let a long label wrap (text-left, height grows). Default: one line. */
+  bungkus?: boolean;
   className?: string;
 };
 
@@ -34,9 +43,10 @@ type ButtonStyleOptions = {
 export function buttonClasses({
   variant = "secondary",
   size = "md",
+  bungkus = false,
   className,
 }: ButtonStyleOptions = {}): string {
-  return cn(base, variants[variant], sizes[size], className);
+  return cn(base, variants[variant], bungkus ? `${tinggiBungkus[size]} text-left` : `${sizes[size]} whitespace-nowrap`, className);
 }
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
@@ -49,6 +59,7 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
 export function Button({
   variant = "secondary",
   size = "md",
+  bungkus = false,
   loading = false,
   disabled,
   type = "button",
@@ -61,7 +72,7 @@ export function Button({
       type={type}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      className={buttonClasses({ variant, size, className })}
+      className={buttonClasses({ variant, size, bungkus, className })}
       {...rest}
     >
       {loading && (

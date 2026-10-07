@@ -1,7 +1,8 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
+import { useCallback, useId, useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import { useBukaSaatDituju } from "@/lib/bagian";
 import { IconChevronDown } from "./Icon";
 
 export function Accordion({
@@ -24,8 +25,15 @@ export function Accordion({
 }
 
 export type AccordionItemProps = {
+  /** Says what opens, e.g. "Lihat rincian biaya bulanan". */
   title: ReactNode;
+  /** One line shown under the title while closed, so the gist is readable without opening. */
+  ringkasan?: ReactNode;
   defaultOpen?: boolean;
+  /** Anchor id of this item (scroll target for "Lihat rincian…" links). */
+  id?: string;
+  /** Anchors that open this item (its own id is always one): a section chip, a #hash link. */
+  bukaUntuk?: readonly string[];
   children: ReactNode;
 };
 
@@ -34,16 +42,21 @@ export type AccordionItemProps = {
 // neither focusable nor read out.
 export function AccordionItem({
   title,
+  ringkasan,
   defaultOpen = false,
+  id: anchor,
+  bukaUntuk,
   children,
 }: AccordionItemProps) {
   const [open, setOpen] = useState(defaultOpen);
   const id = useId();
   const buttonId = `${id}-tombol`;
   const panelId = `${id}-panel`;
+  const buka = useCallback(() => setOpen(true), []);
+  useBukaSaatDituju(anchor ? [anchor, ...(bukaUntuk ?? [])] : bukaUntuk, buka);
 
   return (
-    <div>
+    <div id={anchor} className={anchor ? "scroll-mt-28 lg:scroll-mt-20" : undefined}>
       <h3 className="m-0 text-body font-bold">
         <button
           type="button"
@@ -53,7 +66,10 @@ export function AccordionItem({
           onClick={() => setOpen((v) => !v)}
           className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left text-body font-bold text-arang-900 transition-colors duration-150 ease-out hover:bg-kertas-50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-biru-500"
         >
-          <span>{title}</span>
+          <span className="flex min-w-0 flex-col">
+            <span>{title}</span>
+            {ringkasan && !open && <span className="text-small font-normal text-arang-500">{ringkasan}</span>}
+          </span>
           <IconChevronDown
             className={cn(
               "size-5 shrink-0 text-arang-500 transition-transform duration-200 ease-out",

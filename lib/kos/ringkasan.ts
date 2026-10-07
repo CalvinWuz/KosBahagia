@@ -20,8 +20,6 @@ export type BahanRingkasan = {
   /** Count of safety red flags from the surveyor. */
   redFlags: number;
   kamar: TipeKamar | null;
-  /** Room-level bathroom; falls back to the kos facility when the room has no record. */
-  kmDalamKos: boolean;
   status: InfoStatus | null;
 };
 
@@ -32,7 +30,9 @@ export function kelebihanKekurangan(d: BahanRingkasan): { kelebihan: string[]; k
   const kelebihan: string[] = [];
   const kekurangan: string[] = [];
   const kedap = d.penilaian?.skor_kedap ?? null;
-  const kmDalam = d.kamar?.kamar_mandi_dalam ?? d.kmDalamKos;
+  // Room-level only. NULL (belum dicatat) is neither a plus nor a minus; the
+  // kos-level facility does not say which room has the bathroom.
+  const kmDalam = d.kamar?.kamar_mandi_dalam ?? null;
   const biaya = d.kamar ? hitungBiaya(d.kamar) : null;
   const menit = d.sekitar?.landmark_menit_jalan ?? null;
 
@@ -42,7 +42,7 @@ export function kelebihanKekurangan(d: BahanRingkasan): { kelebihan: string[]; k
   if (biaya && !biaya.lengkap) kekurangan.push(`Biaya ${biaya.belumDiketahui.join(" dan ").toLowerCase()} belum diketahui`);
   if (kedap != null && kedap <= 2) kekurangan.push(`${kataKedap(kedap)} saat tes suara (${kedap}/5${d.penilaian?.material_tembok ? `, tembok ${d.penilaian.material_tembok}` : ""})`);
   if (d.kebersihan != null && d.kebersihan < 3) kekurangan.push(`Kebersihan kurang (${angka(d.kebersihan)}/5)`);
-  if (d.kamar && !kmDalam) kekurangan.push("Kamar mandi di luar, dipakai bersama");
+  if (kmDalam === false) kekurangan.push("Kamar mandi di luar, dipakai bersama");
   if (d.aturan?.jam_malam) kekurangan.push(`Jam malam pukul ${jam(d.aturan.jam_malam)}`);
   if (menit != null && menit > 15) kekurangan.push(`${menit} menit jalan ke ${d.sekitar?.landmark_nama}`);
 
@@ -50,7 +50,7 @@ export function kelebihanKekurangan(d: BahanRingkasan): { kelebihan: string[]; k
   if (bersih && d.kebersihan != null) kelebihan.push(`${bersih} (kebersihan ${angka(d.kebersihan)}/5)`);
   if (kedap != null && kedap >= 4) kelebihan.push(`${kataKedap(kedap)} saat tes suara (${kedap}/5)`);
   if (menit != null && menit <= 10) kelebihan.push(`${menit} menit jalan ke ${d.sekitar?.landmark_nama}`);
-  if (d.kamar && kmDalam) kelebihan.push("Kamar mandi dalam");
+  if (kmDalam === true) kelebihan.push("Kamar mandi dalam");
   if (d.aturan && !d.aturan.jam_malam) kelebihan.push("Tanpa jam malam");
   if (d.transparansi != null && d.transparansi >= 5) kelebihan.push("Semua biaya disebutkan jelas");
   if (d.kamar?.model_listrik === "termasuk") kelebihan.push("Listrik sudah termasuk sewa");

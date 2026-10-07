@@ -2,22 +2,26 @@ import type { Database } from "@/lib/supabase/types";
 import type { CariParams } from "@/lib/cari-params";
 import type { Pusat } from "./pusat";
 
+// cari_kos_v4 / kos_promosi_v2 (migration 20261007000100): kos type is a
+// list (any of), and price, kamar mandi dalam and AC are met by the one room
+// type the card shows. cari_kos_v3 / kos_promosi remain in the database only
+// for the previously deployed frontend.
 type Fungsi = Database["public"]["Functions"];
-export type HasilKos = Fungsi["cari_kos_v3"]["Returns"][number];
-export type KosPromosi = Fungsi["kos_promosi"]["Returns"][number];
-type Argumen = Fungsi["cari_kos_v3"]["Args"];
-type ArgumenPromosi = Fungsi["kos_promosi"]["Args"];
+export type HasilKos = Fungsi["cari_kos_v4"]["Returns"][number];
+export type KosPromosi = Fungsi["kos_promosi_v2"]["Returns"][number];
+type Argumen = Fungsi["cari_kos_v4"]["Args"];
+type ArgumenPromosi = Fungsi["kos_promosi_v2"]["Args"];
 
 /** Anything that can call the search RPCs: supabase-js on the server, the tiny REST client in the browser. */
 export type KlienCari = {
-  rpc(fn: "cari_kos_v3", args: Argumen): PromiseLike<{ data: HasilKos[] | null; error: { message: string } | null }>;
-  rpc(fn: "kos_promosi", args: ArgumenPromosi): PromiseLike<{ data: KosPromosi[] | null; error: { message: string } | null }>;
+  rpc(fn: "cari_kos_v4", args: Argumen): PromiseLike<{ data: HasilKos[] | null; error: { message: string } | null }>;
+  rpc(fn: "kos_promosi_v2", args: ArgumenPromosi): PromiseLike<{ data: KosPromosi[] | null; error: { message: string } | null }>;
 };
 type Klien = KlienCari;
 
 export const UKURAN_HALAMAN = 20;
 
-/** Maps URL params + centre to cari_kos_v3() arguments. One place, both sides. */
+/** Maps URL params + centre to cari_kos_v4() arguments. One place, both sides. */
 export function argumenCari(
   p: CariParams,
   pusat: Pusat,
@@ -36,7 +40,7 @@ export function argumenCari(
     p_radius_m: pusat.radius,
     p_harga_min: p.harga_min,
     p_harga_max: p.harga_max,
-    p_tipe: p.tipe,
+    p_tipe: p.tipe?.length ? p.tipe : undefined,
     p_min_kebersihan: p.kebersihan,
     p_min_kedap: p.kedap,
     p_fasilitas: p.fasilitas?.length ? p.fasilitas : undefined,
@@ -57,7 +61,7 @@ export async function ambilHasil(
   pusat: Pusat,
   halaman: { limit?: number; offset?: number } = {},
 ): Promise<HalamanHasil> {
-  const { data, error } = await db.rpc("cari_kos_v3", argumenCari(p, pusat, halaman));
+  const { data, error } = await db.rpc("cari_kos_v4", argumenCari(p, pusat, halaman));
   if (error) throw new Error(error.message);
   const hasil = data ?? [];
   return { hasil, total: hasil.length ? Number(hasil[0].total_count) : 0 };
@@ -73,7 +77,7 @@ export async function ambilPromosi(db: Klien, p: CariParams, pusat: Pusat): Prom
     Object.entries(argumenCari(p, pusat)).filter(([k]) => !["p_urut", "p_limit", "p_offset"].includes(k)),
   ) as ArgumenPromosi;
   try {
-    const { data, error } = await db.rpc("kos_promosi", { ...filter, p_limit: 2 });
+    const { data, error } = await db.rpc("kos_promosi_v2", { ...filter, p_limit: 2 });
     return error ? [] : (data ?? []);
   } catch {
     return [];

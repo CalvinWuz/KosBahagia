@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
+import { lompatKe } from "@/lib/bagian";
 
 export type Bagian = { id: string; label: string };
 
@@ -51,13 +52,8 @@ export function NavBagian({ bagian, className, tampilan = "chip" }: { bagian: Ba
     el?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
   }, [aktif, tampilan]);
 
-  const lompat = (id: string) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
-    window.history.replaceState(window.history.state, "", `#${id}`);
-  };
+  // Opens whatever is folded in the target first (lib/bagian), then scrolls and moves focus.
+  const lompat = (id: string) => lompatKe(id);
 
   if (tampilan === "daftar") {
     return (

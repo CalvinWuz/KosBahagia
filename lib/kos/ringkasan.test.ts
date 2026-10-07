@@ -20,7 +20,6 @@ const anggrekCakra: BahanRingkasan = {
   sekitar: { landmark_nama: "BINUS University Kampus Anggrek", landmark_menit_jalan: 12 },
   redFlags: 0,
   kamar,
-  kmDalamKos: true,
   status: { status: "penuh", tersedia: 0, total: 6, dikonfirmasiPada: null, label: "Penuh", rincian: "", waktu: "" },
 };
 
@@ -35,6 +34,11 @@ describe("kelebihanKekurangan", () => {
     const r = kelebihanKekurangan({ ...anggrekCakra, redFlags: 2, aturan: { jam_malam: "22:00:00" }, kamar: { ...kamar, kamar_mandi_dalam: false } });
     assert.equal(r.kekurangan[0], "2 catatan keselamatan dari surveyor");
     assert.equal(r.kekurangan.length, 3);
+  });
+  it("an unrecorded bathroom is neither a plus nor a minus", () => {
+    const r = kelebihanKekurangan({ ...anggrekCakra, status: null, kamar: { ...kamar, kamar_mandi_dalam: null } });
+    assert.ok(!r.kelebihan.some((k) => /kamar mandi/i.test(k)));
+    assert.ok(!r.kekurangan.some((k) => /kamar mandi/i.test(k)));
   });
   it("names unknown fees as a drawback", () => {
     const r = kelebihanKekurangan({ ...anggrekCakra, status: null, penilaian: null, kamar: { ...kamar, model_listrik: "meteran", estimasi_listrik: null } });

@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { Accordion, AccordionItem } from "@/components/ui/Accordion";
 import { SkorBadge } from "@/components/kos/SkorBadge";
 import { PenandaDemo } from "@/components/ui/PenandaDemo";
 import { BOBOT, cekTransparansi, KRITERIA_TRANSPARANSI } from "@/lib/scoring";
-import { kataKebersihan, kataKedap } from "@/lib/skala";
+import { artiKedap, kataKebersihan, kataKedap } from "@/lib/skala";
+import { formatSkala } from "@/lib/format";
 import type { TipeKamar } from "@/lib/biaya";
 import type { Penilaian, Sekitar, SkorKos } from "@/lib/kos/detail";
 import { BelumDicatat, Blok } from "./bagian";
@@ -18,7 +20,9 @@ export function SkorRincian({
   tipeKamar,
   kamar,
   sekarang,
+  disurveiPada,
 }: {
+  disurveiPada: string | null;
   skor: SkorKos | null;
   penilaian: Penilaian | null;
   sekitar: Sekitar | null;
@@ -96,23 +100,41 @@ export function SkorRincian({
       <PenandaDemo className="-mt-1 mb-2" />
       <div className="flex flex-wrap items-center gap-3">
         <SkorBadge skor={skor?.skor ?? null} size="lg" />
-        {skor?.skor == null ? (
-          <p className="text-small text-arang-500">Rubrik kebersihan atau kedap suara belum lengkap, jadi kami tidak menebak angkanya.</p>
-        ) : (
-          <ul className="flex flex-wrap gap-1.5" aria-label="Ringkasan">
-            {komponen
-              .filter((k) => k.kata)
-              .map((k) => (
-                <li key={k.nama} className="rounded-full bg-kertas-50 px-2.5 py-1 text-small text-arang-900">
-                  <span className="text-arang-500">{k.nama}:</span> <b>{k.kata}</b>
-                </li>
-              ))}
-            <li className="flex items-center"><ArtiSkala /></li>
-          </ul>
-        )}
+        <p className="text-small text-arang-900">
+          {skor?.skor == null
+            ? "Rubrik kebersihan atau kedap suara belum lengkap, jadi kami tidak menebak angkanya."
+            : "dari 10, gabungan lima komponen survei. Makin tinggi makin baik."}
+        </p>
       </div>
+      {/* The two rubric scores people ask about, each with its scale and meaning. */}
+      <ul className="mt-3 grid gap-2 sm:grid-cols-2" aria-label="Skor rubrik">
+        <li className="rounded-xl border border-biru-100 bg-putih px-3 py-2 text-small text-arang-900">
+          Kebersihan{" "}
+          {skor?.kebersihan != null ? (
+            <>
+              <b className="tabular-nums">{formatSkala(skor.kebersihan)}/5</b>: {kataKebersihan(skor.kebersihan)?.toLowerCase()}
+            </>
+          ) : (
+            <b>belum dinilai</b>
+          )}
+        </li>
+        <li className="rounded-xl border border-biru-100 bg-putih px-3 py-2 text-small text-arang-900">
+          Kedap suara{" "}
+          {skor?.kedap != null ? (
+            <>
+              <b className="tabular-nums">{formatSkala(skor.kedap)}/5</b>: {artiKedap(skor.kedap)}
+            </>
+          ) : (
+            <b>belum dinilai</b>
+          )}
+        </li>
+      </ul>
+      <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <ArtiSkala disurveiPada={disurveiPada} kamarDiukur={penilaian?.kamar_diukur} />
+        <Link href="/cara-kami-menilai" className="text-small font-bold text-biru-600 hover:underline">Cara kami menilai</Link>
+      </p>
       <Accordion className="mt-3">
-        <AccordionItem title="Lihat rincian skor">
+        <AccordionItem title="Lihat rincian skor" ringkasan="Lima komponen, bobotnya, dan bukti ukurnya">
           <ul className="flex flex-col gap-4">
             {komponen.map((k) => (
               <li key={k.nama}>

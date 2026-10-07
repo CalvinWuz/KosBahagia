@@ -9,6 +9,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Toaster } from "@/components/ui/Toast";
 import { TrayBanding } from "@/components/kos/TrayBanding";
 import { PelacakRiwayat } from "@/lib/navigasi";
+import { SKRIP_PANDUAN } from "@/lib/panduan";
 import Script from "next/script";
 
 // Privacy-respecting analytics: cookieless, no personal data, off unless configured.
@@ -29,8 +30,11 @@ export const metadata: Metadata = {
 // Root layout for the renter surface (kosbahagia.com): the bright shell.
 export default function UserLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="id" className={plusJakarta.variable} data-scroll-behavior="smooth">
+    // suppressHydrationWarning: the guide flag below sets data-panduan on <html> before React hydrates.
+    <html lang="id" className={plusJakarta.variable} data-scroll-behavior="smooth" suppressHydrationWarning>
       <body className="flex min-h-dvh flex-col">
+        {/* Runs before the first paint so the new-user guide never flashes for someone who closed it. */}
+        <Script id="penanda-panduan" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: SKRIP_PANDUAN }} />
         <a
           href="#konten"
           className="sr-only rounded-lg bg-putih px-4 py-2 text-body font-bold text-biru-600 focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50"

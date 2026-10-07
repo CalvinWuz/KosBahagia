@@ -95,10 +95,15 @@ besarnya biaya tambahan; detailnya di `/cara-kami-menilai` dan [`docs/audit-2026
 **Penyewa** (`kosbahagia.com`, `app/(user)/`)
 
 - Beranda dengan preset kebutuhan ("Hemat buat mahasiswa", "Bersih & tenang", "Dekat kampus", ...)
-- Pencarian `/cari` dengan filter di URL (bisa dibagikan), peta MapLibre, dan saran area/kampus
+- Pencarian `/cari` dengan filter di URL (bisa dibagikan), peta MapLibre, dan saran area/kampus. Tipe kos bisa dipilih
+  lebih dari satu; harga, kamar mandi dalam, dan AC dicocokkan pada tipe kamar yang sama; baris "Filter aktif" bisa dihapus
+  satu per satu
 - Detail kos: galeri, tur 360° tanpa library, minimap rute SVG, rincian biaya, skor per komponen, catatan surveyor
 - Halaman area `/area/[slug]` (SSG, hanya untuk area dengan ≥ 5 listing segar) lengkap dengan fakta, FAQ, dan JSON-LD
-- Simpan dan bandingkan hingga 3 kos tanpa login (localStorage); perbandingan bisa dibagikan lewat URL
+- Simpan dan bandingkan hingga 3 kos tanpa login (localStorage), dengan tombol berlabel "Simpan"/"Tersimpan" dan
+  "Bandingkan"/"Dalam banding"; perbandingan bisa dibagikan lewat URL
+- Menu utama (Cari kos, Simpanan, Bandingkan, Cara menggunakan) dan panduan tiga langkah untuk pengguna baru
+- Penjelasan di dekat angka: arti skor, komponen biaya, dan cara jarak dihitung
 - `sitemap.xml`, `robots.txt`, OpenGraph, ISR
 
 **Mitra / pemilik** (`mitra.kosbahagia.com`, `app/(mitra)/`)
@@ -154,7 +159,7 @@ Halaman mitra ada di `http://localhost:3000/mitra`; OTP lokal menerima nomor uji
 | `npm run dev` | Server pengembangan (menyalin worker MapLibre lebih dulu) |
 | `npm run build` | Build produksi; harus lolos tanpa error TypeScript |
 | `npm run lint` · `npm run typecheck` · `npm test` | ESLint · `tsc --noEmit` · `node:test` untuk `lib/**/*.test.ts` |
-| `npx supabase test db` | 109 asersi pgTAP: `cari_kos_v3`, `kos_promosi`, `kos_skor`, `kos_kartu`, RLS, mitra, area, konsistensi data contoh |
+| `npx supabase test db` | 135 asersi pgTAP: `cari_kos_v4`, `kos_promosi_v2`, `cari_kos_v3`, `kos_promosi`, `kos_skor`, `kos_kartu`, RLS, mitra, area, konsistensi data contoh |
 | `npm run cek:skor-db` | Bandingkan skor dan total biaya di Postgres dengan `lib/scoring.ts` + `lib/biaya.ts` (butuh Supabase lokal) |
 | `npm run db:types` | Regenerasi `lib/supabase/types.ts` (jangan diedit tangan) |
 | `npm run seed:generate` | Tulis ulang `supabase/seed/01_seed.sql` dari generator deterministik; memakai `public/dummy/manifest.json` bila ada |
@@ -164,6 +169,7 @@ Halaman mitra ada di `http://localhost:3000/mitra`; OTP lokal menerima nomor uji
 | `npm run cek:skor-db` | Bukti `lib/scoring.ts` dan view `kos_skor` sepakat |
 | `npm run proses:360 -- foto.jpg --titik kamar --slug <kos>` | Buat file 360° 2048/6144 px dan cetak baris `kos_media` |
 | `npm run cek:rilis` | Gerbang rilis terhadap basis data produksi |
+| `python3 scripts/uji-ux-v3.py` | 26 skenario browser UX v3 + axe terhadap build lokal (`npm run start -- --port 3011`); butuh Playwright untuk Python |
 
 ## Struktur repo
 
@@ -187,13 +193,14 @@ lib/
   supabase/        rest.ts (penyewa), server/mitra (pemilik), types.ts (generated)
   blurhash.ts      decoder BlurHash untuk placeholder foto
 supabase/
-  migrations/      11 migrasi: enum → tabel → kos_skor + cari_kos → RLS → kos_kartu → area → media → mitra
+  migrations/      12 migrasi: enum → tabel → kos_skor + cari_kos → RLS → kos_kartu → area → media → mitra
                    → biaya per tipe kamar + rubrik transparansi → cari_kos_v3 + kos_promosi
+                   → cari_kos_v4 + kos_promosi_v2 (tipe kos multi, syarat kamar per tipe kamar)
   seed/            generate.ts → 01_seed.sql (50 kos: 40 Palmerah, 10 Lowokwaru)
   tests/           pgTAP
 proxy.ts           routing host mitra, gerbang sesi, noindex
 prompts/           prompt tugas 00–09 yang membangun repo ini, dijalankan berurutan
-docs/              audit-2026-10.md, uji-manusia.md, backlog.md, tangkapan/
+docs/              audit-2026-10.md, hasil-iterasi-v3.md, uji-manusia.md, backlog.md, tangkapan/
 CLAUDE.md          konteks proyek permanen (baca ini dulu sebelum mengubah apa pun)
 ```
 

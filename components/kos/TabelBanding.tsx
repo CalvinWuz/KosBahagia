@@ -104,7 +104,15 @@ function bikinBaris(kol: Kolom[]): Baris[] {
       })),
     },
     { label: "Ukuran kamar", sel: perKamar((k) => ({ teks: k.kamar!.ukuran ?? "Belum kami catat", kunci: k.kamar!.ukuran ?? "-" })) },
-    { label: "Kamar mandi dalam", terbaik: "max", sel: perKamar((k) => ({ teks: k.kmDalam ? "Ya" : "Tidak, dipakai bersama", kunci: String(k.kmDalam), angka: k.kmDalam ? 1 : 0 })) },
+    {
+      label: "Kamar mandi dalam",
+      terbaik: "max",
+      sel: perKamar((k) => ({
+        teks: k.kmDalam == null ? "Belum dicatat" : k.kmDalam ? "Ya" : "Tidak, dipakai bersama",
+        kunci: String(k.kmDalam),
+        angka: k.kmDalam == null ? null : k.kmDalam ? 1 : 0,
+      })),
+    },
     { label: "AC", terbaik: "max", sel: perKamar((k) => ({ teks: k.kamar!.boleh_ac ? "Ya" : "Tidak", kunci: String(k.kamar!.boleh_ac), angka: k.kamar!.boleh_ac ? 1 : 0 })) },
     { label: "Skor Bahagia", terbaik: "max", sel: kol.map((k) => ({ teks: <SkorBadge skor={k.kartu.skor} />, kunci: String(k.kartu.skor ?? "-"), angka: k.kartu.skor })) },
     { label: "Kebersihan", terbaik: "max", sel: kol.map((k) => ({ teks: teksSkor(k.kartu.skor_kebersihan, kataKebersihan(k.kartu.skor_kebersihan)), kunci: String(k.kartu.skor_kebersihan ?? "-"), angka: k.kartu.skor_kebersihan })) },

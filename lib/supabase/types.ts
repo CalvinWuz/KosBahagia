@@ -1306,6 +1306,59 @@ export type Database = {
           total_lengkap: boolean
         }[]
       }
+      cari_kos_v4: {
+        Args: {
+          p_aturan?: Json
+          p_fasilitas?: string[]
+          p_harga_max?: number
+          p_harga_min?: number
+          p_lat: number
+          p_limit?: number
+          p_lng: number
+          p_min_kebersihan?: number
+          p_min_kedap?: number
+          p_offset?: number
+          p_q?: string
+          p_radius_m?: number
+          p_tipe?: Database["public"]["Enums"]["tipe_kos"][]
+          p_urut?: string
+        }
+        Returns: {
+          ada_360: boolean
+          foto_blurhash: string
+          foto_lebar: number
+          foto_tinggi: number
+          foto_url: string
+          harga_bulanan: number
+          id: string
+          jarak_m: number
+          jumlah_red_flags: number
+          jumlah_tipe_kamar: number
+          kamar: Json
+          kamar_acuan_tersedia: number
+          kamar_acuan_total: number
+          kamar_id: string
+          kamar_nama: string
+          kamar_tersedia: number
+          ketersediaan_dikonfirmasi_pada: string
+          landmark_menit_jalan: number
+          landmark_nama: string
+          lat: number
+          lng: number
+          nama: string
+          perlu_dikonfirmasi: boolean
+          skor: number
+          skor_kebersihan: number
+          skor_kedap: number
+          slug: string
+          tier: Database["public"]["Enums"]["tier_kos"]
+          tipe: Database["public"]["Enums"]["tipe_kos"]
+          total_bulanan: number
+          total_count: number
+          total_estimasi: boolean
+          total_lengkap: boolean
+        }[]
+      }
       cari_saran: {
         Args: { p_limit?: number; q: string }
         Returns: {
@@ -1368,6 +1421,55 @@ export type Database = {
           total_lengkap: boolean
         }[]
       }
+      kos_cocok_v2: {
+        Args: {
+          p_aturan?: Json
+          p_fasilitas?: string[]
+          p_harga_max?: number
+          p_harga_min?: number
+          p_lat: number
+          p_lng: number
+          p_min_kebersihan?: number
+          p_min_kedap?: number
+          p_q?: string
+          p_radius_m?: number
+          p_tipe?: Database["public"]["Enums"]["tipe_kos"][]
+        }
+        Returns: {
+          ada_360: boolean
+          foto_blurhash: string
+          foto_lebar: number
+          foto_tinggi: number
+          foto_url: string
+          harga_bulanan: number
+          id: string
+          jarak_m: number
+          jumlah_red_flags: number
+          jumlah_tipe_kamar: number
+          kamar: Json
+          kamar_acuan_tersedia: number
+          kamar_acuan_total: number
+          kamar_id: string
+          kamar_nama: string
+          kamar_tersedia: number
+          ketersediaan_dikonfirmasi_pada: string
+          landmark_menit_jalan: number
+          landmark_nama: string
+          lat: number
+          lng: number
+          nama: string
+          perlu_dikonfirmasi: boolean
+          skor: number
+          skor_kebersihan: number
+          skor_kedap: number
+          slug: string
+          tier: Database["public"]["Enums"]["tier_kos"]
+          tipe: Database["public"]["Enums"]["tipe_kos"]
+          total_bulanan: number
+          total_estimasi: boolean
+          total_lengkap: boolean
+        }[]
+      }
       kos_promosi: {
         Args: {
           p_aturan?: Json
@@ -1382,6 +1484,56 @@ export type Database = {
           p_q?: string
           p_radius_m?: number
           p_tipe?: Database["public"]["Enums"]["tipe_kos"]
+        }
+        Returns: {
+          ada_360: boolean
+          foto_blurhash: string
+          foto_lebar: number
+          foto_tinggi: number
+          foto_url: string
+          harga_bulanan: number
+          id: string
+          jarak_m: number
+          jumlah_red_flags: number
+          jumlah_tipe_kamar: number
+          kamar: Json
+          kamar_acuan_tersedia: number
+          kamar_acuan_total: number
+          kamar_id: string
+          kamar_nama: string
+          kamar_tersedia: number
+          ketersediaan_dikonfirmasi_pada: string
+          landmark_menit_jalan: number
+          landmark_nama: string
+          lat: number
+          lng: number
+          nama: string
+          perlu_dikonfirmasi: boolean
+          skor: number
+          skor_kebersihan: number
+          skor_kedap: number
+          slug: string
+          tier: Database["public"]["Enums"]["tier_kos"]
+          tipe: Database["public"]["Enums"]["tipe_kos"]
+          total_bulanan: number
+          total_estimasi: boolean
+          total_lengkap: boolean
+        }[]
+      }
+      kos_promosi_v2: {
+        Args: {
+          p_aturan?: Json
+          p_fasilitas?: string[]
+          p_harga_max?: number
+          p_harga_min?: number
+          p_lat: number
+          p_limit?: number
+          p_lng: number
+          p_min_kebersihan?: number
+          p_min_kedap?: number
+          p_q?: string
+          p_radius_m?: number
+          p_tipe?: Database["public"]["Enums"]["tipe_kos"][]
         }
         Returns: {
           ada_360: boolean

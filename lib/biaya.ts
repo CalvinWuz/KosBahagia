@@ -148,6 +148,24 @@ export function komponenSingkat(b: RingkasanBiaya): string[] {
     });
 }
 
+/**
+ * What the total is made of, in one line, the same on every screen:
+ * "Sewa + listrik (estimasi) + sampah; air termasuk sewa". `sewa` replaces
+ * the word "Sewa" (the card passes "sewa Rp1,45 jt"); `termasuk: false`
+ * drops the "… termasuk sewa" tail where space is short. Unknown amounts are
+ * left to the caller, which always shows them separately and prominently.
+ */
+export function teksKomponen(b: RingkasanBiaya, { sewa = "Sewa", termasuk: denganTermasuk = true }: { sewa?: string; termasuk?: boolean } = {}): string {
+  const kecil = (nama: string) => {
+    const asli = nama.replace(/^Biaya /, "");
+    return /^(AC|WiFi|TV|PAM)\b/.test(asli) ? asli : asli.charAt(0).toLowerCase() + asli.slice(1);
+  };
+  const tambah = komponenSingkat(b);
+  const termasuk = b.bulanan.filter((x) => x.sifat === "termasuk").map((x) => kecil(x.nama));
+  const daftar = (xs: string[]) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} dan ${xs[xs.length - 1]}`);
+  return [sewa, ...tambah].join(" + ") + (denganTermasuk && termasuk.length ? `; ${daftar(termasuk)} termasuk sewa` : "");
+}
+
 export type UangMasuk = {
   /** Months paid up front; null when not known. */
   bulanDimuka: number | null;

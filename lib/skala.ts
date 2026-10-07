@@ -48,6 +48,17 @@ export function kataSelisihDb(selisih: number | null | undefined): string | null
   return cari(SKALA_SELISIH_DB, selisih)?.kata ?? null;
 }
 
+/**
+ * What a kedap score means in practice, next to the number: a higher score
+ * holds back more sound from the next room. Same thresholds as SKALA_KEDAP.
+ */
+export function artiKedap(nilai: number | null | undefined): string | null {
+  if (nilai == null || !Number.isFinite(nilai)) return null;
+  if (nilai >= 4) return "suara kamar sebelah nyaris tidak terdengar";
+  if (nilai >= 3) return "suara kamar sebelah terdengar samar";
+  return "obrolan kamar sebelah ikut terdengar";
+}
+
 /** Filter chips: the thresholds a renter actually picks between. */
 export const PILIHAN_KEBERSIHAN = [
   { nilai: 3, label: "Cukup 3+" },

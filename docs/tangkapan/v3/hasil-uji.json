@@ -1,0 +1,168 @@
+{
+  "base": "http://localhost:3011",
+  "waktu": "2026-10-07 19:20",
+  "hasil": [
+    {
+      "no": 1,
+      "skenario": "Beranda → cari → detail",
+      "lulus": true,
+      "catatan": "11 kos; kartu memuat total, status, kamar; detail terbuka dengan bar harga"
+    },
+    {
+      "no": 2,
+      "skenario": "Simpan dari kartu, buka simpanan, reload",
+      "lulus": true,
+      "catatan": "'Kos Putri Melati' tersimpan; tombol jadi Tersimpan; tidak pindah halaman; masih ada setelah reload"
+    },
+    {
+      "no": 3,
+      "skenario": "Hapus simpanan dari daftar, detail, kartu",
+      "lulus": true,
+      "catatan": "dari /disimpan dan dari detail; kartu di hasil ikut kembali ke 'Simpan'; localStorage kosong"
+    },
+    {
+      "no": 4,
+      "skenario": "Banding dua kos dengan tipe kamar tertentu",
+      "lulus": true,
+      "catatan": "kolom Anggrek Cakra tetap kamar AC (Rp2.195.000, Penuh), tipe penghuni tertulis"
+    },
+    {
+      "no": 5,
+      "skenario": "Tambah kandidat keempat",
+      "lulus": true,
+      "catatan": "sebelum ['Kost Anggrek Cakra', 'Kos Putri Melati', 'Kost Putri Aisyah'], sesudah ['Kost Anggrek Cakra', 'Griya Asri Kemanggisan', 'Kost Putri Aisyah']"
+    },
+    {
+      "no": 6,
+      "skenario": "Pilih Putra + Campur",
+      "lulus": true,
+      "catatan": "UI 23 = DB 23; kartu dimuat: ['Campur', 'Putra']"
+    },
+    {
+      "no": 7,
+      "skenario": "Hapus Putra dari pilihan",
+      "lulus": true,
+      "catatan": "URL tipe=campur; 14 kos (DB 14)"
+    },
+    {
+      "no": 8,
+      "skenario": "Tanpa tipe = ketiga tipe",
+      "lulus": true,
+      "catatan": "tanpa pilihan 36, ketiganya 36, DB 36"
+    },
+    {
+      "no": 9,
+      "skenario": "URL tipe lama dan multi-tipe",
+      "lulus": true,
+      "catatan": "tipe=putra → 9, badge 'Filter\n1'; tipe=campur,putra,asrama → 23 (nilai asing dibuang)"
+    },
+    {
+      "no": 10,
+      "skenario": "Kamar mandi dalam pada kos bertipe kamar campuran",
+      "lulus": true,
+      "catatan": "kartu dan detail menunjuk kamar AC + kamar mandi dalam (Penuh, Rp2.195.000), tombol 'Tanya kapan tersedia'"
+    },
+    {
+      "no": 11,
+      "skenario": "Harga + kamar mandi dalam + tipe",
+      "lulus": true,
+      "catatan": "5 kos; setiap kamar acuan ≤ Rp2.200.000, total lengkap, ada kamar mandi dalam"
+    },
+    {
+      "no": 12,
+      "skenario": "Daftar, promosi, jumlah, peta memakai filter yang sama",
+      "lulus": true,
+      "catatan": "jumlah 11 = DB 11; promosi ['the-suites-kemanggisan'] ⊆ hasil; peta menerima array hasil yang sama (PetaHasil kos={hasil})"
+    },
+    {
+      "no": 13,
+      "skenario": "Ubah filter cepat saat request berjalan",
+      "lulus": true,
+      "catatan": "respons lama ditahan 2,5 s; tampil 5 kos = DB 5 untuk pilihan terbaru"
+    },
+    {
+      "no": 14,
+      "skenario": "Refresh, URL dibagikan, back/forward",
+      "lulus": true,
+      "catatan": "filter dan mode peta bertahan setelah reload (True) dan di konteks baru (True); back/forward menelusuri pilihan chip (True)"
+    },
+    {
+      "no": 15,
+      "skenario": "Tutup FilterSheet lewat Escape, back, tombol",
+      "lulus": true,
+      "catatan": "satu sesi = 1 entri history; pilihan tetap setelah Escape dan back; fokus kembali ke 'Filter\n2'"
+    },
+    {
+      "no": 16,
+      "skenario": "Rentang harga salah dan hasil nol",
+      "lulus": true,
+      "catatan": "error rentang tampil; saran: [('Hapus semua syarat fasilitas', 17, 17), ('Hapus batas harga maksimal', 11, 11), ('Longgarkan harga ke Rp1.900.000', 2, 2)]"
+    },
+    {
+      "no": 17,
+      "skenario": "Bantuan skor/biaya/jarak lewat tap dan keyboard",
+      "lulus": true,
+      "catatan": "sheet skor & jarak dibuka (tap, Enter), Escape menutup, fokus kembali; 'Lihat rincian biaya' membuka rincian (top 112px, di bawah header)"
+    },
+    {
+      "no": 18,
+      "skenario": "Ganti tipe kamar di detail",
+      "lulus": true,
+      "catatan": "total, status, fasilitas kamar, tombol kontak, dan ?kamar= ikut berubah"
+    },
+    {
+      "no": 19,
+      "skenario": "Anchor biaya/fasilitas/sekitar saat terlipat",
+      "lulus": true,
+      "catatan": "chip Biaya membuka rincian; tautan langsung #rincian-biaya terbuka; target di bawah header (106px): biaya 112, sekitar 112, fasilitas 112"
+    },
+    {
+      "no": 20,
+      "skenario": "Skor null, biaya belum diketahui, kamar penuh, red flag",
+      "lulus": true,
+      "catatan": "Belum dinilai; Total sementara + nama biaya yang belum diketahui terlihat tanpa membuka rincian; panel keselamatan selalu terbuka (kamar penuh: skenario 10)"
+    },
+    {
+      "no": 21,
+      "skenario": "Panduan pertama kali, lewati, buka ulang",
+      "lulus": true,
+      "catatan": "kartu tampil lalu tertutup (fokus ke #preset); setelah reload sudah display:none sebelum hidrasi; kunci kb:panduan terpisah dari kb:simpan; dibuka ulang dari menu; tanpa localStorage tetap jalan"
+    },
+    {
+      "no": 22,
+      "skenario": "Data sekitar kosong/sebagian, harga laundry tidak tersedia",
+      "lulus": true,
+      "catatan": "tanpa data: 'Belum kami catat'; tidak ada klaim 'tidak ada yang dekat'; harga makan dan laundry tampil hanya bila tercatat"
+    },
+    {
+      "no": 23,
+      "skenario": "Menu dari header khusus /cari dan /kos di HP",
+      "lulus": true,
+      "catatan": "Cari kos, Simpanan, Bandingkan, Cara menggunakan dapat dicapai; Escape menutup dan fokus kembali ke Menu; 'Cari kos' kembali ke pencarian terakhir beserta filternya"
+    },
+    {
+      "no": 24,
+      "skenario": "HP, PC, zoom 200%, keyboard, reduced motion",
+      "lulus": true,
+      "catatan": "overflow: tidak ada (320/360/390/768/1440 px, teks 200% di 390 px, 640 px = 1280 px zoom 200%); transisi reduced motion 1e-05s; Tab dari judul kartu ke 'Simpan Kos Putri Melati', Enter menyimpan tanpa pindah halaman"
+    },
+    {
+      "no": 25,
+      "skenario": "Termurah/Skor tertinggi setelah filter",
+      "lulus": true,
+      "catatan": "urutan kartu = urutan cari_kos_v4; total lengkap naik; promosi di blok terpisah tidak menyisip"
+    },
+    {
+      "no": 26,
+      "skenario": "Mode demo dan kontak",
+      "lulus": true,
+      "catatan": "tombol kontak menampilkan pesan, tidak membuka WhatsApp; 10 label 'Data contoh' di detail"
+    },
+    {
+      "no": 99,
+      "skenario": "axe-core (WCAG 2.1 A/AA + best practice)",
+      "lulus": true,
+      "catatan": "{}"
+    }
+  ]
+}

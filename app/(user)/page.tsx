@@ -6,6 +6,7 @@ import { BaruDisurvei } from "@/components/beranda/BaruDisurvei";
 import { PenjelasBiaya } from "@/components/beranda/PenjelasBiaya";
 import { CaraVerifikasi } from "@/components/beranda/CaraVerifikasi";
 import { LanjutkanCari } from "@/components/beranda/LanjutkanCari";
+import { PanduanSingkat } from "@/components/panduan/PanduanSingkat";
 import { PencarianHero, type AreaRingkas } from "@/components/cari/PencarianHero";
 import { PresetGrid } from "@/components/cari/PresetGrid";
 import type { KosKartu } from "@/components/kos/KosCard";
@@ -134,6 +135,7 @@ export default async function Beranda() {
         </div>
       </section>
 
+      <PanduanSingkat fokusKe="preset" />
       <LanjutkanCari />
 
       <section aria-labelledby="preset" className="mx-auto w-full max-w-6xl px-4">

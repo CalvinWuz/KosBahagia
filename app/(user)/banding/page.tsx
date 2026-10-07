@@ -36,9 +36,13 @@ export default async function HalamanBanding({ searchParams }: { searchParams: P
         <>
           {hilang > 0 && <p className="text-small text-arang-500">{hilang} kos dari tautan ini sudah tidak tayang dan tidak ikut dibandingkan.</p>}
           {kos.length < 2 && (
-            <p className="text-small text-arang-500">
-              Baru satu pilihan. <Link href="/cari" className="font-bold text-biru-600 hover:underline">Tambah satu lagi</Link> supaya ada yang dibandingkan.
-            </p>
+            <div className="flex flex-col items-start gap-2 rounded-2xl border border-biru-100 bg-putih p-4" role="status">
+              <p className="text-body font-bold text-arang-900">Baru satu pilihan.</p>
+              <p className="text-small text-arang-900">
+                Tambahkan setidaknya satu kos lagi: tekan <b>Bandingkan</b> di kartu atau halaman kos lain, lalu kembali ke sini.
+              </p>
+              <Link href="/cari" className="text-small font-bold text-biru-600 hover:underline">Cari kos lain</Link>
+            </div>
           )}
           <TabelBanding kos={kos} url={url} sekarang={new Date().toISOString()} />
         </>

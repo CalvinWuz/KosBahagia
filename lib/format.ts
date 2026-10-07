@@ -46,6 +46,11 @@ export function formatWaktuRelatif(
   return `${Math.floor(hari / 365)} tahun lalu`;
 }
 
+/** A 1–5 rubric value: "4,3", or "4" when whole. Pair it with "/5" in the UI. */
+export function formatSkala(nilai: number): string {
+  return angkaSatuDesimal.format(Math.round(nilai * 10) / 10);
+}
+
 const angkaTepatSatuDesimal = new Intl.NumberFormat("id-ID", {
   minimumFractionDigits: 1,
   maximumFractionDigits: 1,

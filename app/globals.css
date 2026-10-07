@@ -139,6 +139,12 @@
   }
 }
 
+/* New-user guide: hidden once read on this device. The flag is set on <html>
+   before the first paint (app/(user)/layout.tsx, lib/panduan.ts). */
+html[data-panduan="v1"] [data-panduan-baru] {
+  display: none;
+}
+
 @layer base {
   html {
     color-scheme: light;

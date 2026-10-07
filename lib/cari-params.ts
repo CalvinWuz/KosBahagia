@@ -5,6 +5,7 @@
 //   /cari?harga_max=1200000&urut=termurah
 //   /cari?kebersihan=4&kedap=4
 //   /cari?fasilitas=ac,kamar-mandi-dalam
+//   /cari?tipe=putra,campur        any of the listed types (old ?tipe=putra still reads)
 //   /cari?q=melati
 
 export type UrutCari = "relevan" | "termurah" | "terdekat" | "skor";
@@ -22,7 +23,8 @@ export type CariParams = {
   lng?: number;
   harga_min?: number;
   harga_max?: number;
-  tipe?: TipeKosParam;
+  /** Kos types, any of them. Empty or absent = every type. Stable order, no duplicates. */
+  tipe?: TipeKosParam[];
   /** Minimum kebersihan score (1–5). */
   kebersihan?: number;
   /** Minimum kedap suara score (1–5). */
@@ -43,7 +45,21 @@ export type CariParams = {
 };
 
 const URUT: UrutCari[] = ["relevan", "termurah", "terdekat", "skor"];
-const TIPE: TipeKosParam[] = ["putra", "putri", "campur"];
+/** Display and serialisation order of the kos types. */
+export const TIPE_KOS: readonly TipeKosParam[] = ["putra", "putri", "campur"];
+
+/** Known types only, each once, in TIPE_KOS order: the same selection always writes the same URL. */
+export function rapikanTipe(nilai: readonly string[] | undefined): TipeKosParam[] {
+  const ada = new Set((nilai ?? []).map((t) => t.trim().toLowerCase()));
+  return TIPE_KOS.filter((t) => ada.has(t));
+}
+
+/** Adds the type when absent, removes only that type when present. */
+export function toggleTipe(p: CariParams, tipe: TipeKosParam): CariParams {
+  const ada = p.tipe ?? [];
+  const baru = ada.includes(tipe) ? ada.filter((t) => t !== tipe) : [...ada, tipe];
+  return { ...p, tipe: rapikanTipe(baru) };
+}
 
 /** Builds a /cari href. Omits empty values so URLs stay short and shareable. */
 export function hrefCari(p: CariParams): string {
@@ -57,10 +73,11 @@ export function hrefCari(p: CariParams): string {
   }
   if (p.harga_min) sp.set("harga_min", String(p.harga_min));
   if (p.harga_max) sp.set("harga_max", String(p.harga_max));
-  if (p.tipe) sp.set("tipe", p.tipe);
+  const tipe = rapikanTipe(p.tipe);
+  if (tipe.length) sp.set("tipe", tipe.join(","));
   if (p.kebersihan) sp.set("kebersihan", String(p.kebersihan));
   if (p.kedap) sp.set("kedap", String(p.kedap));
-  if (p.fasilitas?.length) sp.set("fasilitas", p.fasilitas.join(","));
+  if (p.fasilitas?.length) sp.set("fasilitas", [...new Set(p.fasilitas)].join(","));
   if (p.pasangan) sp.set("pasangan", p.pasangan);
   if (p.tanpa_jam_malam) sp.set("tanpa_jam_malam", "1");
   if (p.hewan) sp.set("hewan", "1");
@@ -69,7 +86,8 @@ export function hrefCari(p: CariParams): string {
   if (p.urut && p.urut !== "relevan") sp.set("urut", p.urut);
   if (p.hal && p.hal > 1) sp.set("hal", String(p.hal));
   if (p.tampil === "peta") sp.set("tampil", "peta");
-  const qs = sp.toString();
+  // Commas are legal in a query string; keep lists readable (tipe=putra,campur).
+  const qs = sp.toString().replace(/%2C/gi, ",");
   return qs ? `/cari?${qs}` : "/cari";
 }
 
@@ -87,7 +105,14 @@ function angka(v: string | string[] | undefined, min: number, max: number): numb
 export function bacaCariParams(mentah: Mentah | URLSearchParams): CariParams {
   const g = (k: string) =>
     mentah instanceof URLSearchParams ? (mentah.get(k) ?? undefined) : satu(mentah[k]);
-  const tipe = g("tipe");
+  // Every value of a list key, whether written as a=x,y or a=x&a=y.
+  const daftar = (k: string): string[] => {
+    const v = mentah instanceof URLSearchParams ? mentah.getAll(k) : mentah[k];
+    const semua = Array.isArray(v) ? v : v != null ? [v] : [];
+    return semua.flatMap((x) => x.split(",")).map((x) => x.trim()).filter(Boolean);
+  };
+  const tipe = rapikanTipe(daftar("tipe"));
+  const fasilitas = [...new Set(daftar("fasilitas"))];
   const urut = g("urut");
   const pasangan = g("pasangan");
   const lat = angka(g("lat"), -11, 6);
@@ -100,10 +125,10 @@ export function bacaCariParams(mentah: Mentah | URLSearchParams): CariParams {
     lng: lat != null && lng != null ? lng : undefined,
     harga_min: angka(g("harga_min"), 0, 50_000_000),
     harga_max: angka(g("harga_max"), 0, 50_000_000),
-    tipe: TIPE.includes(tipe as TipeKosParam) ? (tipe as TipeKosParam) : undefined,
+    tipe: tipe.length ? tipe : undefined,
     kebersihan: angka(g("kebersihan"), 1, 5),
     kedap: angka(g("kedap"), 1, 5),
-    fasilitas: g("fasilitas")?.split(",").map((s) => s.trim()).filter(Boolean),
+    fasilitas: fasilitas.length ? fasilitas : undefined,
     pasangan: pasangan === "boleh" || pasangan === "surat_nikah" ? pasangan : undefined,
     tanpa_jam_malam: g("tanpa_jam_malam") === "1",
     hewan: g("hewan") === "1",
@@ -130,11 +155,26 @@ export const KUNCI_FILTER = [
   "dekat_minimarket",
 ] as const satisfies readonly (keyof CariParams)[];
 
+/**
+ * How many requirements narrow the search, for the badge on "Filter". One
+ * requirement each: the price range (min and/or max), the kos type (however
+ * many types are ticked: it is one "any of" choice), every facility, every
+ * score floor and every rule. lib/cari/filter-aktif.ts lists the same
+ * requirements as removable chips.
+ */
 export function jumlahFilterAktif(p: CariParams): number {
-  return KUNCI_FILTER.filter((k) => {
-    const v = p[k];
-    return Array.isArray(v) ? v.length > 0 : Boolean(v);
-  }).length;
+  let n = 0;
+  if (p.harga_min || p.harga_max) n++;
+  if (p.tipe?.length) n++;
+  if (p.kebersihan) n++;
+  if (p.kedap) n++;
+  n += new Set(p.fasilitas ?? []).size;
+  if (p.pasangan) n++;
+  if (p.tanpa_jam_malam) n++;
+  if (p.hewan) n++;
+  if (p.masak) n++;
+  if (p.dekat_minimarket) n++;
+  return n;
 }
 
 /** Same search, no narrowing filters. */

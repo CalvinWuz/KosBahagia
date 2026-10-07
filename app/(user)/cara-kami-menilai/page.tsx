@@ -94,6 +94,17 @@ export default function CaraKamiMenilai() {
         </ul>
       </section>
 
+      <section aria-labelledby="jarak">
+        <h2 id="jarak" className="scroll-mt-20 text-h2 text-arang-900">Cara kami menulis jarak dan fasilitas</h2>
+        <ul className="mt-2 flex flex-col gap-2 text-small text-arang-900">
+          <li><strong>Jarak garis lurus</strong>: di hasil pencarian dari kampus, stasiun, atau titik di peta, jarak dihitung lurus dari koordinat kos ke titik itu. Urutan Terdekat memakai angka yang sama. Ini bukan panjang rute jalan.</li>
+          <li><strong>Menit jalan kaki dan jarak ke patokan</strong>: dicatat surveyor saat survei, dari patokan terdekat (kampus atau stasiun) ke kos. Kartu hanya menampilkan menitnya bila patokannya sama dengan tujuan pencarianmu.</li>
+          <li><strong>Ilustrasi rute</strong> di halaman kos menunjukkan patokan yang dilewati, bukan peta berskala. Di <strong>peta asli</strong>, garis putus-putus hanya arah lurus, bukan rute jalan kaki.</li>
+          <li><strong>Tempat di sekitar</strong> (minimarket, warung, laundry, transportasi): nama, jarak dari kos, dan harga yang dicatat surveyor. Kalau belum dicatat, kami menulis “Belum kami catat”, bukan “tidak ada”.</li>
+          <li><strong>Fasilitas</strong>: kamar mandi dalam, AC, dan parkir dicatat per tipe kamar. Fasilitas lain dicatat per kos; yang dipakai bersama tidak berarti ada di setiap kamar. Fasilitas yang punya biaya sendiri, misalnya WiFi atau AC, ditulis bersama biayanya.</li>
+        </ul>
+      </section>
+
       <section aria-labelledby="batas">
         <h2 id="batas" className="text-h2 text-arang-900">Batas pengukuran</h2>
         <ul className="mt-2 flex flex-col gap-2 text-small text-arang-900">
