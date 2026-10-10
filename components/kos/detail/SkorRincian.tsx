@@ -1,17 +1,22 @@
+"use client";
+
 import Link from "next/link";
 import { Accordion, AccordionItem } from "@/components/ui/Accordion";
 import { SkorBadge } from "@/components/kos/SkorBadge";
 import { PenandaDemo } from "@/components/ui/PenandaDemo";
 import { BOBOT, cekTransparansi, KRITERIA_TRANSPARANSI } from "@/lib/scoring";
-import { artiKedap, kataKebersihan, kataKedap } from "@/lib/skala";
-import { formatSkala } from "@/lib/format";
+import { kataKebersihan, kataKedap } from "@/lib/skala";
+import { lompatKe } from "@/lib/bagian";
 import type { TipeKamar } from "@/lib/biaya";
 import type { Penilaian, Sekitar, SkorKos } from "@/lib/kos/detail";
 import { BelumDicatat, Blok } from "./bagian";
 import { ArtiSkala } from "./ArtiSkala";
 
-// Block 3: the number, then every component with its raw measurement.
-// The formula is the same one lib/scoring.ts documents.
+// Block 3: the total /10, one sentence, and the five-component calculation
+// in an accordion. The two /5 rubric scores live in "Kebersihan & kedap
+// suara" (block 5); this block links there instead of repeating them, and
+// the calculation points at that evidence rather than listing raw
+// measurements again. The formula is the same one lib/scoring.ts documents.
 export function SkorRincian({
   skor,
   penilaian,
@@ -41,25 +46,16 @@ export function SkorRincian({
       bobot: BOBOT.kebersihan,
       nilai: skor?.kebersihan ?? null,
       kata: kataKebersihan(skor?.kebersihan),
-      bukti: penilaian
-        ? [
-            ["Kamar mandi", penilaian.skor_kamar_mandi],
-            ["Dapur", penilaian.skor_dapur],
-            ["Koridor", penilaian.skor_koridor],
-          ].map(([l, v]) => `${l} ${v == null ? "belum dicatat" : `${v}/5`}`)
-        : [],
+      bukti: ["Rata-rata kamar mandi, dapur bersama, dan koridor"],
+      rujukan: penilaian ? { id: "bukti-kebersihan", label: "Lihat bukti kebersihan" } : undefined,
     },
     {
       nama: "Kedap suara",
       bobot: BOBOT.kedap,
       nilai: skor?.kedap ?? null,
       kata: kataKedap(skor?.kedap),
-      bukti: penilaian
-        ? [
-            penilaian.material_tembok ? `Tembok ${penilaian.material_tembok}` : null,
-            penilaian.db_ambient != null && penilaian.db_tes != null ? `${penilaian.db_ambient} dB sunyi, ${penilaian.db_tes} dB saat tes` : null,
-          ].filter((x): x is string => Boolean(x))
-        : [],
+      bukti: ["Dari material tembok dan tes desibel"],
+      rujukan: penilaian ? { id: "bukti-kedap", label: "Lihat bukti kedap suara" } : undefined,
     },
     {
       nama: "Transparansi biaya",
@@ -106,35 +102,22 @@ export function SkorRincian({
             : "dari 10, gabungan lima komponen survei. Makin tinggi makin baik."}
         </p>
       </div>
-      {/* The two rubric scores people ask about, each with its scale and meaning. */}
-      <ul className="mt-3 grid gap-2 sm:grid-cols-2" aria-label="Skor rubrik">
-        <li className="rounded-xl border border-biru-100 bg-putih px-3 py-2 text-small text-arang-900">
-          Kebersihan{" "}
-          {skor?.kebersihan != null ? (
-            <>
-              <b className="tabular-nums">{formatSkala(skor.kebersihan)}/5</b>: {kataKebersihan(skor.kebersihan)?.toLowerCase()}
-            </>
-          ) : (
-            <b>belum dinilai</b>
-          )}
-        </li>
-        <li className="rounded-xl border border-biru-100 bg-putih px-3 py-2 text-small text-arang-900">
-          Kedap suara{" "}
-          {skor?.kedap != null ? (
-            <>
-              <b className="tabular-nums">{formatSkala(skor.kedap)}/5</b>: {artiKedap(skor.kedap)}
-            </>
-          ) : (
-            <b>belum dinilai</b>
-          )}
-        </li>
-      </ul>
       <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <a
+          href="#kebersihan"
+          onClick={(e) => {
+            e.preventDefault();
+            lompatKe("kebersihan");
+          }}
+          className="sentuh relative rounded-sm text-small font-bold text-biru-600 hover:underline"
+        >
+          Lihat kebersihan & kedap suara
+        </a>
         <ArtiSkala disurveiPada={disurveiPada} kamarDiukur={penilaian?.kamar_diukur} />
         <Link href="/cara-kami-menilai" className="text-small font-bold text-biru-600 hover:underline">Cara kami menilai</Link>
       </p>
       <Accordion className="mt-3">
-        <AccordionItem title="Lihat rincian skor" ringkasan="Lima komponen, bobotnya, dan bukti ukurnya">
+        <AccordionItem title="Lihat perhitungan skor" ringkasan="Lima komponen dan bobotnya">
           <ul className="flex flex-col gap-4">
             {komponen.map((k) => (
               <li key={k.nama}>
@@ -158,6 +141,20 @@ export function SkorRincian({
                     {k.bukti.map((b) => (
                       <li key={b}>{b}</li>
                     ))}
+                    {k.rujukan && (
+                      <li>
+                        <a
+                          href={`#${k.rujukan.id}`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (k.rujukan) lompatKe(k.rujukan.id);
+                          }}
+                          className="font-bold text-biru-600 hover:underline"
+                        >
+                          {k.rujukan.label}
+                        </a>
+                      </li>
+                    )}
                   </ul>
                 )}
               </li>

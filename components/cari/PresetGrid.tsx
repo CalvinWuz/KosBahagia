@@ -144,7 +144,7 @@ function KartuPreset({
     </>
   );
   return href ? (
-    <Link href={href} className={kelasKartu}>
+    <Link href={href} transitionTypes={["maju"]} className={kelasKartu}>
       {isi}
     </Link>
   ) : (

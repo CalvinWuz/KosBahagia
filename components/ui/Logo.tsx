@@ -1,8 +1,9 @@
 import { cn } from "@/lib/cn";
 
 // Brand mark: a house with a smile. Inherits `currentColor`, so the parent
-// decides the colour (biru on the user surface, arang on mitra).
-export function Logo({ className }: { className?: string }) {
+// decides the colour (biru on the user surface, arang on mitra). The smile
+// has pathLength 1 so the reload intro can draw it with a dash offset.
+export function Logo({ className, kelasSenyum }: { className?: string; kelasSenyum?: string }) {
   return (
     <svg
       viewBox="0 0 32 32"
@@ -17,7 +18,8 @@ export function Logo({ className }: { className?: string }) {
       />
       <path
         d="M11.2 19.2c1.4 2.1 3 3.1 4.8 3.1s3.4-1 4.8-3.1"
-        className="stroke-putih"
+        pathLength={1}
+        className={cn("stroke-putih", kelasSenyum)}
         strokeWidth={2.6}
         strokeLinecap="round"
         fill="none"

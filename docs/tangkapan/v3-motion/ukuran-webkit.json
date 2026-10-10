@@ -1,0 +1,22 @@
+{
+  "hp #skor": {
+    "tinggi_px": 340,
+    "jumlah_kata": 46,
+    "kata_terlihat": 46
+  },
+  "hp #kebersihan": {
+    "tinggi_px": 568,
+    "jumlah_kata": 80,
+    "kata_terlihat": 80
+  },
+  "pc #skor": {
+    "tinggi_px": 244,
+    "jumlah_kata": 46,
+    "kata_terlihat": 46
+  },
+  "pc #kebersihan": {
+    "tinggi_px": 382,
+    "jumlah_kata": 80,
+    "kata_terlihat": 80
+  }
+}

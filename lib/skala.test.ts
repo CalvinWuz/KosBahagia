@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { artiKedap, chipKebersihan, chipKedap, kataKebersihan, kataKedap, kataSelisihDb } from "./skala.ts";
+import { artiKedap, chipKebersihan, chipKedap, kataKebersihan, kataKedap, kataSelisihDb, keteranganKebersihan, keteranganKedap, SKALA_KEBERSIHAN, SKALA_KEDAP } from "./skala.ts";
 
 describe("kataKebersihan", () => {
   it("maps the rubric thresholds", () => {
@@ -65,5 +65,20 @@ describe("artiKedap", () => {
       if (kata === "Cukup kedap") assert.match(arti, /samar/);
       if (kata === "Berisik") assert.match(arti, /ikut terdengar/);
     }
+  });
+});
+
+describe("keterangan tingkat", () => {
+  it("comes from the same step as the word, and never invents one for missing data", () => {
+    for (const n of [1, 2.9, 3, 3.9, 4, 4.4, 4.5, 5]) {
+      const kata = kataKebersihan(n);
+      assert.equal(keteranganKebersihan(n), SKALA_KEBERSIHAN.find((t) => t.kata === kata)?.keterangan);
+    }
+    for (const n of [1, 2, 3, 4, 5]) {
+      const kata = kataKedap(n);
+      assert.equal(keteranganKedap(n), SKALA_KEDAP.find((t) => t.kata === kata)?.keterangan);
+    }
+    assert.equal(keteranganKebersihan(null), null);
+    assert.equal(keteranganKedap(undefined), null);
   });
 });

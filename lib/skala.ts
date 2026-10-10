@@ -48,6 +48,14 @@ export function kataSelisihDb(selisih: number | null | undefined): string | null
   return cari(SKALA_SELISIH_DB, selisih)?.kata ?? null;
 }
 
+/** The rubric's one-sentence description for a score, e.g. "Terawat; paling banyak satu hal kecil yang perlu dibersihkan." */
+export function keteranganKebersihan(nilai: number | null | undefined): string | null {
+  return cari(SKALA_KEBERSIHAN, nilai)?.keterangan ?? null;
+}
+export function keteranganKedap(nilai: number | null | undefined): string | null {
+  return cari(SKALA_KEDAP, nilai)?.keterangan ?? null;
+}
+
 /**
  * What a kedap score means in practice, next to the number: a higher score
  * holds back more sound from the next room. Same thresholds as SKALA_KEDAP.

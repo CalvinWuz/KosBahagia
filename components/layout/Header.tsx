@@ -33,7 +33,10 @@ export function Header() {
           aria-label="Kos Bahagia, ke beranda"
           className="flex shrink-0 items-center gap-2 rounded-lg text-biru-500"
         >
-          <Logo />
+          {/* data-logo-header: where the reload intro lands (components/layout/IntroLogo.tsx). */}
+          <span data-logo-header className="inline-flex">
+            <Logo />
+          </span>
           <span className={cn("text-h2 text-biru-600", cari && "hidden sm:inline")}>
             Kos Bahagia
           </span>

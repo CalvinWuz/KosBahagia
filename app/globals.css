@@ -139,6 +139,129 @@
   }
 }
 
+/* ------------------------------------------------------------- motion v3.1
+   Page transitions: React <ViewTransition> in components/layout/TransisiHalaman.tsx.
+   Only the page content animates; the header, banner, footer and compare tray
+   (the "root" snapshot) swap in place, so the header never moves. */
+:root {
+  --durasi-halaman-keluar: 120ms;
+  --durasi-halaman-masuk: 200ms;
+  --jeda-halaman-masuk: 40ms;
+  --geser-halaman-maju: 6px;
+  --durasi-intro-muncul: 240ms;
+  --durasi-intro-senyum: 320ms;
+  --jeda-intro-senyum: 160ms;
+  /* CSS safety net if JavaScript never takes over the intro (lib/intro-logo.ts). */
+  --jeda-intro-cadangan: 1500ms;
+}
+
+::view-transition {
+  /* Clicks during the short transition reach the live page. */
+  pointer-events: none;
+}
+::view-transition-old(root) {
+  display: none;
+}
+::view-transition-new(root) {
+  animation: none;
+}
+::view-transition-old(.halaman-keluar) {
+  animation: var(--durasi-halaman-keluar) ease-in both kb-halaman-keluar;
+}
+::view-transition-new(.halaman-masuk) {
+  animation: var(--durasi-halaman-masuk) var(--ease-out) var(--jeda-halaman-masuk) both kb-halaman-masuk;
+}
+::view-transition-new(.halaman-maju) {
+  animation: var(--durasi-halaman-masuk) var(--ease-out) var(--jeda-halaman-masuk) both kb-halaman-maju;
+}
+@keyframes kb-halaman-keluar {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes kb-halaman-masuk {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes kb-halaman-maju {
+  from {
+    opacity: 0;
+    transform: translateY(var(--geser-halaman-maju));
+  }
+}
+
+/* Logo intro on a full reload (components/layout/IntroLogo.tsx). Hidden
+   unless the pre-paint script set html[data-intro]; then: appear, draw the
+   smile, and (if JS never takes over) fade out and give the header mark back
+   by itself. With JS (data-intro="js") the component ends it. */
+.intro-logo {
+  display: none;
+}
+html[data-intro] .intro-logo {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  animation: 200ms ease-in var(--jeda-intro-cadangan) forwards kb-intro-pudar;
+}
+html[data-intro] .intro-mark {
+  filter: drop-shadow(0 8px 24px color-mix(in srgb, var(--color-biru-600) 25%, transparent));
+  animation: var(--durasi-intro-muncul) var(--ease-out) both kb-intro-muncul;
+}
+html[data-intro] .intro-senyum {
+  stroke-dasharray: 1 2;
+  stroke-dashoffset: 1;
+  animation: var(--durasi-intro-senyum) ease-in-out var(--jeda-intro-senyum) forwards kb-intro-senyum;
+}
+html[data-intro] [data-logo-header] {
+  opacity: 0;
+  animation: 1ms linear calc(var(--jeda-intro-cadangan) + 200ms) forwards kb-intro-aman;
+}
+html[data-intro="js"] .intro-logo,
+html[data-intro="js"] [data-logo-header] {
+  animation: none;
+}
+@keyframes kb-intro-muncul {
+  from {
+    opacity: 0;
+    transform: scale(0.86);
+  }
+}
+@keyframes kb-intro-senyum {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes kb-intro-pudar {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+@keyframes kb-intro-aman {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+  html[data-intro] .intro-logo {
+    display: none;
+  }
+  html[data-intro] [data-logo-header] {
+    opacity: 1;
+    animation: none;
+  }
+}
+
 /* New-user guide: hidden once read on this device. The flag is set on <html>
    before the first paint (app/(user)/layout.tsx, lib/panduan.ts). */
 html[data-panduan="v1"] [data-panduan-baru] {

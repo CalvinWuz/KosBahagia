@@ -25,7 +25,8 @@ from playwright.async_api import async_playwright, expect
 AKAR = Path(__file__).resolve().parent.parent
 BASE = os.environ.get("BASE", "http://localhost:3011")
 REST = os.environ.get("REST", "http://127.0.0.1:54321/rest/v1")
-OUT = AKAR / "docs" / "tangkapan" / "v3"
+# OUT_DIR keeps a regression run from overwriting the v3 evidence.
+OUT = Path(os.environ["OUT_DIR"]) if os.environ.get("OUT_DIR") else AKAR / "docs" / "tangkapan" / "v3"
 OUT.mkdir(parents=True, exist_ok=True)
 ANON = next(
     l.split("=", 1)[1].strip()

@@ -147,7 +147,14 @@ export function DetailKos({ data, sekarang }: { data: DetailKosData; sekarang: s
           <AksiKartu kos={ringkasan} tampilan="tumpuk" />
           <TombolMenu tumpuk />
         </div>
-        <NavBagian bagian={bagianTersedia} className={cn("border-t border-biru-100 transition-opacity duration-150", judulLewat ? "opacity-100" : "hidden")} />
+        {/* Hangs below the bar instead of growing it: a taller bar pushed the
+            title back into view, which hid the nav again, in a loop on
+            browsers without scroll anchoring (Safari). Sections keep their
+            scroll-margin for bar + nav. */}
+        <NavBagian
+          bagian={bagianTersedia}
+          className={cn("absolute inset-x-0 top-full border-y border-biru-100 bg-putih transition-opacity duration-150", judulLewat ? "opacity-100" : "hidden")}
+        />
       </div>
 
       <div className="mx-auto max-w-6xl px-4 pt-4 pb-28 lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8 lg:pb-16">

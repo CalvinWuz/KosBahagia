@@ -449,7 +449,7 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
 
 export function DaftarSkeleton() {
   return (
-    <ul className="grid gap-4 sm:grid-cols-2" aria-busy="true" aria-label="Memuat hasil">
+    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2" aria-busy="true" aria-label="Memuat hasil">
       {Array.from({ length: 6 }, (_, i) => (
         <li key={i}><KosCardSkeleton /></li>
       ))}

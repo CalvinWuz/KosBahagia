@@ -152,6 +152,7 @@ export function KosCard({
         <h3 className="min-w-0 text-body leading-5 font-bold text-arang-900">
           <Link
             href={href}
+            transitionTypes={["maju"]}
             className="line-clamp-2 rounded-sm after:absolute after:inset-0 after:rounded-2xl focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-biru-500"
           >
             {kos.nama}

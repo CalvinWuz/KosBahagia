@@ -10,6 +10,9 @@ import { Toaster } from "@/components/ui/Toast";
 import { TrayBanding } from "@/components/kos/TrayBanding";
 import { PelacakRiwayat } from "@/lib/navigasi";
 import { SKRIP_PANDUAN } from "@/lib/panduan";
+import { SKRIP_INTRO } from "@/lib/intro-logo";
+import { IntroLogo } from "@/components/layout/IntroLogo";
+import { TransisiHalaman } from "@/components/layout/TransisiHalaman";
 import Script from "next/script";
 
 // Privacy-respecting analytics: cookieless, no personal data, off unless configured.
@@ -30,11 +33,13 @@ export const metadata: Metadata = {
 // Root layout for the renter surface (kosbahagia.com): the bright shell.
 export default function UserLayout({ children }: { children: ReactNode }) {
   return (
-    // suppressHydrationWarning: the guide flag below sets data-panduan on <html> before React hydrates.
+    // suppressHydrationWarning: the flags below set data-panduan / data-intro on <html> before React hydrates.
     <html lang="id" className={plusJakarta.variable} data-scroll-behavior="smooth" suppressHydrationWarning>
       <body className="flex min-h-dvh flex-col">
         {/* Runs before the first paint so the new-user guide never flashes for someone who closed it. */}
         <Script id="penanda-panduan" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: SKRIP_PANDUAN }} />
+        {/* Same idea for the logo intro: only on a reload, decided before the first paint (lib/intro-logo.ts). */}
+        <Script id="penanda-intro" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: SKRIP_INTRO }} />
         <a
           href="#konten"
           className="sr-only rounded-lg bg-putih px-4 py-2 text-body font-bold text-biru-600 focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50"
@@ -44,12 +49,13 @@ export default function UserLayout({ children }: { children: ReactNode }) {
         <BannerDemo />
         <Header />
         <main id="konten" className="flex-1">
-          {children}
+          <TransisiHalaman>{children}</TransisiHalaman>
         </main>
         <Footer />
         <TrayBanding />
         <Toaster />
         <PelacakRiwayat />
+        <IntroLogo />
         {PLAUSIBLE && <Script defer data-domain={PLAUSIBLE} src={process.env.NEXT_PUBLIC_PLAUSIBLE_SRC ?? "https://plausible.io/js/script.js"} strategy="afterInteractive" />}
       </body>
     </html>

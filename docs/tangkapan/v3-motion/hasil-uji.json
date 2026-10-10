@@ -1,0 +1,230 @@
+{
+  "base": "http://localhost:3011",
+  "waktu": "2026-10-09 23:50",
+  "hasil": [
+    {
+      "no": 5,
+      "skenario": "Refresh beranda HP",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "muat pertama tanpa intro; reload: senyum tergambar, terbang ke header, skala akhir 0.333, meleset 0.0 px, 1049 ms, akhir {'intro': '-', 'overlay': 'none', 'headerOpacity': 1}"
+    },
+    {
+      "no": 6,
+      "skenario": "Refresh ulang HP",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "intro berjalan lagi (1040 ms); tidak ada penanda 'sudah dilihat'"
+    },
+    {
+      "no": 5,
+      "skenario": "Refresh beranda PC",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "muat pertama tanpa intro; reload: senyum tergambar, terbang ke header, skala akhir 0.333, meleset 0.0 px, 1045 ms, akhir {'intro': '-', 'overlay': 'none', 'headerOpacity': 1}"
+    },
+    {
+      "no": 6,
+      "skenario": "Refresh ulang PC",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "intro berjalan lagi (1051 ms); tidak ada penanda 'sudah dilihat'"
+    },
+    {
+      "no": 7,
+      "skenario": "Refresh halaman dengan header mobile khusus",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "HP /cari: pudar (ya, 708 ms); HP /kos: pudar (ya, 707 ms); PC /kos: terbang (ya, 1049 ms); bar halaman tidak bergeser"
+    },
+    {
+      "no": 8,
+      "skenario": "Scroll/resize/navigasi saat intro",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "wheel: selesai 32 ms setelahnya, mark header 1, resize: selesai 31 ms setelahnya, mark header 1, navigasi: selesai 80 ms setelahnya, mark header 1"
+    },
+    {
+      "no": 1,
+      "skenario": "Beranda → Cari → Detail → kembali",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "beranda→cari ['kb-halaman-keluar', 'kb-halaman-maju'], cari→detail HP ['kb-halaman-keluar', 'kb-halaman-maju'], PC ['kb-halaman-keluar', 'kb-halaman-maju']; kembali (router.back): tanpa animasi; scroll hasil 900 → 900 px setelah kembali; header PC selama transisi: ['0,65', '37,65'] (sebelum 0,65, sesudah 37,65, tanpa posisi antara)"
+    },
+    {
+      "no": 2,
+      "skenario": "Cari → Simpanan/Bandingkan/Cara menggunakan",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "crossfade (tanpa arah) di tiap tujuan [True, True, True]; simpanan 1 dan kandidat banding 1 tetap"
+    },
+    {
+      "no": 3,
+      "skenario": "Navigasi cepat berulang",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "4 klik berturut-turut: tidak ada transisi tertinggal (0), halaman berisi, klik berikutnya berfungsi, history +3 untuk 5 navigasi, error []"
+    },
+    {
+      "no": 4,
+      "skenario": "Filter, urutan, mode peta, tipe kamar",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "chip filter, urutan, peta/daftar, muat lebih banyak (20 → 36 kartu), tipe kamar: animasi transisi tidak ada (0 panggilan startViewTransition); intro tidak diputar ulang"
+    },
+    {
+      "no": 9,
+      "skenario": "Tanpa JavaScript / tanpa View Transitions",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "tanpa JS: konten dan logo header tampil, overlay tidak; tanpa startViewTransition: navigasi tetap jalan tanpa animasi"
+    },
+    {
+      "no": 10,
+      "skenario": "Reduced motion dari awal dan saat berjalan",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "reduce dari awal: intro tidak tampil, durasi animasi transisi terpanjang 0 ms; berubah saat intro: intro langsung berhenti, mark header 1"
+    },
+    {
+      "no": 11,
+      "skenario": "Back/forward cache, history, StrictMode",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "history tetap 2 → 2; kembali dari /mitra (dimuat ulang (back_forward)): intro tidak diputar; next dev (StrictMode): 1 animasi gerak untuk satu reload, intro selesai"
+    },
+    {
+      "no": 12,
+      "skenario": "Detail dengan skor tinggi, rendah, null",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "Anggrek Cakra 5/5 Sangat bersih + 1/5 Berisik; Putra Bahagia 3,5/5 + kedap 'Belum dinilai'; Mbak Tuti kebersihan 'Belum dinilai' + 4/5; tanpa penilaian: 'Belum kami catat'; tidak ada nilai 0"
+    },
+    {
+      "no": 13,
+      "skenario": "Buka/tutup dua bukti dan bantuan",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "Enter membuka/menutup kedua accordion; angka lama semua ada (5/5, 49/81 dB, selisih 32); 'Cara dinilai' membuka sheet, Escape mengembalikan fokus ke 'Cara dinilai'"
+    },
+    {
+      "no": 14,
+      "skenario": "Anchor menuju kondisi/bukti",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "#bukti-kedap langsung terbuka (top 112 px); tautan dari Skor Bahagia ke #kebersihan (top 112 px, bar + nav bagian sampai 57 px); halaman diam di sekitar batas judul: ya, tiap 5 px di sekitar judul × 10 frame"
+    },
+    {
+      "no": 15,
+      "skenario": "Red flag dan biaya belum lengkap",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "panel keselamatan tetap terbuka; 'Total sementara' dan nama biaya yang belum diketahui tetap di ringkasan"
+    },
+    {
+      "no": 16,
+      "skenario": "Peta dan 360° saat navigasi",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "peta tidak hitam saat transisi (kecerahan rata-rata 249/255); worker peta diminta 1×; file 360° tidak dimuat (0)"
+    },
+    {
+      "no": 17,
+      "skenario": "Zoom 200%, landscape, layar kecil",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "overflow/overlay tertinggal: tidak ada (selama dan sesudah intro)"
+    },
+    {
+      "no": 5,
+      "skenario": "Refresh beranda HP",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "muat pertama tanpa intro; reload: senyum tergambar, terbang ke header, skala akhir 0.333, meleset 0.0 px, 1047 ms, akhir {'intro': '-', 'overlay': 'none', 'headerOpacity': 1}"
+    },
+    {
+      "no": 6,
+      "skenario": "Refresh ulang HP",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "intro berjalan lagi (1033 ms); tidak ada penanda 'sudah dilihat'"
+    },
+    {
+      "no": 5,
+      "skenario": "Refresh beranda PC",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "muat pertama tanpa intro; reload: senyum tergambar, terbang ke header, skala akhir 0.333, meleset 0.0 px, 1047 ms, akhir {'intro': '-', 'overlay': 'none', 'headerOpacity': 1}"
+    },
+    {
+      "no": 6,
+      "skenario": "Refresh ulang PC",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "intro berjalan lagi (1019 ms); tidak ada penanda 'sudah dilihat'"
+    },
+    {
+      "no": 7,
+      "skenario": "Refresh halaman dengan header mobile khusus",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "HP /cari: pudar (ya, 700 ms); HP /kos: pudar (ya, 680 ms); PC /kos: terbang (ya, 1014 ms); bar halaman tidak bergeser"
+    },
+    {
+      "no": 1,
+      "skenario": "Beranda → Cari → Detail → kembali",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "beranda→cari ['kb-halaman-keluar', 'kb-halaman-maju'], cari→detail HP ['kb-halaman-keluar', 'kb-halaman-maju'], PC ['kb-halaman-keluar', 'kb-halaman-maju']; kembali (router.back): tanpa animasi; scroll hasil 900 → 900 px setelah kembali; header PC selama transisi: ['0,65', '37,65'] (sebelum 0,65, sesudah 37,65, tanpa posisi antara)"
+    },
+    {
+      "no": 4,
+      "skenario": "Filter, urutan, mode peta, tipe kamar",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "chip filter, urutan, peta/daftar, muat lebih banyak (20 → 36 kartu), tipe kamar: animasi transisi tidak ada (0 panggilan startViewTransition); intro tidak diputar ulang"
+    },
+    {
+      "no": 9,
+      "skenario": "Tanpa JavaScript / tanpa View Transitions",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "tanpa JS: konten dan logo header tampil, overlay tidak; tanpa startViewTransition: navigasi tetap jalan tanpa animasi"
+    },
+    {
+      "no": 12,
+      "skenario": "Detail dengan skor tinggi, rendah, null",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "Anggrek Cakra 5/5 Sangat bersih + 1/5 Berisik; Putra Bahagia 3,5/5 + kedap 'Belum dinilai'; Mbak Tuti kebersihan 'Belum dinilai' + 4/5; tanpa penilaian: 'Belum kami catat'; tidak ada nilai 0"
+    },
+    {
+      "no": 13,
+      "skenario": "Buka/tutup dua bukti dan bantuan",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "Enter membuka/menutup kedua accordion; angka lama semua ada (5/5, 49/81 dB, selisih 32); 'Cara dinilai' membuka sheet, Escape mengembalikan fokus ke 'Cara dinilai'"
+    },
+    {
+      "no": 14,
+      "skenario": "Anchor menuju kondisi/bukti",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "#bukti-kedap langsung terbuka (top 112 px); tautan dari Skor Bahagia ke #kebersihan (top 112 px, bar + nav bagian sampai 106 px); halaman diam di sekitar batas judul: ya, tiap 5 px di sekitar judul × 10 frame"
+    },
+    {
+      "no": 15,
+      "skenario": "Red flag dan biaya belum lengkap",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "panel keselamatan tetap terbuka; 'Total sementara' dan nama biaya yang belum diketahui tetap di ringkasan"
+    },
+    {
+      "no": 17,
+      "skenario": "Zoom 200%, landscape, layar kecil",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "overflow/overlay tertinggal: tidak ada (selama dan sesudah intro)"
+    }
+  ]
+}
