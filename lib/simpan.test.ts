@@ -2,19 +2,31 @@ import { beforeEach, describe, it } from "node:test";
 import assert from "node:assert/strict";
 
 // A tiny in-memory localStorage/window so the store runs under node:test.
+// `rusak` makes it behave like a browser that refuses storage.
 const isi = new Map<string, string>();
+const rusak = { baca: false, tulis: false };
 Object.assign(globalThis, {
   localStorage: {
-    getItem: (k: string) => isi.get(k) ?? null,
-    setItem: (k: string, v: string) => void isi.set(k, v),
+    getItem: (k: string) => {
+      if (rusak.baca) throw new Error("SecurityError");
+      return isi.get(k) ?? null;
+    },
+    setItem: (k: string, v: string) => {
+      if (rusak.tulis) throw new Error("QuotaExceededError");
+      isi.set(k, v);
+    },
     removeItem: (k: string) => void isi.delete(k),
   },
   window: { addEventListener() {}, removeEventListener() {} },
 });
 
-const { bacaBanding, bacaSimpan, hapusBanding, tambahBanding, toggleSimpan } = await import("./simpan.ts");
+const { bacaBanding, bacaSimpan, hapusBanding, tambahBanding, toggleSimpan, tersimpanPermanen } = await import("./simpan.ts");
 
-beforeEach(() => isi.clear());
+beforeEach(() => {
+  isi.clear();
+  rusak.baca = false;
+  rusak.tulis = false;
+});
 
 describe("simpanan dan banding di perangkat ini", () => {
   it("reads entries saved by older builds (bare ids, no room type)", () => {
@@ -47,5 +59,39 @@ describe("simpanan dan banding di perangkat ini", () => {
     assert.equal(JSON.parse(isi.get("kb:simpan") ?? "[]")[0].kamarId, "ac");
     toggleSimpan({ id: "k1", slug: "a", nama: "A" });
     assert.deepEqual(JSON.parse(isi.get("kb:simpan") ?? "[]"), []);
+  });
+});
+
+describe("browser yang menolak penyimpanan", () => {
+  it("a refused write stays in this tab instead of being undone by the old list on disk", () => {
+    assert.deepEqual(bacaSimpan(), []);
+    rusak.tulis = true;
+    toggleSimpan({ id: "k1", slug: "a", nama: "A" });
+    // Re-reading must not bring back the (empty) disk copy.
+    assert.deepEqual(bacaSimpan().map((s) => s.id), ["k1"]);
+    assert.equal(tersimpanPermanen("simpan"), false);
+    assert.equal(isi.has("kb:simpan"), false);
+
+    // Once the browser accepts writes again, the whole list is stored.
+    rusak.tulis = false;
+    toggleSimpan({ id: "k2", slug: "b", nama: "B" });
+    assert.equal(tersimpanPermanen("simpan"), true);
+    assert.deepEqual(JSON.parse(isi.get("kb:simpan") ?? "[]").map((s: { id: string }) => s.id), ["k2", "k1"]);
+  });
+
+  it("storage that cannot even be read still gives a working list for this tab", () => {
+    assert.deepEqual(bacaBanding(), []);
+    rusak.baca = true;
+    rusak.tulis = true;
+    assert.deepEqual(bacaBanding(), []);
+    assert.equal(tambahBanding({ id: "k1", slug: "a", nama: "A", kamarId: "ac" }), true);
+    assert.equal(bacaBanding().length, 1);
+    assert.equal(tersimpanPermanen("banding"), false);
+
+    rusak.baca = false;
+    rusak.tulis = false;
+    tambahBanding({ id: "k2", slug: "b", nama: "B" });
+    assert.equal(tersimpanPermanen("banding"), true);
+    assert.deepEqual(JSON.parse(isi.get("kb:banding") ?? "[]").map((b: { id: string }) => b.id), ["k1", "k2"]);
   });
 });

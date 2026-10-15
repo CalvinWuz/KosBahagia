@@ -16,7 +16,7 @@ import { bacaKamar, hitungBiaya, labelTotal, teksKomponen } from "@/lib/biaya";
 import { statusKamar } from "@/lib/kamar";
 import { chipKebersihan, chipKedap } from "@/lib/skala";
 import { adalahIlustrasi } from "@/lib/media";
-import { gantiBanding, hapusBanding, samaKandidat, tambahBanding, toggleSimpan, useBanding, useSimpanan, type RingkasanKos } from "@/lib/simpan";
+import { HANYA_DI_TAB, gantiBanding, hapusBanding, samaKandidat, tambahBanding, tersimpanPermanen, toggleSimpan, useBanding, useSimpanan, type RingkasanKos } from "@/lib/simpan";
 import { tampilkanToast } from "@/lib/toast";
 import { SkorBadge } from "./SkorBadge";
 
@@ -61,7 +61,7 @@ export function KosCard({
   sekarang?: Date;
   /** Above the fold → eager image. */
   prioritas?: boolean;
-  /** Compact horizontal layout for the map mini card. */
+  /** Compact horizontal layout: the map mini card and the paid-promotion strip. */
   ringkas?: boolean;
   /** Straight-line distance to the search centre (campus/station searches). */
   jarak?: AcuanJarak;
@@ -113,14 +113,14 @@ export function KosCard({
       onMouseLeave={onSorot ? () => onSorot(null) : undefined}
     >
       {/* Phones: a shorter photo so more than one card fits a screen. */}
-      <div className={cn("relative shrink-0 bg-biru-100", ringkas ? "w-28 self-stretch" : "aspect-[16/10] w-full sm:aspect-[4/3]")}>
+      <div className={cn("relative shrink-0 bg-biru-100", ringkas ? "w-24 self-stretch" : "aspect-[16/10] w-full sm:aspect-[4/3]")}>
         {kos.foto_url && (
           <FotoBlur
             src={kos.foto_url}
             alt={adalahIlustrasi(kos.foto_url) ? `Ilustrasi contoh tampak depan ${kos.nama}` : `Foto ${kos.nama}`}
             blurhash={kos.foto_blurhash}
             fill
-            sizes={ringkas ? "112px" : "(min-width: 1024px) 340px, (min-width: 640px) 50vw, 90vw"}
+            sizes={ringkas ? "96px" : "(min-width: 1024px) 340px, (min-width: 640px) 50vw, 90vw"}
             className="object-cover"
             priority={prioritas}
             loading={prioritas ? undefined : "lazy"}
@@ -140,10 +140,10 @@ export function KosCard({
                 </Badge>
               )}
             </div>
-            {adalahIlustrasi(kos.foto_url) && (
-              <span className="absolute right-2 bottom-2 rounded-md bg-arang-900/70 px-1.5 py-0.5 text-micro text-putih">Ilustrasi</span>
-            )}
           </>
+        )}
+        {adalahIlustrasi(kos.foto_url) && (
+          <span className={cn("absolute rounded-md bg-arang-900/70 px-1.5 py-0.5 text-micro text-putih", ringkas ? "right-1 bottom-1" : "right-2 bottom-2")}>Ilustrasi</span>
         )}
       </div>
 
@@ -176,7 +176,8 @@ export function KosCard({
           )}
         </div>
 
-        {/* 3. where and who for */}
+        {/* 3. where and who for (compact card: just where) */}
+        {ringkas && lokasi && <p className="text-micro text-arang-500">{lokasi}</p>}
         {!ringkas && (
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-small text-arang-500">
             <span className="rounded-md bg-kertas-50 px-1.5 py-0.5 text-micro font-bold text-arang-900">{TIPE_LABEL[kos.tipe ?? ""] ?? kos.tipe}</span>
@@ -200,7 +201,10 @@ export function KosCard({
           <StatusRingkas status={status} />
         </div>
 
-        {/* 5. short evidence; safety notes always shown */}
+        {/* 5. short evidence; safety notes always shown, on the compact card too */}
+        {ringkas && redFlags > 0 && (
+          <p className="self-start rounded-full bg-merah-100 px-2 py-0.5 text-micro font-bold text-merah-700">{redFlags} catatan keselamatan</p>
+        )}
         {!ringkas && (bersih || kedap || redFlags > 0) && (
           <ul className="flex flex-wrap gap-1.5">
             {bersih && kos.skor_kebersihan != null && (
@@ -268,7 +272,8 @@ const KELAS_AKSI: Record<TampilanAksi, { wadah: string; tombol: string; ikon: st
   // Mobile detail header: icon over a short label.
   tumpuk: { wadah: "flex gap-1", tombol: "h-12 min-w-14 flex-col justify-center gap-0.5 rounded-xl px-1.5 text-micro", ikon: "size-5" },
   // Map mini card.
-  ringkas: { wadah: "flex flex-wrap gap-2", tombol: "sentuh h-9 gap-1 rounded-full px-3 text-micro", ikon: "size-4" },
+  // Map mini card and promotion strip: both buttons fit one row next to the 96 px photo.
+  ringkas: { wadah: "flex flex-wrap gap-1.5", tombol: "sentuh h-9 gap-1 rounded-full px-2.5 text-micro", ikon: "size-4" },
 };
 
 // Save + compare with visible labels (UX v3: icons alone were not
@@ -296,8 +301,9 @@ export function AksiKartu({ kos, tampilan = "kartu", className }: { kos: Ringkas
 
   const klikSimpan = () => {
     toggleSimpan(kos);
-    if (tersimpan) tampilkanToast({ teks: `${kos.nama} dihapus dari simpanan.` });
-    else tampilkanToast({ teks: `${kos.nama} tersimpan di perangkat ini.`, aksi: { label: "Lihat simpanan", href: "/disimpan" } });
+    const hanyaTab = tersimpanPermanen("simpan") ? "" : ` ${HANYA_DI_TAB}`;
+    if (tersimpan) tampilkanToast({ teks: `${kos.nama} dihapus dari simpanan.${hanyaTab}` });
+    else tampilkanToast({ teks: hanyaTab ? `${kos.nama} disimpan sementara.${hanyaTab}` : `${kos.nama} tersimpan di perangkat ini.`, aksi: { label: "Lihat simpanan", href: "/disimpan" } });
   };
   const klikBanding = () => {
     if (dibanding) {
@@ -306,9 +312,11 @@ export function AksiKartu({ kos, tampilan = "kartu", className }: { kos: Ringkas
       return;
     }
     if (!tambahBanding(kos)) return setTanyaGanti(true);
+    // The tray that appears already says how many are in; the toast only adds what to do next.
     const n = banding.length + 1;
+    const hanyaTab = tersimpanPermanen("banding") ? "" : ` ${HANYA_DI_TAB}`;
     tampilkanToast({
-      teks: n === 1 ? `${namaPenuh} masuk perbandingan. Tambah 1–2 kos lagi untuk dibandingkan.` : `${namaPenuh} masuk perbandingan (${n} dari 3).`,
+      teks: (n === 1 ? `${namaPenuh} masuk perbandingan. Tambah 1–2 kos lagi.` : `${namaPenuh} masuk perbandingan (${n} dari 3).`) + hanyaTab,
       aksi: n >= 2 ? { label: "Bandingkan", href: "/banding" } : undefined,
     });
   };

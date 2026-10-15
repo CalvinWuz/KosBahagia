@@ -139,6 +139,16 @@
   }
 }
 
+/* The bottom stack (heights published by lib/ruang-bawah.ts): the detail
+   page's chat bar, the compare tray above it, the toast above both. Nothing
+   covers the layer below it, at any bar height or text size. */
+.di-atas-bar-aksi {
+  bottom: calc(max(var(--tinggi-bar-aksi, 0px), env(safe-area-inset-bottom)) + 0.75rem);
+}
+.di-atas-tray {
+  bottom: calc(max(var(--tinggi-bar-aksi, 0px), env(safe-area-inset-bottom)) + 0.75rem + var(--tinggi-tray, 0px));
+}
+
 /* ------------------------------------------------------------- motion v3.1
    Page transitions: React <ViewTransition> in components/layout/TransisiHalaman.tsx.
    Only the page content animates; the header, banner, footer and compare tray

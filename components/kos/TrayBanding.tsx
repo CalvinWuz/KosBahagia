@@ -1,40 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { buttonClasses } from "@/components/ui/Button";
 import { IconBanding, IconClose } from "@/components/ui/Icon";
 import { hapusBanding, useBanding, MAKS_BANDING } from "@/lib/simpan";
 import { hrefBanding } from "@/lib/kos/kunci-banding";
-import { cn } from "@/lib/cn";
+import { useTinggiBawah } from "@/lib/ruang-bawah";
 
 // Floating "2 dari 3 dibandingkan · Bandingkan" bar. Appears as soon as the
 // tray has something in it, on every renter page except /banding itself.
-// On the detail page it sits above the sticky contact bar. A spacer of the
-// same height is added to the page flow so it never covers the last content.
+// It sits above the detail page's chat bar and publishes its own height, so
+// the toast stacks above it and the phone map ends above it
+// (lib/ruang-bawah.ts). A spacer of the same height is added to the page
+// flow so it never covers the last content.
 export function TrayBanding() {
   const tray = useBanding();
   const pathname = usePathname();
   const [ditutup, setDitutup] = useState<string | null>(null);
   const kunci = tray.map((b) => `${b.id}:${b.kamarId ?? ""}`).join(",");
+  const tampil = !(tray.length === 0 || pathname.startsWith("/banding") || ditutup === kunci);
 
-  if (tray.length === 0 || pathname.startsWith("/banding") || ditutup === kunci) return null;
-  const diDetail = pathname.startsWith("/kos/");
+  if (!tampil) return null;
   const href = hrefBanding(tray.map((b) => ({ kos: b.slug || b.id, kamar: b.kamarId })));
 
   return (
     <>
-      <div aria-hidden="true" className={cn("h-24", diDetail && "lg:h-24")} />
-      <div
-        role="region"
-        aria-label="Perbandingan"
-        className={cn(
-          "fixed inset-x-0 z-30 flex justify-center px-4 motion-safe:animate-muncul",
-          diDetail ? "bottom-[calc(7rem+env(safe-area-inset-bottom))] lg:bottom-4" : "bottom-[max(1rem,env(safe-area-inset-bottom))]",
-        )}
-      >
-        <div className="flex w-full max-w-md items-center gap-2 rounded-2xl border border-biru-100 bg-putih p-2 pl-3 shadow-xl">
+      <div aria-hidden="true" style={{ height: "calc(var(--tinggi-tray, 0px) + 1rem)" }} />
+      <BingkaiTray>
+        <div className="pointer-events-auto flex w-full max-w-md items-center gap-2 rounded-2xl border border-biru-100 bg-putih p-2 pl-3 shadow-xl">
           <IconBanding className="size-5 shrink-0 text-biru-600" />
           <div className="min-w-0 flex-1">
             <p className="text-small font-bold text-arang-900 tabular-nums">
@@ -70,7 +65,20 @@ export function TrayBanding() {
             <IconClose className="size-4" />
           </button>
         </div>
-      </div>
+      </BingkaiTray>
     </>
+  );
+}
+
+// The fixed frame. Its top padding (the same 0.75rem as the gap below it) is
+// the space to the toast above and to the end of the phone map, so the
+// measured height already includes it; only the tray itself takes taps.
+function BingkaiTray({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useTinggiBawah(ref, "--tinggi-tray");
+  return (
+    <div ref={ref} role="region" aria-label="Perbandingan" className="di-atas-bar-aksi pointer-events-none fixed inset-x-0 z-30 flex justify-center px-4 pt-3 motion-safe:animate-muncul">
+      {children}
+    </div>
   );
 }

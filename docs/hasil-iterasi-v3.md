@@ -7,6 +7,10 @@ Tanggal: 7 Oktober 2026. Dasar kerja: `docs/prompt-ux-v3-kuesioner.md` (enam ara
 contoh). **Belum** di-commit, di-push, di-deploy, dan migrasi baru **belum** diterapkan ke Supabase cloud;
 urutannya ada di bagian 8 dan perintah commit di bagian 9.
 
+**Pembaruan 15 Oktober 2026.** Status di atas adalah keadaan 7 Oktober. Versi 3 sudah di-commit (`1eee9ae`), migrasinya
+sudah diterapkan, dan sudah tayang; update minor 3.1 menyusul (`6e7ada4`). Prompt versi 3 lalu dijalankan ulang dari
+awal terhadap kode tersebut: hasil audit ulang, celah yang ditutup, dan pengujiannya ada di **bagian 12**.
+
 > **Bedakan dua jenis hasil.** Semua angka "lulus" di dokumen ini adalah pengujian internal otomatis terhadap data
 > contoh. Belum ada pengujian ulang dengan responden, jadi dokumen ini tidak menyatakan bahwa pengalaman pengguna
 > versi 3 sudah meningkat. Angka kuesioner tetap dari `docs/laporan/laporan-uji-prototipe.md`. Skenario untuk sesi
@@ -290,3 +294,149 @@ satu hal, apa?". Masukkan temuannya ke grid versi 3 di `docs/feedback-grid-dan-i
 
 Target kualitatif: tombol ditemukan tanpa petunjuk lisan, angka dijelaskan dengan benar, filter selesai dengan lebih
 sedikit kebingungan. Angka baru hanya ditulis setelah datanya terkumpul.
+
+---
+
+## 12. Putaran ulang versi 3 (15 Oktober 2026)
+
+Calvin meminta prompt versi 3 dijalankan ulang dari awal. Kode versi 3 dan 3.1 sudah ada di `master` (`1eee9ae`,
+`6e7ada4`) dan **tidak** di-revert, karena itu juga membuang pekerjaan 3.1. Putaran ini mengulang langkah prompt §13:
+audit, reproduksi, perbaikan, pengujian, dan dokumentasi, terhadap kode yang sekarang. Sumber celah adalah pemeriksaan
+ulang sendiri plus audit 11 Oktober (`docs/audit-menyeluruh-2026-10-11.md` §9), dibatasi pada enam arahan. Temuan audit
+di luar enam arahan (mitra A02–A05, A09, A13–A15; dependency A01; CI A17; A16) tidak dikerjakan di sini; semuanya ada
+di `docs/prompt-tindak-lanjut-audit-2026-10-11.md`.
+
+> Semua hasil di bagian ini adalah pengujian internal otomatis dengan data contoh lokal (Playwright headless, Chromium
+> dan WebKit). Ini bukan validasi responden; bagian 11 tetap berlaku.
+
+### 12.1 Audit ulang: yang masih belum memenuhi kriteria selesai
+
+Suite versi 3 pada `6e7ada4` lulus 27/27 (Chromium), jadi bug filter versi 2 tidak muncul lagi. Celah berikut lolos dari
+suite itu dan direproduksi di browser sebelum diperbaiki (screenshot di `docs/tangkapan/v3-ulang/sebelum/`):
+
+| Arahan | Temuan (sebelum) | Bukti |
+|---|---|---|
+| 1 | "Bagikan daftar" hanya menulis slug. Pengirim menyimpan kamar AC Griya Kemanggisan (Rp2.430.000), penerima tautan melihat kamar standar Rp2.000.000; "Simpan semua" juga membuang kamarnya | `04-tautan-bagikan-penerima-hp.png` |
+| 1 | Saat request simpanan gagal (503), `/disimpan` menulis "Kos ini sudah tidak tayang" dan menawarkan "Hapus dari simpanan" | `05-simpanan-saat-gagal-hp.png` |
+| 1 | Bila browser menolak `localStorage.setItem`, tombol tetap "Simpan" (daftar lama di disk menimpa memori), tetapi toast berkata "tersimpan di perangkat ini" | log audit |
+| 1, 3 | Dua aksi cepat menampilkan dua toast besar; di detail HP toast (564–740 px) menutupi tray banding (670–732 px) di atas bar chat; tombol tutup toast 32 px | `02-…`, `03-detail-dua-aksi-hp.png` |
+| 2 | Halaman area menulis "sudah termasuk listrik, air, biaya wajib" tanpa syarat, padahal median ikut menghitung total estimasi dan sementara; FAQ menambah "biasanya untuk 3–5 kamar" yang tidak dihitung dari data | `06-area-fakta-hp.png` |
+| 2 | Judul detail kamar AC: "— Rp2.000.000/bulan" (harga kamar default); gambar OG selalu "total sudah semua", tanpa label data contoh | log audit |
+| 2 | Kedap suara Griya Kemanggisan diukur di tipe Standar, tetapi ringkasan kamar AC menulis "Berisik saat tes suara" tanpa konteks | – |
+| 3 | HP 390×844 tanpa filter: blok promosi 662 px, hasil biasa pertama mulai 1070 px (di luar layar awal). PC: satu kartu promosi setengah grid dengan ruang kosong, hasil biasa di 1058 px. Dengan satu filter, "Hapus semua" turun ke baris sendiri | `08-…`, `01-…`, `07-cari-pc.png` |
+| 3 | Peta HP berakhir di 918 px pada layar 844 px (tinggi tetap `100dvh-6.5rem`, banner demo tiga baris); zoom aman, atribusi terpotong | `09-cari-peta-hp.png` |
+| 3 | Kartu ringkas (kartu mini peta) tidak menampilkan jumlah catatan keselamatan | kode `KosCard` |
+| 4 | Persentase kamar mandi dalam di area memakai `kos_fasilitas`, sedangkan `/cari` memakai `tipe_kamar.kamar_mandi_dalam` | kode `statistik_area` |
+| 1, 4 | Ditemukan saat uji WebKit: dari kartu ke detail `?kamar=`, bar chat menampilkan harga kamar default selama 2–3 frame (±35–40 ms) sebelum harga kamar pilihan; ringkasan sudah benar | trace per frame |
+| – | Hydration error A12 tidak muncul pada fresh load, navigasi klien, maupun reload; tidak ada yang diperbaiki untuk itu | log audit |
+
+### 12.2 Perubahan
+
+| Arahan | Perubahan | Lokasi |
+|---|---|---|
+| 1 | Tautan bagikan memakai bentuk kunci banding `?kos=slug:idKamar`; penerima melihat kamar yang sama, kamar yang sudah dihapus diberi keterangan, "Simpan semua" membawa kamar; tautan lama tanpa kamar tetap terbaca (maks. 20 kos) | `lib/kos/kunci-banding.ts`, `components/kos/DaftarSimpanan.tsx`, `app/(user)/disimpan/page.tsx` |
+| 1 | Gagal muat simpanan atau tautan bagikan = panel "Harga dan ketersediaan terbaru belum bisa dimuat" + Coba lagi; daftar tetap bisa dibuka (nama, kamar, harga saat disimpan); tidak pernah "tidak tayang" atau ajakan hapus dari galat | `components/kos/DaftarSimpanan.tsx` |
+| 1 | Simpanan/banding yang ditolak browser hidup di memori tab itu dan menjadi sumber kebenaran; tombol berubah benar, toast dan `/disimpan` menyebut "sementara … hilang saat tab ditutup" | `lib/simpan.ts`, `components/kos/KosCard.tsx` |
+| 1, 3 | Satu toast aktif (yang baru menggantikan); bar chat dan tray mempublikasikan tingginya (`--tinggi-bar-aksi`, `--tinggi-tray`), lalu tray ditumpuk di atas bar dan toast di atas tray; tombol/tautan toast berarea sentuh 44 px | `lib/toast.ts`, `lib/ruang-bawah.ts`, `components/ui/Toast.tsx`, `components/kos/TrayBanding.tsx`, `components/kos/detail/BarAksi.tsx`, `app/globals.css` |
+| 2 | Angka area dihitung dari pencarian area itu sendiri (`cari_kos_v4`, kamar yang tampil di pencarian, dihargai `lib/biaya.ts`): median dan kisaran hanya dari total lengkap/estimasi, jumlah total yang belum lengkap disebut; kamar mandi dalam "X dari Y kos" = jumlah `/cari` dengan filter itu, dengan tautan ke sana; FAQ memakai kalimat yang sama | `lib/area/fakta.ts`, `lib/area/data.ts`, `components/area/FaktaArea.tsx`, `components/area/FaqArea.tsx`, halaman area |
+| 2 | Judul detail kos dengan lebih dari satu tipe kamar: "dari Rp…/bulan" (total termurah); gambar OG memakai label `lib/biaya.ts` + nama kamar + "Data contoh" | `app/(user)/kos/[slug]/page.tsx`, `opengraph-image.tsx` |
+| 2 | Bila tes suara dilakukan di tipe kamar lain: kartu Kedap suara menulis "Diukur di …, bukan di kamar … yang sedang kamu lihat", ringkasan "saat tes suara di tipe kamar lain" | `lib/skala.ts` (`diukurDiTipeLain`), `lib/kos/ringkasan.ts`, `BuktiKebersihan.tsx` |
+| 3 | Promosi berbayar memakai kartu ringkas: satu strip geser di HP, grid penuh lebar di PC; label dan pemisahan dari urutan tetap. Kartu ringkas kini menampilkan lokasi, label "Ilustrasi", dan jumlah catatan keselamatan (juga kartu mini peta) | `components/cari/HasilPencarian.tsx`, `components/kos/KosCard.tsx` |
+| 3 | "Hapus semua" hanya muncul bila filter aktif lebih dari satu (dengan satu filter, × pada chip melakukan hal yang sama) | `components/cari/FilterAktif.tsx` |
+| 3 | Peta HP mengukur posisinya sendiri dan berakhir di atas tray | `components/cari/HasilPencarian.tsx` |
+| 1, 4 | Detail membaca `?kamar=` dari tautan yang diklik selama router belum memperbarui bilah alamat, jadi harga kamar pilihan benar sejak frame pertama; halaman tetap statis | `lib/navigasi.ts` (`queryHalaman`), `components/kos/DetailKos.tsx` |
+
+Tidak ada migrasi, perubahan RPC, atau perubahan formula skor. `statistik_area` tetap dipakai untuk syarat minimal
+listing area, jumlah per tipe penghuni, listrik, makan, dan jam malam; kolom median, kisaran, dan persen kamar mandi
+dalamnya tidak lagi ditampilkan. Folder `regresi-v3-*` hanya menyimpan `hasil-uji.json` (screenshot suite versi 3 sudah
+ada di `docs/tangkapan/v3/`).
+
+### 12.3 Sebelum → sesudah (terukur)
+
+| Ukuran | Sebelum | Sesudah |
+|---|---|---|
+| HP 390×844 `/cari` tanpa filter: tinggi promosi / hasil biasa pertama | 662 px / 1070 px | 342 px / 746 px (di layar awal) |
+| PC 1440×900: tinggi promosi / hasil biasa pertama / lebar satu kartu promosi | 657 px / 1058 px / 50 % | 274 px / 671 px / 100 % |
+| HP dengan satu filter: kartu pertama | 464 px | 420 px |
+| Toast aktif setelah dua aksi cepat | 2 | 1 |
+| Detail HP: toast / tray / bar chat | toast menutupi tray | 571–675 / 687–749 / mulai 761 px |
+| Peta HP: tepi bawah / atribusi (layar 844) | 918 / 908 px | 844 / 834 px; dengan tray berakhir tepat di atas tray |
+| Penerima tautan bagikan, kamar AC Griya Kemanggisan | Rp2.000.000 (kamar standar) | Rp2.430.000 (kamar AC) |
+| Palmerah: median / kamar mandi dalam | Rp1.330.000 (termasuk 1 total sementara) / 31 % | Rp1.340.000 dari 35 total lengkap atau estimasi, 1 tidak dihitung / 11 dari 36 kos |
+
+Screenshot sesudah: `docs/tangkapan/v3-ulang/sesudah/` dan file `27-…` sampai `36-…` di `docs/tangkapan/v3-ulang/`.
+
+### 12.4 Hasil pemeriksaan (perintah yang benar-benar dijalankan)
+
+| Perintah | Hasil |
+|---|---|
+| `npm run lint` | 0 masalah |
+| `npm run typecheck` | Lolos |
+| `npm test` | 116 lulus (106 sebelumnya): storage menolak tulis/baca, kunci tautan simpanan, fakta biaya area, `diukurDiTipeLain`, ringkasan kamar lain |
+| `npm run cek:skor-db` | 47 kos, 77 tipe kamar: 0 beda (skor dan total tidak berubah) |
+| `npm run build` | Lolos, 71 halaman |
+| `python3 scripts/uji-ux-v3-ulang.py` (skenario 27–37) | **22/22**: 11 di Chromium, 11 di WebKit; rincian `docs/tangkapan/v3-ulang/hasil-uji.json` |
+| `OUT_DIR=… python3 scripts/uji-ux-v3.py` (skenario 1–26 + axe) | **27/27** di Chromium (26 skenario + axe-core 0 pelanggaran); `docs/tangkapan/v3-ulang/regresi-v3-chromium/` |
+| `MESIN=chromium OUT_DIR=… python3 scripts/uji-motion-v31.py` (regresi 3.1) | 18/19. Skenario 1 mencatat scroll "900 → 248 px setelah kembali" karena test membaca posisi sebelum klik, padahal promosi yang lebih pendek membuat Playwright menggulir ke kartu dulu. Test diubah membaca posisi tepat sebelum pindah halaman: 848 → 848 px, lulus di Chromium dan WebKit |
+| `MESIN=webkit OUT_DIR=… python3 scripts/uji-ux-v3.py` | **27/27** di WebKit (axe-core 0 pelanggaran); `docs/tangkapan/v3-ulang/regresi-v3-webkit/`. Run penuh pertama 25/27: skenario 10 gagal karena kedipan harga 2–3 frame (diperbaiki, lihat 12.2) dan skenario 24 karena test membandingkan teks durasi `0.00001s` dengan `1e-05s` (test diperbaiki, nilainya sama) |
+
+Skenario baru: 27 tautan bagikan dengan kamar; 28 simpanan saat 503; 29 browser menolak penyimpanan; 30 satu toast
+dan lapisan bawah tidak saling menutupi; 31 hasil utama di layar awal dan promosi ringkas; 32 peta HP; 33 catatan
+keselamatan di kartu ringkas; 34 angka area = pencarian; 35 kamar tempat tes suara; 36 judul dan pratinjau berbagi;
+37 harga kamar pilihan sejak frame pertama navigasi (reduced motion, agar fade transisi tidak menutupinya).
+
+Yang diperbaiki selama pengujian: celah 4 px antara peta HP dan tray (jarak bingkai tray disamakan 0,75rem), dan dua
+tombol kartu ringkas yang turun ke dua baris (foto 96 px, padding tombol dirapatkan; area sentuh tetap 44 px).
+
+### 12.5 Keterbatasan
+
+- Hanya browser headless (Playwright Chromium dan WebKit) di Mac ini. Safari asli, iPhone/Android fisik, Firefox,
+  dan pembaca layar belum diuji.
+- Di WebKit, pemeriksaan keyboard skenario 24 memakai Option+Tab: Safari secara bawaan melewati tautan dan tombol
+  dengan Tab biasa. Ini perilaku Safari, bukan aplikasi.
+- Catatan keselamatan di kartu ringkas diuji dengan respons promosi yang dimodifikasi (mock transport): data contoh
+  tidak punya kos promosi dengan red flag, dan pin peta digambar di canvas sehingga tidak bisa dipilih per kos dari test.
+- "dari Rp…" di judul memakai total kamar termurah yang tercatat, termasuk kamar yang sedang penuh.
+- Angka area kini berbeda sedikit dari versi sebelumnya karena definisinya berubah (lihat 12.3). Area dengan lebih
+  dari 500 kos akan dihitung dari 500 hasil pertama; data sekarang jauh di bawah itu.
+- Foto di gambar OG tidak tampil di lokal karena URL foto diarahkan ke domain situs; label dan teksnya sudah benar.
+- Back/forward browser tetap tanpa animasi (keputusan 3.1).
+- Tidak ada validasi responden untuk putaran ini; skenario bagian 11 tetap jadi langkah berikutnya.
+
+### 12.6 Perintah commit dan push
+
+Tanpa migrasi, jadi tidak ada urutan penerapan khusus. Dokumen audit, prompt tindak lanjut, dan file presentasi 3.1
+yang belum terlacak bukan bagian dari tugas ini dan tidak ikut di-add.
+
+Jalankan dari folder repo:
+
+```bash
+cd /Users/calvinn/KosBahagia
+```
+
+```bash
+git add lib/simpan.ts lib/simpan.test.ts lib/toast.ts lib/ruang-bawah.ts lib/navigasi.ts lib/skala.ts lib/skala.test.ts lib/kos/kunci-banding.ts lib/kos/kunci-banding.test.ts lib/kos/ringkasan.ts lib/kos/ringkasan.test.ts lib/area/data.ts lib/area/fakta.ts lib/area/fakta.test.ts
+```
+
+```bash
+git add components/kos/DaftarSimpanan.tsx components/kos/KosCard.tsx components/kos/TrayBanding.tsx components/kos/DetailKos.tsx components/kos/detail/BarAksi.tsx components/kos/detail/BuktiKebersihan.tsx components/ui/Toast.tsx components/cari/HasilPencarian.tsx components/cari/FilterAktif.tsx components/area/FaktaArea.tsx components/area/FaqArea.tsx
+```
+
+```bash
+git add "app/(user)/disimpan/page.tsx" "app/(user)/area/[slug]/page.tsx" "app/(user)/kos/[slug]/page.tsx" "app/(user)/kos/[slug]/opengraph-image.tsx" app/globals.css scripts/uji-ux-v3.py scripts/uji-ux-v3-ulang.py scripts/uji-motion-v31.py docs/hasil-iterasi-v3.md docs/tangkapan/v3-ulang
+```
+
+```bash
+git status
+```
+
+`git status` harus menunjukkan semua file di atas staged; yang tersisa hanya empat file dokumen/presentasi yang
+belum terlacak.
+
+```bash
+git commit -m "UX v3 second pass: shared rooms, honest save states, area costs, bottom stack" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+```
+
+```bash
+git push
+```

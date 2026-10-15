@@ -325,7 +325,7 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
         </div>
 
         {/* Mobile: map replaces the list under the same header */}
-        {peta && !desktop && <div className="h-[calc(100dvh-6.5rem)] lg:hidden">{petaBlok}</div>}
+        {peta && !desktop && <LayarPetaHp>{petaBlok}</LayarPetaHp>}
 
         <div id="hasil-pencarian" tabIndex={-1} className={cn("px-4 py-3 focus:outline-none", peta && "hidden lg:block")}>
           <PetunjukPanduan fokusKe="hasil-pencarian" />
@@ -383,16 +383,19 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
             <Kosong kunci={kunci} saran={saran} params={params} sekarang={sekarangDate} />
           ) : (
             <>
+              {/* Paid placements: one compact row (a swipeable strip on phones), so
+                  the regular results start near the top. Still labelled, still
+                  within the filter, never re-ranking the list below. */}
               {data.promosi.length > 0 && !memuat && (
-                <section aria-labelledby="promosi-judul" className="mb-5 rounded-2xl border border-dashed border-arang-500/40 bg-putih p-3">
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <section aria-labelledby="promosi-judul" className="mb-4 rounded-2xl border border-dashed border-arang-500/40 bg-putih p-3">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-2">
                     <h2 id="promosi-judul" className="text-small font-bold text-arang-900">Promosi berbayar</h2>
-                    <p className="text-micro text-arang-500">Pemilik membayar untuk tampil di sini. Tetap sesuai filtermu; tidak mengubah urutan atau skor.</p>
+                    <p className="text-micro text-arang-500">Pemilik membayar untuk tampil di sini; filter, urutan, dan skor tidak berubah.</p>
                   </div>
-                  <ul className="mt-2 grid gap-4 sm:grid-cols-2">
+                  <ul className="-mx-3 mt-2 flex snap-x snap-mandatory gap-3 overflow-x-auto px-3 [scrollbar-width:none] sm:mx-0 sm:grid sm:snap-none sm:grid-cols-[repeat(auto-fit,minmax(18rem,1fr))] sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
                     {data.promosi.map((k) => (
-                      <li key={`promosi-${k.id}`}>
-                        <KosCard kos={k} sekarang={sekarangDate} jarak={acuanJarak(k as HasilKos)} />
+                      <li key={`promosi-${k.id}`} className="w-[85%] shrink-0 snap-start only:w-full sm:w-auto">
+                        <KosCard kos={k} sekarang={sekarangDate} jarak={acuanJarak(k as HasilKos)} ringkas className="h-full" />
                       </li>
                     ))}
                   </ul>
@@ -443,6 +446,29 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
       {pernahBukaCari && (
         <PencarianSheet open={bukaCari} onClose={() => setBukaCari(false)} areaPopuler={areaPopuler} onPilih={pilihDariSheet} title="Ganti area" />
       )}
+    </div>
+  );
+}
+
+// Phones: the map fills the screen below the header and ends above the
+// compare tray. Measured, because the demo banner and the header wrap to
+// more lines on narrow screens and with enlarged text; a fixed offset left
+// the bottom of the map (zoom, attribution) below the fold.
+function LayarPetaHp({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [atas, setAtas] = useState<number | null>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ukur = () => setAtas(Math.round(el.getBoundingClientRect().top + window.scrollY));
+    ukur();
+    const ro = new ResizeObserver(ukur);
+    ro.observe(document.body);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <div ref={ref} className="lg:hidden" style={{ height: `calc(100dvh - ${atas ?? 104}px - var(--tinggi-tray, 0px))` }}>
+      {children}
     </div>
   );
 }

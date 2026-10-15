@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { artiKedap, chipKebersihan, chipKedap, kataKebersihan, kataKedap, kataSelisihDb, keteranganKebersihan, keteranganKedap, SKALA_KEBERSIHAN, SKALA_KEDAP } from "./skala.ts";
+import { artiKedap, chipKebersihan, chipKedap, diukurDiTipeLain, kataKebersihan, kataKedap, kataSelisihDb, keteranganKebersihan, keteranganKedap, SKALA_KEBERSIHAN, SKALA_KEDAP } from "./skala.ts";
 
 describe("kataKebersihan", () => {
   it("maps the rubric thresholds", () => {
@@ -80,5 +80,19 @@ describe("keterangan tingkat", () => {
     }
     assert.equal(keteranganKebersihan(null), null);
     assert.equal(keteranganKedap(undefined), null);
+  });
+});
+
+describe("kamar tempat tes suara", () => {
+  it("compares the measured room type with the one in view, as the surveyor writes it", () => {
+    assert.equal(diukurDiTipeLain("Tipe Standar (kipas), lantai 2", "Standar (kipas)"), false);
+    assert.equal(diukurDiTipeLain("Tipe Standar (kipas), lantai 2", "AC + kamar mandi dalam"), true);
+    assert.equal(diukurDiTipeLain("Tipe AC + kamar mandi dalam, lantai 2", "AC + kamar mandi dalam"), false);
+    assert.equal(diukurDiTipeLain("Tipe Standar, lantai 1", "Kamar besar (3×4 m)"), true);
+  });
+  it("claims nothing when either side is unknown", () => {
+    assert.equal(diukurDiTipeLain(null, "Standar"), null);
+    assert.equal(diukurDiTipeLain("Tipe Standar, lantai 1", null), null);
+    assert.equal(diukurDiTipeLain("  ", "Standar"), null);
   });
 });

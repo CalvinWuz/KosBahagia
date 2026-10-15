@@ -33,7 +33,12 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const biaya = kamar ? hitungBiaya(kamar) : null;
   const total = formatRupiah(biaya?.total ?? d.kartu.total_bulanan ?? 0);
   const kekuatan = kekuatanKos(d);
-  const judul = `${d.kos.nama}, ${d.area?.nama ?? ""} — ${total}/bulan`;
+  // The canonical page is shared for every room type (?kamar= is client-side),
+  // so with more than one room the title says "dari" the cheapest total
+  // instead of quoting one room's price as the kos's price.
+  const totalKamar = d.tipeKamar.map((t) => hitungBiaya(t).total);
+  const hargaJudul = totalKamar.length > 1 ? `dari ${formatRupiah(Math.min(...totalKamar))}` : total;
+  const judul = `${d.kos.nama}, ${d.area?.nama ?? ""} — ${hargaJudul}/bulan`;
   // Say exactly what the number is: complete, an estimate, or partial.
   const artiTotal = !biaya
     ? `Total ${total} per bulan.`

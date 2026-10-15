@@ -48,6 +48,18 @@ export function kataSelisihDb(selisih: number | null | undefined): string | null
   return cari(SKALA_SELISIH_DB, selisih)?.kata ?? null;
 }
 
+/**
+ * Whether the noise test was done in another room type than the one in view,
+ * so a score measured in the standard room is not read as a fact about the
+ * AC room. `kamar_diukur` is written "Tipe <room name>, lantai <n>". Null when
+ * either side is unknown: then nothing is claimed either way.
+ */
+export function diukurDiTipeLain(kamarDiukur: string | null | undefined, namaKamar: string | null | undefined): boolean | null {
+  if (!kamarDiukur?.trim() || !namaKamar?.trim()) return null;
+  const rapikan = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
+  return rapikan(kamarDiukur.split(",")[0]).replace(/^tipe /, "") !== rapikan(namaKamar);
+}
+
 /** The rubric's one-sentence description for a score, e.g. "Terawat; paling banyak satu hal kecil yang perlu dibersihkan." */
 export function keteranganKebersihan(nilai: number | null | undefined): string | null {
   return cari(SKALA_KEBERSIHAN, nilai)?.keterangan ?? null;

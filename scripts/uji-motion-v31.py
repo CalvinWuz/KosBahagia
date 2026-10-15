@@ -252,8 +252,12 @@ async def suite(p, jenis: str):
         await pg.wait_for_timeout(600)
         await pg.evaluate("window.scrollBy(0, 900)")  # mouse.wheel is not available in mobile WebKit
         await pg.wait_for_timeout(500)
+        # The card is scrolled to before the click (a click may scroll by itself), and the
+        # position is read right before leaving, so "back" is compared with where we left.
+        tautan = pg.locator("ul.grid[aria-busy=false] article h3 a").nth(1)
+        await ke_tengah(tautan)
         y_cari = await pg.evaluate("scrollY")
-        vt2 = await amati_vt(pg, lambda: pg.locator("ul.grid[aria-busy=false] article h3 a").first.click(), 1500)
+        vt2 = await amati_vt(pg, tautan.click, 1500)
         await pg.wait_for_url(re.compile(r"/kos/"))
         await pg.wait_for_timeout(500)
         vt3 = await amati_vt(pg, lambda: pg.get_by_role("button", name="Kembali").first.click())
@@ -284,7 +288,7 @@ async def suite(p, jenis: str):
         await pg.wait_for_timeout(900)
         await tutup_video(c, pg, "navigasi-pc")
         ada = lambda vt, kelas: kelas in nama_vt(vt)  # noqa: E731
-        ok = ada(vt1, "kb-halaman-maju") and ada(vt1, "kb-halaman-keluar") and ada(vt2, "kb-halaman-maju") and header_tetap and ada(vt4, "kb-halaman-maju") and y_balik > 300
+        ok = ada(vt1, "kb-halaman-maju") and ada(vt1, "kb-halaman-keluar") and ada(vt2, "kb-halaman-maju") and header_tetap and ada(vt4, "kb-halaman-maju") and abs(y_balik - y_cari) <= 5
         catat(1, "Beranda → Cari → Detail → kembali", ok, f"beranda→cari {nama_vt(vt1)}, cari→detail HP {nama_vt(vt2)}, PC {nama_vt(vt4)}; kembali (router.back): {nama_vt(vt3) or 'tanpa animasi'}; scroll hasil {y_cari:.0f} → {y_balik:.0f} px setelah kembali; header PC selama transisi: {sorted(posisi)} (sebelum {atas_awal}, sesudah {atas_akhir}, tanpa posisi antara)", jenis)
 
     # 2: search/detail → saved / compare / help ----------------------------------

@@ -39,7 +39,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const judul = d.area.seo_judul ?? `Kos di ${d.area.nama}`;
   const deskripsi =
     d.area.seo_deskripsi ??
-    `${d.statistik.jumlah_kos} kos di ${d.area.nama} yang sudah kami survei, total per bulan mulai ${formatRupiah(d.statistik.min_total)}.`;
+    `${d.fakta.jumlah} kos di ${d.area.nama} yang sudah kami survei` +
+      (d.fakta.biaya.min != null ? `, total per bulan mulai ${formatRupiah(d.fakta.biaya.min)}.` : ".");
   return {
     title: { absolute: `${judul} · Kos Bahagia` },
     description: deskripsi,
@@ -52,9 +53,9 @@ export default async function HalamanArea({ params }: Params) {
   const { slug } = await params;
   const d = await dataArea(slug);
   if (!d) notFound();
-  const { area, statistik, kos, tetangga } = d;
+  const { area, statistik, fakta, kos, tetangga } = d;
   const nama = area.nama ?? slug;
-  const faq = faqArea(nama, statistik);
+  const faq = faqArea(nama, statistik, fakta);
   const sekarang = new Date();
 
   const jsonLd = [
@@ -100,7 +101,7 @@ export default async function HalamanArea({ params }: Params) {
         {area.deskripsi && <p className="max-w-2xl text-body text-arang-900">{area.deskripsi}</p>}
         <div className="flex flex-wrap gap-3">
           <Link href={hrefCari({ area: slug })} className={buttonClasses({ variant: "primary" })}>
-            Lihat {statistik.jumlah_kos} kos di {nama}
+            Lihat {fakta.jumlah} kos di {nama}
           </Link>
           <Link href={hrefCari({ area: slug, harga_max: 1_200_000, urut: "termurah" })} className={buttonClasses({ variant: "secondary" })}>
             Yang hemat dulu
@@ -108,7 +109,7 @@ export default async function HalamanArea({ params }: Params) {
         </div>
       </header>
 
-      <FaktaArea s={statistik} nama={nama} />
+      <FaktaArea s={statistik} fakta={fakta} nama={nama} slug={slug} />
 
       {/* A taste, not the whole catalogue: the full list lives on /cari with
           filters and the map. Keeps the page short on phones. */}
@@ -127,7 +128,7 @@ export default async function HalamanArea({ params }: Params) {
         {kos.length > CUPLIKAN && (
           <div className="mt-4 flex justify-center">
             <Link href={hrefCari({ area: slug })} className={buttonClasses({ variant: "secondary" })}>
-              Lihat semua {statistik.jumlah_kos} kos di {nama}
+              Lihat semua {fakta.jumlah} kos di {nama}
             </Link>
           </div>
         )}

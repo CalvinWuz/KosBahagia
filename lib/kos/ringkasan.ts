@@ -4,10 +4,10 @@
 // never disagree with the sections below it.
 
 import { hitungBiaya, type TipeKamar } from "../biaya.ts";
-import { chipKebersihan, kataKedap } from "../skala.ts";
+import { chipKebersihan, diukurDiTipeLain, kataKedap } from "../skala.ts";
 import type { InfoStatus } from "../kamar.ts";
 
-type Penilaian = { skor_kedap: number | null; material_tembok: string | null } | null;
+type Penilaian = { skor_kedap: number | null; material_tembok: string | null; kamar_diukur?: string | null } | null;
 type Aturan = { jam_malam: string | null } | null;
 type Sekitar = { landmark_nama: string; landmark_menit_jalan: number | null } | null;
 
@@ -35,12 +35,14 @@ export function kelebihanKekurangan(d: BahanRingkasan): { kelebihan: string[]; k
   const kmDalam = d.kamar?.kamar_mandi_dalam ?? null;
   const biaya = d.kamar ? hitungBiaya(d.kamar) : null;
   const menit = d.sekitar?.landmark_menit_jalan ?? null;
+  // The summary is about the selected room; a noise test from another room type says so.
+  const tes = diukurDiTipeLain(d.penilaian?.kamar_diukur, d.kamar?.nama) ? "saat tes suara di tipe kamar lain" : "saat tes suara";
 
   // Drawbacks first in importance: safety, then what the renter cannot change.
   if (d.redFlags > 0) kekurangan.push(`${d.redFlags} catatan keselamatan dari surveyor`);
   if (d.status?.status === "penuh") kekurangan.push("Tipe kamar ini sedang penuh");
   if (biaya && !biaya.lengkap) kekurangan.push(`Biaya ${biaya.belumDiketahui.join(" dan ").toLowerCase()} belum diketahui`);
-  if (kedap != null && kedap <= 2) kekurangan.push(`${kataKedap(kedap)} saat tes suara (${kedap}/5${d.penilaian?.material_tembok ? `, tembok ${d.penilaian.material_tembok}` : ""})`);
+  if (kedap != null && kedap <= 2) kekurangan.push(`${kataKedap(kedap)} ${tes} (${kedap}/5${d.penilaian?.material_tembok ? `, tembok ${d.penilaian.material_tembok}` : ""})`);
   if (d.kebersihan != null && d.kebersihan < 3) kekurangan.push(`Kebersihan kurang (${angka(d.kebersihan)}/5)`);
   if (kmDalam === false) kekurangan.push("Kamar mandi di luar, dipakai bersama");
   if (d.aturan?.jam_malam) kekurangan.push(`Jam malam pukul ${jam(d.aturan.jam_malam)}`);
@@ -48,7 +50,7 @@ export function kelebihanKekurangan(d: BahanRingkasan): { kelebihan: string[]; k
 
   const bersih = chipKebersihan(d.kebersihan);
   if (bersih && d.kebersihan != null) kelebihan.push(`${bersih} (kebersihan ${angka(d.kebersihan)}/5)`);
-  if (kedap != null && kedap >= 4) kelebihan.push(`${kataKedap(kedap)} saat tes suara (${kedap}/5)`);
+  if (kedap != null && kedap >= 4) kelebihan.push(`${kataKedap(kedap)} ${tes} (${kedap}/5)`);
   if (menit != null && menit <= 10) kelebihan.push(`${menit} menit jalan ke ${d.sekitar?.landmark_nama}`);
   if (kmDalam === true) kelebihan.push("Kamar mandi dalam");
   if (d.aturan && !d.aturan.jam_malam) kelebihan.push("Tanpa jam malam");

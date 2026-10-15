@@ -8,9 +8,11 @@ import { cn } from "@/lib/cn";
 type Ubah = (ubah: (p: CariParams) => CariParams) => void;
 
 // What is narrowing the results right now, one removable chip per choice,
-// plus "Hapus semua". Shown above the results and at the top of the filter
-// sheet; both write through the same `terapkan`, so the chips, the sheet and
-// the URL always agree.
+// plus "Hapus semua" once there are two or more (with one, the chip's own ×
+// does the same and the extra button only pushed the results down a row on
+// phones). Shown above the results and at the top of the filter sheet; both
+// write through the same `terapkan`, so the chips, the sheet and the URL
+// always agree.
 export function FilterAktif({
   params,
   namaFasilitas,
@@ -47,7 +49,7 @@ export function FilterAktif({
             </li>
           ))}
         </ul>
-        {hapusSemua && (
+        {hapusSemua && daftar.length > 1 && (
           <button
             type="button"
             onClick={() => terapkan(tanpaFilter)}

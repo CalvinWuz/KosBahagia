@@ -26,11 +26,42 @@ function bacaKedalaman(): number {
   }
 }
 
+// The URL an internal link is taking us to, until the router has put it in
+// the address bar. Next renders the new page before it updates
+// window.location, so a page that reads its own query without
+// useSearchParams (DetailKos's ?kamar=, kept that way so the page stays
+// static) would otherwise see the previous page's query on its first render
+// and show the default room's price for a few frames.
+let tujuan: URL | null = null;
+if (typeof window !== "undefined") {
+  document.addEventListener(
+    "click",
+    (e) => {
+      const a = e.target instanceof Element ? e.target.closest<HTMLAnchorElement>("a[href]") : null;
+      if (!a || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || a.target === "_blank") return;
+      const url = new URL(a.href, window.location.href);
+      tujuan = url.origin === window.location.origin ? url : null;
+    },
+    true,
+  );
+  window.addEventListener("popstate", () => {
+    tujuan = null;
+  });
+}
+
+/** The query string of the page at `pathname` that is being rendered: the clicked link's, until the address bar catches up. */
+export function queryHalaman(pathname: string): string {
+  if (tujuan && tujuan.pathname === pathname && window.location.pathname !== pathname) return tujuan.search;
+  return window.location.search;
+}
+
 /** Mounted once in the layout: counts our own page views in this tab. */
 export function PelacakRiwayat() {
   const pathname = usePathname();
   const terakhir = useRef<string | null>(null);
   useEffect(() => {
+    // The router has committed the new URL by now; a stale link target must not outlive it.
+    tujuan = null;
     if (terakhir.current === pathname) return;
     terakhir.current = pathname;
     try {

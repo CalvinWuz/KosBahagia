@@ -9,7 +9,7 @@ import { formatJarak, formatTanggal } from "@/lib/format";
 import { kamarAcuan, kamarDariUrl, statusKamar } from "@/lib/kamar";
 import { kelebihanKekurangan } from "@/lib/kos/ringkasan";
 import { PenandaDemo } from "@/components/ui/PenandaDemo";
-import { useKembali } from "@/lib/navigasi";
+import { queryHalaman, useKembali } from "@/lib/navigasi";
 import { hrefCari } from "@/lib/cari-params";
 import type { DetailKosData } from "@/lib/kos/detail";
 import { kekuatanKos } from "@/lib/kos/kekuatan";
@@ -39,11 +39,12 @@ const TIPE_LABEL: Record<string, string> = { putra: "Kos putra", putri: "Kos put
 
 // ?kamar= read without useSearchParams, so the page stays statically
 // rendered; the server snapshot is "no choice" and the client corrects it.
+// queryHalaman covers a client navigation, where this page renders before
+// the address bar shows its URL (lib/navigasi.ts).
 const langgananUrl = (cb: () => void) => {
   window.addEventListener("popstate", cb);
   return () => window.removeEventListener("popstate", cb);
 };
-const bacaKamarUrl = () => new URLSearchParams(window.location.search).get("kamar");
 const tanpaKamarUrl = () => null;
 
 const BAGIAN: Bagian[] = [
@@ -81,6 +82,7 @@ export function DetailKos({ data, sekarang }: { data: DetailKosData; sekarang: s
   // The selected room type drives price, status, summary, contact message,
   // save and compare. It lives in ?kamar= so reloads, shared links and the
   // back button keep it; without one the cheapest room with space is shown.
+  const bacaKamarUrl = useCallback(() => new URLSearchParams(queryHalaman(`/kos/${kos.slug}`)).get("kamar"), [kos.slug]);
   const kamarUrl = useSyncExternalStore(langgananUrl, bacaKamarUrl, tanpaKamarUrl);
   const [pilihan, setPilihan] = useState<string | null>(null);
   const kamarId = pilihan ?? kamarDariUrl(tipeKamar, kamarUrl)?.id ?? kartu.kamar_id ?? kamarAcuan(tipeKamar)?.id ?? null;
@@ -247,7 +249,7 @@ export function DetailKos({ data, sekarang }: { data: DetailKosData; sekarang: s
             {/* 4 */}
             <RincianBiaya tipeKamar={kamarHidup} terpilih={kamar} onPilih={pilihKamar} dikonfirmasiPada={ketersediaan.dikonfirmasiPada} sekarang={sekarangDate} />
             {/* 5 */}
-            <BuktiKebersihan penilaian={penilaian} disurveiPada={kos.disurvei_pada} />
+            <BuktiKebersihan penilaian={penilaian} disurveiPada={kos.disurvei_pada} kamarTerpilih={kamar?.nama ?? null} />
             {/* 6 */}
             <DaftarFasilitas semua={semuaFasilitas} dimiliki={fasilitasKos} kamar={kamar} />
             {/* 7 */}

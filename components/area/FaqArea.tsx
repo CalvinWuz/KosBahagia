@@ -1,5 +1,5 @@
 import { formatRupiah } from "@/lib/format";
-import type { StatistikArea } from "@/lib/area/data";
+import type { FaktaArea, StatistikArea } from "@/lib/area/data";
 
 const LISTRIK: Record<string, string> = {
   termasuk: "sudah termasuk sewa",
@@ -11,12 +11,28 @@ const LISTRIK: Record<string, string> = {
 export type Faq = { q: string; a: string };
 
 // Questions in the words people actually type into Google; answers computed
-// from the survey so they stay true after every revalidation.
-export function faqArea(nama: string, s: StatistikArea): Faq[] {
+// from the survey so they stay true after every revalidation. Cost and
+// bathroom answers use the area's own search (lib/area/fakta.ts) and say
+// what is an estimate and what is left out, the way every card does.
+function jawabanHarga(nama: string, f: FaktaArea): string {
+  const b = f.biaya;
+  if (b.median == null || b.min == null || b.max == null) {
+    return `Total per bulan kos di ${nama} belum bisa kami rangkum karena biayanya belum lengkap. Rincian tiap kos ada di halaman detailnya.`;
+  }
+  const kalimat = [
+    `Dari ${b.dihitung} kos di ${nama} yang biayanya lengkap, total per bulan berkisar ${formatRupiah(b.min)} sampai ${formatRupiah(b.max)}, dengan median ${formatRupiah(b.median)}.`,
+    "Total itu sewa ditambah biaya wajib bulanan, bukan sewa saja.",
+  ];
+  if (b.estimasi > 0) kalimat.push(`Di ${b.estimasi} kos, listriknya masih estimasi pemakaian.`);
+  if (b.belumLengkap > 0) kalimat.push(`${b.belumLengkap} kos yang biayanya belum lengkap tidak ikut dihitung.`);
+  return kalimat.join(" ");
+}
+
+export function faqArea(nama: string, s: StatistikArea, f: FaktaArea): Faq[] {
   const faq: Faq[] = [
     {
       q: `Berapa harga kos di ${nama}?`,
-      a: `Dari ${s.jumlah_kos} kos yang kami survei di ${nama}, total per bulan berkisar ${formatRupiah(s.min_total)} sampai ${formatRupiah(s.max_total)}, dengan median ${formatRupiah(s.median_total)}. Angka ini sudah termasuk listrik, air, dan biaya wajib lain, bukan sewa saja.`,
+      a: jawabanHarga(nama, f),
     },
     {
       q: `Kos di ${nama} ada yang bebas jam malam?`,
@@ -26,7 +42,7 @@ export function faqArea(nama: string, s: StatistikArea): Faq[] {
     },
     {
       q: `Ada kos di ${nama} dengan kamar mandi dalam?`,
-      a: `${s.persen_km_dalam}% kos di ${nama} punya kamar mandi di dalam kamar. Sisanya berbagi kamar mandi, biasanya untuk 3–5 kamar.`,
+      a: `${f.kmDalam} dari ${f.jumlah} kos di ${nama} punya minimal satu tipe kamar dengan kamar mandi dalam. Di kos lainnya kamar mandinya di luar kamar, atau belum kami catat per tipe kamar.`,
     },
     {
       q: `Listrik di kos ${nama} biasanya termasuk?`,

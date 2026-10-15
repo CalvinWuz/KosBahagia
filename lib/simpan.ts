@@ -40,17 +40,31 @@ export type RingkasanKos = {
 const KUNCI = { simpan: "kb:simpan", banding: "kb:banding" } as const;
 export { MAKS_BANDING };
 
+type Jenis = keyof typeof KUNCI;
+
 const pendengar = new Set<() => void>();
 const cache: { simpan: Simpanan[]; banding: ItemBanding[] } = { simpan: [], banding: [] };
 const KOSONG: never[] = [];
+// A list the browser refused to store (full quota, blocked site data, some
+// private modes) lives in memory for this tab only. While that is so, the
+// memory copy is the source of truth: re-reading the disk would bring back
+// the old list and undo what the renter just did. The UI says "sementara"
+// instead of "tersimpan di perangkat ini".
+const sementara: Record<Jenis, boolean> = { simpan: false, banding: false };
 
 function sama(a: unknown, b: unknown) {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
-function bacaMentah(kunci: string): unknown[] {
+/** The stored list; null when storage itself cannot be read. Corrupt data reads as empty. */
+function bacaMentah(kunci: string): unknown[] | null {
+  let raw: string | null;
   try {
-    const raw = localStorage.getItem(kunci);
+    raw = localStorage.getItem(kunci);
+  } catch {
+    return null;
+  }
+  try {
     const nilai = raw ? JSON.parse(raw) : [];
     return Array.isArray(nilai) ? nilai : [];
   } catch {
@@ -58,12 +72,25 @@ function bacaMentah(kunci: string): unknown[] {
   }
 }
 
+/** Said wherever "tersimpan di perangkat ini" would otherwise be untrue. */
+export const HANYA_DI_TAB = "Browser ini menolak menyimpan, jadi daftarnya hilang saat tab ditutup.";
+
+/** False while this list exists only in this tab (the browser refused to store it). */
+export function tersimpanPermanen(jenis: Jenis): boolean {
+  return !sementara[jenis];
+}
+
 // Entries written by earlier builds were bare ids; keep them readable.
 const teksAtauNull = (v: unknown) => (typeof v === "string" && v ? v : null);
 const angkaAtauNull = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
 export function bacaSimpan(): Simpanan[] {
-  const nilai = bacaMentah(KUNCI.simpan).map((x): Simpanan | null => {
+  const mentah = sementara.simpan ? null : bacaMentah(KUNCI.simpan);
+  if (mentah === null) {
+    sementara.simpan = true;
+    return cache.simpan;
+  }
+  const nilai = mentah.map((x): Simpanan | null => {
     if (typeof x === "string") return { id: x, slug: "", nama: "", kamarId: null, kamarNama: null, total_bulanan: null, kamar_tersedia: null, disimpan_pada: "" };
     if (!x || typeof x !== "object") return null;
     const o = x as Record<string, unknown>;
@@ -83,7 +110,12 @@ export function bacaSimpan(): Simpanan[] {
   return cache.simpan;
 }
 export function bacaBanding(): ItemBanding[] {
-  const nilai = bacaMentah(KUNCI.banding).map((x): ItemBanding | null => {
+  const mentah = sementara.banding ? null : bacaMentah(KUNCI.banding);
+  if (mentah === null) {
+    sementara.banding = true;
+    return cache.banding;
+  }
+  const nilai = mentah.map((x): ItemBanding | null => {
     if (typeof x === "string") return { id: x, slug: "", nama: "", kamarId: null, kamarNama: null };
     if (!x || typeof x !== "object") return null;
     const o = x as Record<string, unknown>;
@@ -94,14 +126,14 @@ export function bacaBanding(): ItemBanding[] {
   return cache.banding;
 }
 
-function tulis(kunci: string, nilai: unknown) {
+function tulis<J extends Jenis>(jenis: J, nilai: (typeof cache)[J]) {
   try {
-    localStorage.setItem(kunci, JSON.stringify(nilai));
+    localStorage.setItem(KUNCI[jenis], JSON.stringify(nilai));
+    sementara[jenis] = false;
   } catch {
-    // Private mode etc. — in-memory state still updates below.
+    sementara[jenis] = true;
   }
-  if (kunci === KUNCI.simpan) cache.simpan = nilai as Simpanan[];
-  else cache.banding = nilai as ItemBanding[];
+  cache[jenis] = nilai;
   pendengar.forEach((fn) => fn());
 }
 
@@ -120,12 +152,16 @@ export function useSimpanan(): Simpanan[] {
 export function useBanding(): ItemBanding[] {
   return useSyncExternalStore(langganan, bacaBanding, () => KOSONG);
 }
+/** True while the list only lives in this tab (see `sementara`). */
+export function useHanyaDiTab(jenis: Jenis): boolean {
+  return useSyncExternalStore(langganan, () => sementara[jenis], () => false);
+}
 
 /** A kos is saved once; saving again from another room type updates the room. */
 export function toggleSimpan(kos: RingkasanKos) {
   const ada = bacaSimpan();
   if (ada.some((s) => s.id === kos.id)) {
-    tulis(KUNCI.simpan, ada.filter((s) => s.id !== kos.id));
+    tulis("simpan", ada.filter((s) => s.id !== kos.id));
     return;
   }
   const baru: Simpanan = {
@@ -138,16 +174,16 @@ export function toggleSimpan(kos: RingkasanKos) {
     kamar_tersedia: kos.kamar_tersedia ?? null,
     disimpan_pada: new Date().toISOString(),
   };
-  tulis(KUNCI.simpan, [baru, ...ada]);
+  tulis("simpan", [baru, ...ada]);
 }
 
 export function hapusSimpan(id: string) {
-  tulis(KUNCI.simpan, bacaSimpan().filter((s) => s.id !== id));
+  tulis("simpan", bacaSimpan().filter((s) => s.id !== id));
 }
 
 /** Refresh a save's snapshot to the current values (after the user has seen the change). */
 export function segarkanSimpan(kos: RingkasanKos) {
-  tulis(KUNCI.simpan, bacaSimpan().map((s) => (s.id === kos.id ? { ...s, total_bulanan: kos.total_bulanan ?? null, kamar_tersedia: kos.kamar_tersedia ?? null } : s)));
+  tulis("simpan", bacaSimpan().map((s) => (s.id === kos.id ? { ...s, total_bulanan: kos.total_bulanan ?? null, kamar_tersedia: kos.kamar_tersedia ?? null } : s)));
 }
 
 const itemDari = (kos: RingkasanKos): ItemBanding => ({ id: kos.id, slug: kos.slug, nama: kos.nama, kamarId: kos.kamarId ?? null, kamarNama: kos.kamarNama ?? null });
@@ -161,16 +197,16 @@ export function tambahBanding(kos: RingkasanKos): boolean {
   const item = itemDari(kos);
   if (ada.some((b) => samaKandidat(b, item))) return true;
   if (ada.length >= MAKS_BANDING) return false;
-  tulis(KUNCI.banding, [...ada, item]);
+  tulis("banding", [...ada, item]);
   return true;
 }
 export function hapusBanding(kandidat: Pick<ItemBanding, "id" | "kamarId">) {
-  tulis(KUNCI.banding, bacaBanding().filter((b) => !samaKandidat(b, kandidat)));
+  tulis("banding", bacaBanding().filter((b) => !samaKandidat(b, kandidat)));
 }
 /** Swap one tray entry for another (the "which one to drop" answer). */
 export function gantiBanding(lama: Pick<ItemBanding, "id" | "kamarId">, kos: RingkasanKos) {
-  tulis(KUNCI.banding, bacaBanding().map((b) => (samaKandidat(b, lama) ? itemDari(kos) : b)));
+  tulis("banding", bacaBanding().map((b) => (samaKandidat(b, lama) ? itemDari(kos) : b)));
 }
 export function setBanding(items: ItemBanding[]) {
-  tulis(KUNCI.banding, items.slice(0, MAKS_BANDING));
+  tulis("banding", items.slice(0, MAKS_BANDING));
 }

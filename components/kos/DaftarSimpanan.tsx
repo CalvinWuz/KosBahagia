@@ -6,12 +6,13 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
+import { IconPutar } from "@/components/ui/Icon";
 import { KosCard, KosCardSkeleton, type KosKartu } from "@/components/kos/KosCard";
 import { restSelect } from "@/lib/supabase/rest";
 import type { TipeKamar } from "@/lib/biaya";
 import { formatRupiah } from "@/lib/format";
-import { hapusSimpan, segarkanSimpan, setBanding, toggleSimpan, useSimpanan, type Simpanan } from "@/lib/simpan";
-import { hrefBanding } from "@/lib/kos/kunci-banding";
+import { HANYA_DI_TAB, hapusSimpan, segarkanSimpan, setBanding, tersimpanPermanen, toggleSimpan, useHanyaDiTab, useSimpanan, type Simpanan } from "@/lib/simpan";
+import { MAKS_TAUTAN_SIMPANAN, adalahUuid, bacaKunciKos, hrefBanding, tulisKunciKos, type KunciKos } from "@/lib/kos/kunci-banding";
 import { tampilkanToast } from "@/lib/toast";
 
 const hidrasi = () => () => {};
@@ -19,31 +20,38 @@ const useSudahHidrasi = () => useSyncExternalStore(hidrasi, () => true, () => fa
 
 type Urut = "terbaru" | "termurah";
 
+type Muatan = { kunci: string; kos: KosKartu[]; kamar: TipeKamar[]; gagal: boolean };
+
 // /disimpan — works signed out. Each card says what changed since the save.
-export function DaftarSimpanan({ dariTautan = [] }: { dariTautan?: string[] }) {
+// A failed fetch is a failed fetch: it never turns into "sudah tidak tayang"
+// or "kamar sudah tidak ada", and never suggests deleting a save.
+export function DaftarSimpanan({ dariTautan = [] }: { dariTautan?: KunciKos[] }) {
   const simpanan = useSimpanan();
+  const hanyaDiTab = useHanyaDiTab("simpan");
   const siap = useSudahHidrasi();
   const router = useRouter();
   const [urut, setUrut] = useState<Urut>("terbaru");
   const [disalin, setDisalin] = useState(false);
-  const kunci = simpanan.map((s) => `${s.id}:${s.kamarId ?? ""}`).join(",");
-  const [data, setData] = useState<{ kunci: string; kos: KosKartu[]; kamar: TipeKamar[] } | null>(null);
+  const [coba, setCoba] = useState(0);
+  const kunci = `${simpanan.map((s) => `${s.id}:${s.kamarId ?? ""}`).join(",")}|${coba}`;
+  const [data, setData] = useState<Muatan | null>(null);
 
   useEffect(() => {
-    if (!kunci) return;
+    const daftar = kunci.split("|")[0];
+    if (!daftar) return;
     let batal = false;
-    const ids = [...new Set(kunci.split(",").map((k) => k.split(":")[0]))].join(",");
-    const kamarIds = kunci.split(",").map((k) => k.split(":")[1]).filter(Boolean).join(",");
+    const ids = [...new Set(daftar.split(",").map((k) => k.split(":")[0]))].join(",");
+    const kamarIds = daftar.split(",").map((k) => k.split(":")[1]).filter(Boolean).join(",");
     Promise.all([
       restSelect("kos_kartu", { select: "*", id: `in.(${ids})` }),
       kamarIds ? restSelect("tipe_kamar", { select: "*", id: `in.(${kamarIds})` }) : Promise.resolve({ data: [] as TipeKamar[], error: null }),
-    ]).then(([kos, kamar]) => !batal && setData({ kunci, kos: kos.data ?? [], kamar: kamar.data ?? [] }));
+    ]).then(([kos, kamar]) => !batal && setData({ kunci, kos: kos.data ?? [], kamar: kamar.data ?? [], gagal: Boolean(kos.error || kamar.error) }));
     return () => {
       batal = true;
     };
   }, [kunci]);
 
-  if (dariTautan.length > 0) return <DariTautan slugs={dariTautan} />;
+  if (dariTautan.length > 0) return <DariTautan kunci={dariTautan} />;
 
   if (!siap) {
     return (
@@ -85,9 +93,10 @@ export function DaftarSimpanan({ dariTautan = [] }: { dariTautan?: string[] }) {
     router.push(hrefBanding(tiga.map((s) => ({ kos: s.slug || s.id, kamar: s.kamarId }))));
   };
 
+  // The link carries each saved room type, so the person opening it sees the same room and total.
   const bagikan = async () => {
-    const slugs = simpanan.map((s) => s.slug).filter(Boolean);
-    const url = `${window.location.origin}/disimpan?kos=${slugs.join(",")}`;
+    const isi = tulisKunciKos(simpanan.slice(0, MAKS_TAUTAN_SIMPANAN).map((s) => ({ kos: s.slug || s.id, kamar: s.kamarId })));
+    const url = `${window.location.origin}/disimpan?kos=${isi}`;
     try {
       if (navigator.share) return await navigator.share({ title: "Kos yang kusimpan", url });
       await navigator.clipboard.writeText(url);
@@ -101,7 +110,9 @@ export function DaftarSimpanan({ dariTautan = [] }: { dariTautan?: string[] }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-small text-arang-500">{simpanan.length} kos tersimpan di perangkat ini (tidak dikirim ke server).</p>
+        <p className="text-small text-arang-500">
+          {hanyaDiTab ? `${simpanan.length} kos tersimpan sementara di tab ini. ${HANYA_DI_TAB}` : `${simpanan.length} kos tersimpan di perangkat ini (tidak dikirim ke server).`}
+        </p>
         <div className="flex flex-wrap gap-2">
           {simpanan.length >= 2 && (
             <Button variant="secondary" size="sm" onClick={bandingkan}>
@@ -117,6 +128,27 @@ export function DaftarSimpanan({ dariTautan = [] }: { dariTautan?: string[] }) {
           <Chip selected={urut === "termurah"} onClick={() => setUrut("termurah")}>Termurah</Chip>
         </div>
       )}
+      {!memuat && data?.gagal ? (
+        <GagalMuat jumlah={simpanan.length} cobaLagi={() => setCoba((c) => c + 1)}>
+          <ul className="divide-y divide-biru-100 rounded-2xl border border-biru-100 bg-putih">
+            {terurut.map((s) => (
+              <li key={s.id} className="flex flex-col gap-0.5 px-4 py-3">
+                {s.slug ? (
+                  <Link href={s.kamarId ? `/kos/${s.slug}?kamar=${s.kamarId}` : `/kos/${s.slug}`} className="self-start rounded-sm text-body font-bold text-biru-600 hover:underline">
+                    {s.nama || "Kos tersimpan"}
+                  </Link>
+                ) : (
+                  <span className="text-body font-bold text-arang-900">{s.nama || "Kos tersimpan"}</span>
+                )}
+                <span className="text-small text-arang-500">
+                  {s.kamarNama ? `Kamar ${s.kamarNama}` : "Kamar dipilih otomatis"}
+                  {s.total_bulanan != null && `, ${formatRupiah(s.total_bulanan)}/bln saat disimpan`}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </GagalMuat>
+      ) : (
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-busy={memuat}>
         {terurut.map((s) => {
           const kos = kosDari(s);
@@ -133,28 +165,77 @@ export function DaftarSimpanan({ dariTautan = [] }: { dariTautan?: string[] }) {
           );
         })}
       </ul>
+      )}
+    </div>
+  );
+}
+
+function GagalMuat({ jumlah, cobaLagi, children }: { jumlah?: number; cobaLagi: () => void; children?: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-4">
+      <div role="alert" className="flex flex-col items-start gap-3 rounded-2xl border border-merah-100 bg-putih p-6">
+        <p className="text-body font-bold text-arang-900">Harga dan ketersediaan terbaru belum bisa dimuat.</p>
+        <p className="text-small text-arang-500">
+          {jumlah != null ? `Daftarmu (${jumlah} kos) tetap aman di perangkat ini. ` : ""}Cek koneksi internet, lalu coba lagi.
+        </p>
+        <Button variant="primary" onClick={cobaLagi}>
+          <IconPutar className="size-4" /> Coba lagi
+        </Button>
+      </div>
+      {children}
     </div>
   );
 }
 
 // A list opened from a shared link. Nothing is written until the user says so.
-function DariTautan({ slugs }: { slugs: string[] }) {
+// Each entry shows the room type that was shared; a room that no longer
+// exists is said so, never swapped silently.
+function DariTautan({ kunci }: { kunci: KunciKos[] }) {
   const router = useRouter();
   const simpanan = useSimpanan();
-  const [kos, setKos] = useState<KosKartu[] | null>(null);
-  const kunciSlug = slugs.join(",");
+  const [coba, setCoba] = useState(0);
+  const kunciMuat = `${tulisKunciKos(kunci)}|${coba}`;
+  const [muat, setMuat] = useState<Muatan | null>(null);
   useEffect(() => {
     let batal = false;
-    restSelect("kos_kartu", { select: "*", slug: `in.(${kunciSlug})`, status: "eq.tayang" }).then(({ data }) => !batal && setKos(data ?? []));
+    const daftar = bacaKunciKos(kunciMuat.split("|")[0], MAKS_TAUTAN_SIMPANAN);
+    const slugs = daftar.filter((k) => !adalahUuid(k.kos)).map((k) => k.kos);
+    const ids = daftar.filter((k) => adalahUuid(k.kos)).map((k) => k.kos);
+    const kamarIds = daftar.flatMap((k) => (k.kamar ? [k.kamar] : []));
+    const atau = [slugs.length ? `slug.in.(${slugs.join(",")})` : "", ids.length ? `id.in.(${ids.join(",")})` : ""].filter(Boolean).join(",");
+    Promise.all([
+      restSelect("kos_kartu", { select: "*", or: `(${atau})`, status: "eq.tayang" }),
+      kamarIds.length ? restSelect("tipe_kamar", { select: "*", id: `in.(${kamarIds.join(",")})` }) : Promise.resolve({ data: [] as TipeKamar[], error: null }),
+    ]).then(([kos, kamar]) => !batal && setMuat({ kunci: kunciMuat, kos: kos.data ?? [], kamar: kamar.data ?? [], gagal: Boolean(kos.error || kamar.error) }));
     return () => {
       batal = true;
     };
-  }, [kunciSlug]);
+  }, [kunciMuat]);
 
-  const belumAda = (kos ?? []).filter((k) => !simpanan.some((s) => s.id === k.id));
+  const siap = muat?.kunci === kunciMuat;
+  const baris = siap
+    ? kunci.flatMap((k) => {
+        const kartu = muat.kos.find((x) => x.slug === k.kos || x.id === k.kos);
+        if (!kartu) return [];
+        const kamar = k.kamar ? muat.kamar.find((t) => t.id === k.kamar && t.kos_id === kartu.id) : undefined;
+        return [{ kunci: k, kos: kamar ? kartuDenganKamar(kartu, kamar) : kartu, kamarHilang: Boolean(k.kamar && !kamar) }];
+      })
+    : [];
+  const tidakTayang = kunci.length - baris.length;
+  const belumAda = baris.filter((b) => !simpanan.some((s) => s.id === b.kos.id));
   const simpanSemua = () => {
-    belumAda.forEach((k) => toggleSimpan({ id: k.id ?? "", slug: k.slug ?? "", nama: k.nama ?? "", total_bulanan: k.total_bulanan, kamar_tersedia: k.kamar_tersedia }));
-    tampilkanToast({ teks: `${belumAda.length} kos disimpan ke perangkat ini.` });
+    belumAda.forEach(({ kos: k, kamarHilang }) =>
+      toggleSimpan({
+        id: k.id ?? "",
+        slug: k.slug ?? "",
+        nama: k.nama ?? "",
+        kamarId: kamarHilang ? null : k.kamar_id,
+        kamarNama: kamarHilang ? null : k.kamar_nama,
+        total_bulanan: k.total_bulanan,
+        kamar_tersedia: k.kamar_acuan_tersedia,
+      }),
+    );
+    tampilkanToast({ teks: tersimpanPermanen("simpan") ? `${belumAda.length} kos disimpan ke perangkat ini.` : `${belumAda.length} kos disimpan sementara. ${HANYA_DI_TAB}` });
     router.replace("/disimpan");
   };
 
@@ -162,10 +243,10 @@ function DariTautan({ slugs }: { slugs: string[] }) {
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 rounded-2xl border border-biru-100 bg-putih p-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-small text-arang-900">
-          Daftar dari tautan yang dibagikan{kos ? `, ${kos.length} kos` : ""}.
+          Daftar dari tautan yang dibagikan{siap && !muat.gagal ? `, ${baris.length} kos dengan tipe kamar yang dipilih pengirim` : ""}.
         </p>
         <div className="flex flex-wrap gap-2">
-          {belumAda.length > 0 && (
+          {belumAda.length > 0 && !muat?.gagal && (
             <Button variant="primary" size="sm" onClick={simpanSemua}>
               Simpan {belumAda.length} kos ke perangkat ini
             </Button>
@@ -173,16 +254,30 @@ function DariTautan({ slugs }: { slugs: string[] }) {
           <Link href="/disimpan" className={buttonClasses({ variant: "ghost", size: "sm" })}>Lihat simpananku</Link>
         </div>
       </div>
-      {kos === null ? (
+      {!siap ? (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true">
-          {Array.from({ length: Math.min(slugs.length, 3) }, (_, i) => <li key={i}><KosCardSkeleton /></li>)}
+          {Array.from({ length: Math.min(kunci.length, 3) }, (_, i) => <li key={i}><KosCardSkeleton /></li>)}
         </ul>
-      ) : kos.length === 0 ? (
-        <p className="text-small text-arang-500">Kos di tautan ini sudah tidak tayang.</p>
+      ) : muat.gagal ? (
+        <GagalMuat cobaLagi={() => setCoba((c) => c + 1)} />
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {kos.map((k) => <li key={k.id}><KosCard kos={k} /></li>)}
-        </ul>
+        <>
+          {baris.length > 0 && (
+            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {baris.map((b) => (
+                <li key={`${b.kunci.kos}:${b.kunci.kamar ?? ""}`} className="flex flex-col gap-2">
+                  {b.kamarHilang && <p className="text-micro text-arang-500">Tipe kamar yang dibagikan sudah tidak ada; ini tipe yang tersedia sekarang.</p>}
+                  <KosCard kos={b.kos} />
+                </li>
+              ))}
+            </ul>
+          )}
+          {tidakTayang > 0 && (
+            <p className="text-small text-arang-500">
+              {baris.length === 0 ? "Kos di tautan ini sudah tidak tayang." : `${tidakTayang} kos di tautan ini sudah tidak tayang.`}
+            </p>
+          )}
+        </>
       )}
     </div>
   );

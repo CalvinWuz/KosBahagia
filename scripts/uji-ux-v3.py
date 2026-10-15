@@ -6,6 +6,7 @@ the same RPC the app calls, runs axe-core, and writes evidence screenshots.
 
   npm run build && npm run start -- --port 3011      # in another terminal
   python3 scripts/uji-ux-v3.py                       # needs: pip install playwright
+  MESIN=webkit OUT_DIR=… python3 scripts/uji-ux-v3.py   # Safari's engine instead of Chromium
 
 Output: pemeriksaan JSON in docs/tangkapan/v3/hasil-uji.json, screenshots in
 docs/tangkapan/v3/. Uses local data only; nothing is sent to WhatsApp or prod.
@@ -36,6 +37,8 @@ ANON = next(
 AXE = (AKAR / "node_modules" / "axe-core" / "axe.min.js").read_text()
 
 PUSAT = {"binus-kemanggisan": (-6.2019, 106.7818, 2000), "palmerah": (-6.1985, 106.7905, 3000)}
+MESIN = os.environ.get("MESIN", "chromium")
+HANYA = [x for x in os.environ.get("HANYA", "").split(",") if x]  # e.g. HANYA=10 runs the group that starts at 10
 HP = dict(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
 PC = dict(viewport={"width": 1440, "height": 900}, device_scale_factor=1)
 
@@ -109,7 +112,7 @@ async def jalankan(no, nama, fungsi):
 
 async def main():
     async with async_playwright() as p:
-        b = await p.chromium.launch()
+        b = await getattr(p, MESIN).launch()
 
         async def baru(opsi=HP, **extra):
             c = await b.new_context(**opsi, **extra)
@@ -263,8 +266,9 @@ async def main():
             await pg.wait_for_url(re.compile(r"/kos/kost-anggrek-cakra"), timeout=15000)
             ringkas = await pg.locator("#ringkasan").inner_text()
             tombol = await pg.locator("div.fixed.bottom-0").first.inner_text()
-            ok10 = "Kamar AC + kamar mandi dalam" in teks and href.endswith(ac) and "AC + kamar mandi dalam" in ringkas and "Penuh" in ringkas and "Tanya kapan tersedia" in tombol
-            catat(10, "Kamar mandi dalam pada kos bertipe kamar campuran", ok10, "kartu dan detail menunjuk kamar AC + kamar mandi dalam (Penuh, Rp2.195.000), tombol 'Tanya kapan tersedia'")
+            cek10 = {"kartu": "Kamar AC + kamar mandi dalam" in teks, "href": href.endswith(ac), "ringkasan": "AC + kamar mandi dalam" in ringkas and "Penuh" in ringkas, "tombol": "Tanya kapan tersedia" in tombol}
+            ok10 = all(cek10.values())
+            catat(10, "Kamar mandi dalam pada kos bertipe kamar campuran", ok10, "kartu dan detail menunjuk kamar AC + kamar mandi dalam (Penuh, Rp2.195.000), tombol 'Tanya kapan tersedia'" + ("" if ok10 else f"; gagal: {[k for k, v in cek10.items() if not v]}, tombol='{tombol[:80]}'"))
             await buka(pg, BASE + "/cari?area=binus-kemanggisan&harga_max=2200000&tipe=putri&fasilitas=kamar-mandi-dalam")
             n11 = await jumlah_ui(pg)
             db11 = cari("binus-kemanggisan", harga_max=2200000, tipe=["putri"], fasilitas=["kamar-mandi-dalam"])
@@ -594,14 +598,17 @@ async def main():
             durasi = await pg.locator('ul[aria-label="Filter cepat"] button').first.evaluate("e => getComputedStyle(e).transitionDuration")
             # keyboard: Tab to the first card's Simpan button and press Enter
             await pg.locator("ul.grid[aria-busy=false] article h3 a").first.focus()
-            await pg.keyboard.press("Tab")
+            # Safari moves between links and buttons with Option+Tab (plain Tab skips them by default).
+            await pg.keyboard.press("Alt+Tab" if MESIN == "webkit" else "Tab")
             nama_fokus = await pg.evaluate("document.activeElement?.getAttribute('aria-label') || ''")
             url = pg.url
             await pg.keyboard.press("Enter")
             await pg.wait_for_timeout(300)
             ditekan = await pg.evaluate("document.activeElement?.getAttribute('aria-pressed')")
             await c.close()
-            ok = not luap and durasi in ("1e-05s", "0.01ms", "0s") and nama_fokus.startswith("Simpan ") and ditekan == "true" and url == pg.url
+            # Compared as a number: Chromium writes 1e-05s, WebKit 0.00001s for the same 0.01 ms.
+            detik = float(durasi[:-2]) / 1000 if durasi.endswith("ms") else float(durasi.rstrip("s"))
+            ok = not luap and detik <= 0.0001 and nama_fokus.startswith("Simpan ") and ditekan == "true" and url == pg.url
             catat(24, "HP, PC, zoom 200%, keyboard, reduced motion", ok, f"overflow: {luap or 'tidak ada'} (320/360/390/768/1440 px, teks 200% di 390 px, 640 px = 1280 px zoom 200%); transisi reduced motion {durasi}; Tab dari judul kartu ke '{nama_fokus[:30]}', Enter menyimpan tanpa pindah halaman")
 
         # 25 -----------------------------------------------------------------
@@ -650,7 +657,12 @@ async def main():
             (25, "Urutan", s25),
             (26, "Demo", s26),
         ]:
-            await jalankan(no, nama, f)
+            if not HANYA or str(no) in HANYA:
+                await jalankan(no, nama, f)
+        if HANYA:  # a partial run skips axe and the evidence screenshots
+            await b.close()
+            print("\n".join(f"{h['no']} {'LULUS' if h['lulus'] else 'GAGAL'}" for h in hasil))
+            return
 
         # axe-core ------------------------------------------------------------
         pelanggaran = {}
@@ -710,7 +722,7 @@ async def main():
         await c.close()
         await b.close()
 
-    (OUT / "hasil-uji.json").write_text(json.dumps({"base": BASE, "waktu": time.strftime("%Y-%m-%d %H:%M"), "hasil": hasil}, ensure_ascii=False, indent=2))
+    (OUT / "hasil-uji.json").write_text(json.dumps({"base": BASE, "mesin": MESIN, "waktu": time.strftime("%Y-%m-%d %H:%M"), "hasil": hasil}, ensure_ascii=False, indent=2))
     gagal = [h for h in hasil if not h["lulus"]]
     print(f"\n{len(hasil) - len(gagal)}/{len(hasil)} lulus")
     sys.exit(1 if gagal else 0)

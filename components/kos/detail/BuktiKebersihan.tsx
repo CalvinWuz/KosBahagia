@@ -3,7 +3,7 @@ import { Accordion, AccordionItem } from "@/components/ui/Accordion";
 import type { Penilaian } from "@/lib/kos/detail";
 import { PenandaDemo } from "@/components/ui/PenandaDemo";
 import { formatSkala, formatTanggal } from "@/lib/format";
-import { kataKebersihan, kataKedap, kataSelisihDb, keteranganKebersihan, keteranganKedap, skorKebersihanRata } from "@/lib/skala";
+import { diukurDiTipeLain, kataKebersihan, kataKedap, kataSelisihDb, keteranganKebersihan, keteranganKedap, skorKebersihanRata } from "@/lib/skala";
 import { cn } from "@/lib/cn";
 import { Baris, BelumDicatat, Blok, Skala } from "./bagian";
 import { ArtiSkala } from "./ArtiSkala";
@@ -19,7 +19,7 @@ const PEMBERSIH: Record<string, string> = {
 // evidence (three area scores, cleaning routine, wall, decibels, limits) is
 // one tap away in two accordions, unchanged in content. Numbers and words come
 // from lib/skala, the same source as the card chips, the hero and the score.
-export function BuktiKebersihan({ penilaian, disurveiPada }: { penilaian: Penilaian | null; disurveiPada: string | null }) {
+export function BuktiKebersihan({ penilaian, disurveiPada, kamarTerpilih = null }: { penilaian: Penilaian | null; disurveiPada: string | null; kamarTerpilih?: string | null }) {
   if (!penilaian) {
     return (
       <Blok id="kebersihan" judul="Kebersihan & kedap suara">
@@ -50,6 +50,7 @@ export function BuktiKebersihan({ penilaian, disurveiPada }: { penilaian: Penila
           kata={kataKedap(p.skor_kedap)}
           baik={p.skor_kedap != null && p.skor_kedap >= 4}
           arti={keteranganKedap(p.skor_kedap) ?? "Tes suara belum kami catat."}
+          catatan={p.skor_kedap != null && diukurDiTipeLain(p.kamar_diukur, kamarTerpilih) ? `Diukur di ${p.kamar_diukur}, bukan di kamar ${kamarTerpilih} yang sedang kamu lihat.` : null}
         />
       </div>
       <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-small">
@@ -117,7 +118,7 @@ export function BuktiKebersihan({ penilaian, disurveiPada }: { penilaian: Penila
 // One score at a glance: the number on its 1–5 scale, the rubric word and
 // one sentence of what it means in practice. Missing data says so; it is
 // never shown as 0.
-function KartuKondisi({ judul, nilai, kata, baik, arti }: { judul: string; nilai: number | null; kata: string | null; baik: boolean; arti: string }) {
+function KartuKondisi({ judul, nilai, kata, baik, arti, catatan = null }: { judul: string; nilai: number | null; kata: string | null; baik: boolean; arti: string; catatan?: string | null }) {
   return (
     <section aria-label={judul} className="rounded-2xl border border-biru-100 bg-putih p-4">
       <h3 className="text-small font-bold text-arang-900">
@@ -135,6 +136,7 @@ function KartuKondisi({ judul, nilai, kata, baik, arti }: { judul: string; nilai
         </p>
       )}
       <p className="mt-1 text-small text-arang-900">{arti}</p>
+      {catatan && <p className="mt-1 text-micro text-arang-500">{catatan}</p>}
     </section>
   );
 }

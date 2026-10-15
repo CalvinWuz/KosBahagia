@@ -1,0 +1,160 @@
+{
+  "base": "http://localhost:3011",
+  "waktu": "2026-10-15 18:44",
+  "hasil": [
+    {
+      "no": 27,
+      "skenario": "Bagikan daftar simpanan dengan tipe kamar",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "tautan kos=griya-kemanggisan:fa7dec71-28ed-4596-acd7-807895f3590e; pengirim dan penerima sama-sama Rp2.430.000 kamar AC; 'Simpan 1 kos' menyimpan kamarId AC; tautan lama tanpa kamar tetap terbuka (Rp2.000.000, kamar default); kamar yang sudah dihapus diberi keterangan"
+    },
+    {
+      "no": 28,
+      "skenario": "Simpanan saat jaringan gagal (503)",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "panel 'belum bisa dimuat' + Coba lagi; tidak ada 'tidak tayang' atau ajakan hapus; nama kos tetap bisa dibuka; Coba lagi memulihkan kartu kamar AC; tautan bagikan yang gagal dimuat juga tidak menyebut 'tidak tayang'"
+    },
+    {
+      "no": 29,
+      "skenario": "Browser menolak penyimpanan",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "tombol 'Tersimpan', toast 'Kos Putri Melati disimpan sementara. Browser ini menolak menyimpan, ja…'; /disimpan (navigasi di tab yang sama) menampilkan kos dan menyebut 'sementara di tab ini'"
+    },
+    {
+      "no": 30,
+      "skenario": "Satu toast; toast, tray, bar chat tidak saling menutupi",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "dua aksi cepat → 1 toast; detail HP: toast 571–675, tray 687–749, bar chat dari 761 px; area tombol tutup toast 44px; tray tetap bisa ditutup; PC tray 12 px dari bawah"
+    },
+    {
+      "no": 31,
+      "skenario": "Hasil utama di layar awal, promosi ringkas",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "HP: promosi 342 px, hasil biasa pertama mulai 746 px (layar 844); PC: promosi 274 px, satu kartu promosi 100% lebar blok, hasil biasa mulai 671 px (layar 900); 'Hapus semua' 0 saat satu filter, 1 saat dua"
+    },
+    {
+      "no": 32,
+      "skenario": "Peta HP muat di layar dan berakhir di atas tray",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "tanpa tray: peta sampai 844 px, atribusi 834 px (layar 844); dengan tray: peta sampai 770 px, tray mulai 770 px"
+    },
+    {
+      "no": 33,
+      "skenario": "Kartu ringkas tetap menampilkan catatan keselamatan",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "respons promosi dimodifikasi (mock transport) menjadi 2 catatan keselamatan; kartu ringkas promosi menampilkannya (komponen yang sama dipakai kartu mini peta)"
+    },
+    {
+      "no": 34,
+      "skenario": "Angka area memakai definisi pencarian",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "median Rp1.340.000 dari 35 total lengkap/estimasi (DB), 1 belum lengkap tidak dihitung; kamar mandi dalam 11 dari 36 = jumlah /cari dengan filter itu (11); tidak ada klaim 'sudah termasuk listrik' atau '3–5 kamar'"
+    },
+    {
+      "no": 35,
+      "skenario": "Skor kedap suara menyebut kamar yang diukur",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "kamar AC: 'Diukur di Tipe Standar (kipas), lantai 2, bukan di kamar AC…' dan ringkasan 'saat tes suara di tipe kamar lain'; kamar Standar: tanpa catatan"
+    },
+    {
+      "no": 36,
+      "skenario": "Judul dan pratinjau berbagi",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "kos dua tipe: 'Griya Kemanggisan, Palmerah — dari Rp2.000.000/bulan · Kos Bahagia'; kos satu tipe: 'D'Kost Syahdan, Palmerah — Rp2.350.000/bulan · Kos Bahagia'; gambar OG dirender (200), isinya diperiksa manual: label dari lib/biaya.ts + kamar + 'Data contoh'"
+    },
+    {
+      "no": 37,
+      "skenario": "Harga kamar pilihan sejak frame pertama navigasi",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "reduced motion (tanpa fade yang menutupi): bar chat per frame ['Rp2.195.000/bln'] untuk kamar AC; navigasi berikutnya ke kost-anggrek-cakra?kamar=7a9bff4e-1768-4 stabil ['Rp1.645.000/bln']"
+    },
+    {
+      "no": 27,
+      "skenario": "Bagikan daftar simpanan dengan tipe kamar",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "tautan kos=griya-kemanggisan:fa7dec71-28ed-4596-acd7-807895f3590e; pengirim dan penerima sama-sama Rp2.430.000 kamar AC; 'Simpan 1 kos' menyimpan kamarId AC; tautan lama tanpa kamar tetap terbuka (Rp2.000.000, kamar default); kamar yang sudah dihapus diberi keterangan"
+    },
+    {
+      "no": 28,
+      "skenario": "Simpanan saat jaringan gagal (503)",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "panel 'belum bisa dimuat' + Coba lagi; tidak ada 'tidak tayang' atau ajakan hapus; nama kos tetap bisa dibuka; Coba lagi memulihkan kartu kamar AC; tautan bagikan yang gagal dimuat juga tidak menyebut 'tidak tayang'"
+    },
+    {
+      "no": 29,
+      "skenario": "Browser menolak penyimpanan",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "tombol 'Tersimpan', toast 'Kos Putri Melati disimpan sementara. Browser ini menolak menyimpan, ja…'; /disimpan (navigasi di tab yang sama) menampilkan kos dan menyebut 'sementara di tab ini'"
+    },
+    {
+      "no": 30,
+      "skenario": "Satu toast; toast, tray, bar chat tidak saling menutupi",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "dua aksi cepat → 1 toast; detail HP: toast 571–675, tray 687–749, bar chat dari 761 px; area tombol tutup toast 44px; tray tetap bisa ditutup; PC tray 12 px dari bawah"
+    },
+    {
+      "no": 31,
+      "skenario": "Hasil utama di layar awal, promosi ringkas",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "HP: promosi 342 px, hasil biasa pertama mulai 746 px (layar 844); PC: promosi 274 px, satu kartu promosi 100% lebar blok, hasil biasa mulai 671 px (layar 900); 'Hapus semua' 0 saat satu filter, 1 saat dua"
+    },
+    {
+      "no": 32,
+      "skenario": "Peta HP muat di layar dan berakhir di atas tray",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "tanpa tray: peta sampai 844 px, atribusi 834 px (layar 844); dengan tray: peta sampai 770 px, tray mulai 770 px"
+    },
+    {
+      "no": 33,
+      "skenario": "Kartu ringkas tetap menampilkan catatan keselamatan",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "respons promosi dimodifikasi (mock transport) menjadi 2 catatan keselamatan; kartu ringkas promosi menampilkannya (komponen yang sama dipakai kartu mini peta)"
+    },
+    {
+      "no": 34,
+      "skenario": "Angka area memakai definisi pencarian",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "median Rp1.340.000 dari 35 total lengkap/estimasi (DB), 1 belum lengkap tidak dihitung; kamar mandi dalam 11 dari 36 = jumlah /cari dengan filter itu (11); tidak ada klaim 'sudah termasuk listrik' atau '3–5 kamar'"
+    },
+    {
+      "no": 35,
+      "skenario": "Skor kedap suara menyebut kamar yang diukur",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "kamar AC: 'Diukur di Tipe Standar (kipas), lantai 2, bukan di kamar AC…' dan ringkasan 'saat tes suara di tipe kamar lain'; kamar Standar: tanpa catatan"
+    },
+    {
+      "no": 36,
+      "skenario": "Judul dan pratinjau berbagi",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "kos dua tipe: 'Griya Kemanggisan, Palmerah — dari Rp2.000.000/bulan · Kos Bahagia'; kos satu tipe: 'D'Kost Syahdan, Palmerah — Rp2.350.000/bulan · Kos Bahagia'; gambar OG dirender (200), isinya diperiksa manual: label dari lib/biaya.ts + kamar + 'Data contoh'"
+    },
+    {
+      "no": 37,
+      "skenario": "Harga kamar pilihan sejak frame pertama navigasi",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "reduced motion (tanpa fade yang menutupi): bar chat per frame ['Rp2.195.000/bln'] untuk kamar AC; navigasi berikutnya ke kost-anggrek-cakra?kamar=7a9bff4e-1768-4 stabil ['Rp1.645.000/bln']"
+    }
+  ]
+}

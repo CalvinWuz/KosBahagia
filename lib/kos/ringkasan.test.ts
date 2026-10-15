@@ -30,6 +30,12 @@ describe("kelebihanKekurangan", () => {
     assert.equal(r.kelebihan[0], "Sangat bersih (kebersihan 5/5)");
     assert.ok(!r.kelebihan.some((k) => /kedap/i.test(k)));
   });
+  it("says when the noise test was in another room type than the one selected", () => {
+    const diukurStandar = { ...anggrekCakra, penilaian: { skor_kedap: 1, material_tembok: "gypsum", kamar_diukur: "Tipe Standar (kipas), lantai 1" } };
+    assert.ok(kelebihanKekurangan(diukurStandar).kekurangan.includes("Berisik saat tes suara di tipe kamar lain (1/5, tembok gypsum)"));
+    const diukurDiSini = { ...anggrekCakra, penilaian: { skor_kedap: 1, material_tembok: "gypsum", kamar_diukur: "Tipe AC + kamar mandi dalam, lantai 2" } };
+    assert.ok(kelebihanKekurangan(diukurDiSini).kekurangan.includes("Berisik saat tes suara (1/5, tembok gypsum)"));
+  });
   it("puts safety red flags first and caps both lists at three", () => {
     const r = kelebihanKekurangan({ ...anggrekCakra, redFlags: 2, aturan: { jam_malam: "22:00:00" }, kamar: { ...kamar, kamar_mandi_dalam: false } });
     assert.equal(r.kekurangan[0], "2 catatan keselamatan dari surveyor");

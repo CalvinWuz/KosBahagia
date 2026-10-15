@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { formatRupiah } from "@/lib/format";
@@ -9,6 +9,7 @@ import type { InfoStatus } from "@/lib/kamar";
 import { MODE_DEMO, TEKS_DEMO } from "@/lib/demo";
 import { catatKlikWa, labelTombolWa, linkWa, pesanWa, type SumberKlik } from "@/lib/wa";
 import { cn } from "@/lib/cn";
+import { useTinggiBawah } from "@/lib/ruang-bawah";
 
 const Sheet = dynamic(() => import("@/components/ui/Sheet").then((m) => m.Sheet));
 
@@ -124,8 +125,12 @@ export function BarAksi({
 }) {
   const biaya = kamar ? hitungBiaya(kamar) : null;
   const total = biaya?.total ?? 0;
+  // The phone bar publishes its height so the tray and toasts stack above it.
+  const ref = useRef<HTMLDivElement>(null);
+  useTinggiBawah(ref, "--tinggi-bar-aksi");
   return (
     <div
+      ref={desktop ? undefined : ref}
       className={cn(
         desktop
           ? "rounded-2xl border border-biru-100 bg-putih p-4"
