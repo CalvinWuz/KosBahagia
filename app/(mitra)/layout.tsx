@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import Script from "next/script";
 import "../globals.css";
 import { plusJakarta } from "@/lib/fonts";
 import { NavMitra } from "@/components/mitra/NavMitra";
 import { DasarMitraProvider } from "@/lib/mitra/DasarMitra";
 import { dasarMitra } from "@/lib/mitra/dasar";
 import { sesiMitra } from "@/lib/mitra/sesi";
+import { SKRIP_TUTORIAL } from "@/lib/tutorial-bagian";
 
 export const metadata: Metadata = {
   title: {
@@ -21,8 +23,11 @@ export const metadata: Metadata = {
 export default async function MitraLayout({ children }: { children: ReactNode }) {
   const [dasar, sesi] = await Promise.all([dasarMitra(), sesiMitra()]);
   return (
-    <html lang="id" className={plusJakarta.variable} data-scroll-behavior="smooth">
+    // suppressHydrationWarning: only for <html>'s own attributes, which the
+    // pre-paint tutorial script sets (lib/tutorial-bagian.ts).
+    <html lang="id" className={plusJakarta.variable} data-scroll-behavior="smooth" suppressHydrationWarning>
       <body className="flex min-h-dvh flex-col">
+        <Script id="penanda-tutorial" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: SKRIP_TUTORIAL }} />
         <a
           href="#konten"
           className="sr-only rounded-lg bg-putih px-4 py-2 text-body font-bold text-biru-600 focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50"

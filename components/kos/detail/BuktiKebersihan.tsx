@@ -7,6 +7,7 @@ import { diukurDiTipeLain, kataKebersihan, kataKedap, kataSelisihDb, keteranganK
 import { cn } from "@/lib/cn";
 import { Baris, BelumDicatat, Blok, Skala } from "./bagian";
 import { ArtiSkala } from "./ArtiSkala";
+import { SlotTutorial } from "@/components/panduan/TutorialBagian";
 
 const PEMBERSIH: Record<string, string> = {
   petugas: "Petugas kebersihan",
@@ -23,6 +24,9 @@ export function BuktiKebersihan({ penilaian, disurveiPada, kamarTerpilih = null 
   if (!penilaian) {
     return (
       <Blok id="kebersihan" judul="Kebersihan & kedap suara">
+        <SlotTutorial kelompok="detail" langkah={1} judul="Baca kondisi dan bukti" className="mb-3">
+          Kos ini belum punya hasil penilaian kebersihan dan kedap suara. Angkanya tidak ditebak; bagian ini terisi setelah survei.
+        </SlotTutorial>
         <BelumDicatat />
       </Blok>
     );
@@ -36,7 +40,11 @@ export function BuktiKebersihan({ penilaian, disurveiPada, kamarTerpilih = null 
 
   return (
     <Blok id="kebersihan" judul="Kebersihan & kedap suara" keterangan={`${konteks}.`}>
-      <div className="grid gap-3 sm:grid-cols-2">
+      {/* Section tutorial, step 2 of 2 (step 1 is in the summary). */}
+      <SlotTutorial kelompok="detail" langkah={1} judul="Baca kondisi dan bukti" sasaran="detail-kondisi" className="mb-3">
+        Ringkasan kebersihan dan kedap suara membantu membaca kondisi sekilas. Buka bukti atau Cara dinilai untuk memahami angka dan batas pengukurannya.
+      </SlotTutorial>
+      <div data-tutorial="detail-kondisi" className="grid gap-3 sm:grid-cols-2">
         <KartuKondisi
           judul="Kebersihan"
           nilai={rata}

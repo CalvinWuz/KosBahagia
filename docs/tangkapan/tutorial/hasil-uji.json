@@ -1,0 +1,202 @@
+{
+  "base": "http://localhost:3011",
+  "waktu": "2026-10-18 05:14",
+  "hasil": [
+    {
+      "no": 1,
+      "skenario": "Pengguna baru: satu tawaran kecil, tanpa tur/fokus/scroll otomatis",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "HP /cari: tawaran ['pencarian'], panel False, dialog 0, fokus di body True, scroll 0, status {'pencarian': 'ditawarkan'}; PC /kos: tawaran ['detail'], panel False, dialog 0, fokus di body True, scroll 0, status {'detail': 'ditawarkan'}; HP beranda: tawaran ['beranda'], panel False, dialog 0, fokus di body True, scroll 0, status {}"
+    },
+    {
+      "no": 2,
+      "skenario": "1–2 langkah per kelompok, tidak berantai",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "Pencarian: 2 langkah (sorot cari-kontrol lalu cari-kartu); Detail: 2 langkah; setelah Selesai tidak ada panel dan detail tidak membuka tutorial sendiri; isi langkah 21 dan 19 kata"
+    },
+    {
+      "no": 4,
+      "skenario": "Tutup/Lewati vs Selesai; pemicu manual tetap jalan",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "Selesai → selesai; Lewati → ditutup; 'Petunjuk bagian ini' membuka lagi dari langkah 1, ditutup lagi → ditutup"
+    },
+    {
+      "no": 3,
+      "skenario": "Tawaran tidak berulang",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "/cari: tawaran tampil lalu tercatat 'ditawarkan'; ganti filter (masih kunjungan yang sama) True; reload False, tombol tenang True; detail kos A True, kos B False, back False, forward False; navigasi klien kos pertama True, kos kedua False"
+    },
+    {
+      "no": 5,
+      "skenario": "Penanda kb:panduan lama dihormati",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "/: tawaran False, tombol None; /cari?area=binus-kemanggisan: tawaran False, tombol True; /kos/kost-anggrek-cakra: tawaran False, tombol True; kb:panduan tetap v1, kartu panduan lama tidak ada lagi di halaman"
+    },
+    {
+      "no": 6,
+      "skenario": "Simpanan, banding, kamar, harga, URL tetap",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "URL ?kamar=, kb:simpan, kb:banding, harga bar (Rp2.430.000/bln) dan panjang history sama sebelum/sesudah tutorial; saat ditutup 0 panggilan gulir; panel hilang sehingga kartu kondisi naik 598 → 376 px (scrollY 2477 → 2507, penyesuaian scroll anchoring browser)"
+    },
+    {
+      "no": 7,
+      "skenario": "Keadaan kosong, belum dinilai, peta",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "hasil nol: langkah 2 'Belum ada yang cocok' menyorot kotak saran, bukan kartu; kos belum dinilai: langkah 2 tanpa sorotan; simpanan kosong dan banding satu kandidat tanpa tutorial (False, False); mode peta HP tanpa tawaran/tombol (False); error konsol []"
+    },
+    {
+      "no": 8,
+      "skenario": "Klik cepat, navigasi, resize, lapisan lain",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "tiga klik cepat → 1 panel; buka Filter → panel/dialog/sorotan [0, 1, 0]; resize 700 px: panel tetap (1), lebar halaman 700; pindah ke detail saat terbuka → panel/sorotan [0, 0]; buka Menu → panel/dialog [0, 1]; error []"
+    },
+    {
+      "no": 9,
+      "skenario": "Keyboard, Escape, fokus kembali, tanpa history",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "Enter membuka, fokus ke judul 'Cek kamar dan biaya'; Tab ke 'Tutup petunjuk'; Escape menutup dan fokus kembali ke tombol 'detail'; history 2 → 2; panel = region berjudul H3, bukan tooltip/modal, tombol ['Tutup petunjuk', 'Berikutnya', 'Lewati']; tombol tutup 44×44 px"
+    },
+    {
+      "no": 10,
+      "skenario": "Reduced motion; intro tidak bertumpuk",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "reduced motion: animasi panel ['none', '1e-05s']; reload normal: intro 8–715 ms, tawaran baru dicatat 'ditawarkan' pada 725 ms (setelah intro selesai)"
+    },
+    {
+      "no": 11,
+      "skenario": "360/390/768/1440, landscape, teks 200%",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "overflow/panel keluar layar: tidak ada"
+    },
+    {
+      "no": 12,
+      "skenario": "Storage diblokir/rusak",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "diblokir: tawaran tampil True, ditutup (memori) True, error []; JSON rusak: tawaran tampil True, perubahan DOM 1,5 s setelah tenang 0 (tidak berulang), error []"
+    },
+    {
+      "no": 13,
+      "skenario": "Tutorial tidak memuat peta, 360°, media, kode mitra",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "/cari?area=binus-kemanggisan: 0 permintaan, berat tidak ada; /kos/kost-anggrek-cakra: 0 permintaan, berat tidak ada"
+    },
+    {
+      "no": 14,
+      "skenario": "Mitra: hanya di surface mitra, tanpa submit",
+      "mesin": "chromium",
+      "lulus": true,
+      "catatan": "login nomor uji lokal; tawaran True; langkah 1 menyorot kos pertama 'Kos Putri Melati', langkah 2 menyorot 'Perbarui ketersediaan / Ubah harga dan foto'; URL tetap, permintaan non-GET selama tutorial tidak ada; status selesai; akun tanpa kos: tanpa tutorial (False), tombol 'Daftarkan kos' tetap; halaman pencari tanpa materi mitra (ya)"
+    },
+    {
+      "no": 1,
+      "skenario": "Pengguna baru: satu tawaran kecil, tanpa tur/fokus/scroll otomatis",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "HP /cari: tawaran ['pencarian'], panel False, dialog 0, fokus di body True, scroll 0, status {'pencarian': 'ditawarkan'}; PC /kos: tawaran ['detail'], panel False, dialog 0, fokus di body True, scroll 0, status {'detail': 'ditawarkan'}; HP beranda: tawaran ['beranda'], panel False, dialog 0, fokus di body True, scroll 0, status {}"
+    },
+    {
+      "no": 2,
+      "skenario": "1–2 langkah per kelompok, tidak berantai",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "Pencarian: 2 langkah (sorot cari-kontrol lalu cari-kartu); Detail: 2 langkah; setelah Selesai tidak ada panel dan detail tidak membuka tutorial sendiri; isi langkah 21 dan 19 kata"
+    },
+    {
+      "no": 4,
+      "skenario": "Tutup/Lewati vs Selesai; pemicu manual tetap jalan",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "Selesai → selesai; Lewati → ditutup; 'Petunjuk bagian ini' membuka lagi dari langkah 1, ditutup lagi → ditutup"
+    },
+    {
+      "no": 3,
+      "skenario": "Tawaran tidak berulang",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "/cari: tawaran tampil lalu tercatat 'ditawarkan'; ganti filter (masih kunjungan yang sama) True; reload False, tombol tenang True; detail kos A True, kos B False, back False, forward False; navigasi klien kos pertama True, kos kedua False"
+    },
+    {
+      "no": 5,
+      "skenario": "Penanda kb:panduan lama dihormati",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "/: tawaran False, tombol None; /cari?area=binus-kemanggisan: tawaran False, tombol True; /kos/kost-anggrek-cakra: tawaran False, tombol True; kb:panduan tetap v1, kartu panduan lama tidak ada lagi di halaman"
+    },
+    {
+      "no": 6,
+      "skenario": "Simpanan, banding, kamar, harga, URL tetap",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "URL ?kamar=, kb:simpan, kb:banding, harga bar (Rp2.430.000/bln) dan panjang history sama sebelum/sesudah tutorial; saat ditutup 0 panggilan gulir; panel hilang sehingga kartu kondisi naik 599 → 407 px (scrollY 2476 → 2476, penyesuaian scroll anchoring browser)"
+    },
+    {
+      "no": 7,
+      "skenario": "Keadaan kosong, belum dinilai, peta",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "hasil nol: langkah 2 'Belum ada yang cocok' menyorot kotak saran, bukan kartu; kos belum dinilai: langkah 2 tanpa sorotan; simpanan kosong dan banding satu kandidat tanpa tutorial (False, False); mode peta HP tanpa tawaran/tombol (False); error konsol []"
+    },
+    {
+      "no": 8,
+      "skenario": "Klik cepat, navigasi, resize, lapisan lain",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "tiga klik cepat → 1 panel; buka Filter → panel/dialog/sorotan [0, 1, 0]; resize 700 px: panel tetap (1), lebar halaman 700; pindah ke detail saat terbuka → panel/sorotan [0, 0]; buka Menu → panel/dialog [0, 1]; error []"
+    },
+    {
+      "no": 9,
+      "skenario": "Keyboard, Escape, fokus kembali, tanpa history",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "Enter membuka, fokus ke judul 'Cek kamar dan biaya'; Alt+Tab ke 'Tutup petunjuk'; Escape menutup dan fokus kembali ke tombol 'detail'; history 2 → 2; panel = region berjudul H3, bukan tooltip/modal, tombol ['Tutup petunjuk', 'Berikutnya', 'Lewati']; tombol tutup 44×44 px"
+    },
+    {
+      "no": 10,
+      "skenario": "Reduced motion; intro tidak bertumpuk",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "reduced motion: animasi panel ['none', '0.00001s']; reload normal: intro 21–721 ms, tawaran baru dicatat 'ditawarkan' pada 740 ms (setelah intro selesai)"
+    },
+    {
+      "no": 11,
+      "skenario": "360/390/768/1440, landscape, teks 200%",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "overflow/panel keluar layar: tidak ada"
+    },
+    {
+      "no": 12,
+      "skenario": "Storage diblokir/rusak",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "diblokir: tawaran tampil True, ditutup (memori) True, error []; JSON rusak: tawaran tampil True, perubahan DOM 1,5 s setelah tenang 0 (tidak berulang), error []"
+    },
+    {
+      "no": 13,
+      "skenario": "Tutorial tidak memuat peta, 360°, media, kode mitra",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "/cari?area=binus-kemanggisan: 0 permintaan, berat tidak ada; /kos/kost-anggrek-cakra: 0 permintaan, berat tidak ada"
+    },
+    {
+      "no": 14,
+      "skenario": "Mitra: hanya di surface mitra, tanpa submit",
+      "mesin": "webkit",
+      "lulus": true,
+      "catatan": "login nomor uji lokal; tawaran True; langkah 1 menyorot kos pertama 'Kos Putri Melati', langkah 2 menyorot 'Perbarui ketersediaan / Ubah harga dan foto /'; URL tetap, permintaan non-GET selama tutorial tidak ada; status selesai; akun tanpa kos: tanpa tutorial (False), tombol 'Daftarkan kos' tetap; halaman pencari tanpa materi mitra (ya)"
+    }
+  ]
+}

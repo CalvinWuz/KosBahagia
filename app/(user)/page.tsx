@@ -135,7 +135,7 @@ export default async function Beranda() {
         </div>
       </section>
 
-      <PanduanSingkat fokusKe="preset" />
+      <PanduanSingkat />
       <LanjutkanCari />
 
       <section aria-labelledby="preset" className="mx-auto w-full max-w-6xl px-4">

@@ -20,7 +20,7 @@ import { TombolMenu } from "@/components/layout/Navigasi";
 import { cn } from "@/lib/cn";
 import { namaFasilitas, type FasilitasFilter } from "@/lib/cari/fasilitas";
 import { FilterAktif } from "./FilterAktif";
-import { PetunjukPanduan } from "@/components/panduan/PanduanSingkat";
+import { SlotTutorial, TawaranTutorial, TombolTutorial } from "@/components/panduan/TutorialBagian";
 import type { AreaPeta } from "./PetaHasil";
 import type { AreaRingkas, PilihanCari } from "./saran";
 
@@ -221,6 +221,8 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
   ];
 
   const tampilkanPeta = desktop || peta;
+  // The results list is on screen (on phones the map view replaces it).
+  const daftarTampil = desktop || !peta;
   const kosTerpilih = terpilih ? hasil.find((k) => k.id === terpilih) : undefined;
 
   const petaBlok = tampilkanPeta && (
@@ -261,7 +263,7 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
     <div className="lg:grid lg:grid-cols-[minmax(0,720px)_minmax(0,1fr)]">
       <div className="min-w-0">
         {/* Sticky top: back · area (tap to change) · map toggle / filter + chips */}
-        <div className="sticky top-0 z-30 border-b border-biru-100 bg-putih lg:top-16">
+        <div data-tutorial="cari-kontrol" className="sticky top-0 z-30 border-b border-biru-100 bg-putih lg:top-16">
           {/* Wraps instead of overflowing when text is enlarged; one row otherwise. */}
           <div className="flex min-h-14 flex-wrap items-center gap-1 px-2 py-1 sm:px-4">
             <button
@@ -328,7 +330,16 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
         {peta && !desktop && <LayarPetaHp>{petaBlok}</LayarPetaHp>}
 
         <div id="hasil-pencarian" tabIndex={-1} className={cn("px-4 py-3 focus:outline-none", peta && "hidden lg:block")}>
-          <PetunjukPanduan fokusKe="hasil-pencarian" />
+          {/* Section tutorial, 2 steps: the controls above, then the cards.
+              Not on the phone map view, where this list is hidden. */}
+          {daftarTampil && (
+            <>
+              <TawaranTutorial kelompok="pencarian" jumlah={2} className="mb-3" />
+              <SlotTutorial kelompok="pencarian" langkah={0} judul="Atur kebutuhanmu" sasaran="cari-kontrol" tingkatJudul={2} className="mb-3">
+                Pilih lokasi dan pakai Filter untuk membatasi total biaya, tipe kos, dan fasilitas kamar. Pilihan aktif bisa dihapus satu per satu.
+              </SlotTutorial>
+            </>
+          )}
           <FilterAktif params={params} namaFasilitas={nama} terapkan={terapkan} className="pb-3" />
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pb-1">
             <p className="text-small text-arang-900 tabular-nums" aria-live="polite" aria-atomic="true">
@@ -352,6 +363,7 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
           <div className="flex flex-wrap items-center gap-x-2 pt-1 pb-3 text-micro text-arang-500">
             {jarakGarisLurus ? `Jarak: garis lurus ke ${areaPusat?.nama ?? "titik di peta"}.` : "Menit jalan kaki: dicatat surveyor."}
             <BantuanJarak className="text-micro" />
+            <TombolTutorial kelompok="pencarian" jumlah={2} kecil />
           </div>
 
           {galatRentang ? (
@@ -380,7 +392,14 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
           ) : memuat && hasil.length === 0 ? (
             <DaftarSkeleton />
           ) : !memuat && total === 0 ? (
-            <Kosong kunci={kunci} saran={saran} params={params} sekarang={sekarangDate} />
+            <>
+              {daftarTampil && (
+                <SlotTutorial kelompok="pencarian" langkah={1} judul="Belum ada yang cocok" sasaran="cari-kosong" tingkatJudul={2} className="mb-4">
+                  Saran di bawah melonggarkan satu filter dan menyebut jumlah hasilnya. Filter lain tetap seperti pilihanmu.
+                </SlotTutorial>
+              )}
+              <Kosong kunci={kunci} saran={saran} params={params} sekarang={sekarangDate} />
+            </>
           ) : (
             <>
               {/* Paid placements: one compact row (a swipeable strip on phones), so
@@ -401,10 +420,15 @@ export function HasilPencarian({ awal, areas, fasilitas, sekarang }: Props) {
                   </ul>
                 </section>
               )}
+              {daftarTampil && (
+                <SlotTutorial kelompok="pencarian" langkah={1} judul="Kenali hasil kos" sasaran="cari-kartu" tingkatJudul={2} className="mb-4">
+                  Lihat total bulanan, tipe kamar, dan status di kartu. Buka detail, atau pakai Simpan dan Bandingkan untuk menyusun pilihan.
+                </SlotTutorial>
+              )}
               <h2 className="sr-only">Hasil pencarian, urut {urutAktif.label.toLowerCase()}</h2>
               <ul className={cn("grid gap-4 sm:grid-cols-2", memuat && "opacity-60")} aria-busy={memuat}>
                 {hasil.map((k, i) => (
-                  <li key={k.id}>
+                  <li key={k.id} data-tutorial={i === 0 ? "cari-kartu" : undefined}>
                     <KosCard kos={k} sekarang={sekarangDate} prioritas={i < 2} jarak={acuanJarak(k)} onSorot={desktop ? setDisorot : undefined} />
                   </li>
                 ))}
@@ -500,7 +524,7 @@ function Kosong({
   const longgar = siap ? (saran?.longgar ?? []) : [];
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col items-start gap-3 rounded-2xl border border-biru-100 bg-putih p-6">
+      <div data-tutorial="cari-kosong" className="flex flex-col items-start gap-3 rounded-2xl border border-biru-100 bg-putih p-6">
         <p className="text-h2 text-arang-900">Nggak ada yang pas.</p>
         {!siap ? (
           <p className="text-small text-arang-500" role="status">Mencari filter yang bisa dilonggarkan…</p>

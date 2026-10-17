@@ -16,6 +16,7 @@ import { kataKebersihan, kataKedap } from "@/lib/skala";
 import { setBanding } from "@/lib/simpan";
 import { hrefBanding, MAKS_BANDING, type KunciBanding } from "@/lib/kos/kunci-banding";
 import { tampilkanToast } from "@/lib/toast";
+import { SlotTutorial, TawaranTutorial, TombolTutorial } from "@/components/panduan/TutorialBagian";
 import type { KosBanding } from "@/lib/kos/banding";
 import { cn } from "@/lib/cn";
 
@@ -217,8 +218,22 @@ export function TabelBanding({ kos, url, sekarang: sekarangIso }: { kos: KosBand
         <p className="text-small text-arang-500" aria-live="polite">
           {beda.length} perbedaan, {sama.length} hal yang sama. Setiap kolom membandingkan satu tipe kamar.
         </p>
-        <Button variant="secondary" size="sm" onClick={bagikan}>{disalin ? "Tautan disalin" : "Bagikan"}</Button>
+        <div className="flex flex-wrap items-center gap-3">
+          {kos.length >= 2 && <TombolTutorial kelompok="banding" />}
+          <Button variant="secondary" size="sm" onClick={bagikan}>{disalin ? "Tautan disalin" : "Bagikan"}</Button>
+        </div>
       </div>
+
+      {/* Section tutorial, one step, once there is something to compare
+          (the page explains the empty and one-candidate states itself). */}
+      {kos.length >= 2 && (
+        <>
+          <TawaranTutorial kelompok="banding" />
+          <SlotTutorial kelompok="banding" langkah={0} judul="Lihat perbedaan utama" sasaran="banding-tabel">
+            Bandingkan 2–3 kandidat berdasarkan tipe kamar, biaya, ketersediaan, dan aturan. Keluarkan kandidat bila ingin mengganti pilihan.
+          </SlotTutorial>
+        </>
+      )}
 
       <RingkasBanding kol={kol} />
 
@@ -226,7 +241,7 @@ export function TabelBanding({ kos, url, sekarang: sekarangIso }: { kos: KosBand
       {/* `relative` matters: the sr-only cells are absolutely positioned and
           would otherwise widen the whole document on phones. The box scrolls
           both ways so the header row and the label column can stay pinned. */}
-      <div className="relative max-h-[80dvh] overflow-auto rounded-2xl border border-biru-100 bg-putih [scrollbar-width:thin]" tabIndex={0} role="region" aria-label="Tabel perbandingan lengkap, bisa digeser">
+      <div data-tutorial="banding-tabel" className="relative max-h-[80dvh] overflow-auto rounded-2xl border border-biru-100 bg-putih [scrollbar-width:thin]" tabIndex={0} role="region" aria-label="Tabel perbandingan lengkap, bisa digeser">
         <table className="w-full border-collapse text-small">
           <thead className="sticky top-0 z-20 bg-putih shadow-[0_1px_0_var(--color-biru-100)]">
             <tr>

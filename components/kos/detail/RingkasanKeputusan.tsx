@@ -2,6 +2,7 @@
 
 import { IconCheck } from "@/components/ui/Icon";
 import { PenandaDemo } from "@/components/ui/PenandaDemo";
+import { SlotTutorial, TawaranTutorial, TombolTutorial } from "@/components/panduan/TutorialBagian";
 import { formatRupiah, formatTanggal } from "@/lib/format";
 import { hitungBiaya, hitungUangMasuk, labelTotal, teksKomponen, type TipeKamar } from "@/lib/biaya";
 import { lompatKe } from "@/lib/bagian";
@@ -50,81 +51,92 @@ export function RingkasanKeputusan({
     <section id="ringkasan" aria-labelledby="ringkasan-judul" className="scroll-mt-28 rounded-2xl border border-biru-100 bg-putih p-4 lg:scroll-mt-20">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 id="ringkasan-judul" className="text-h2 text-arang-900">Ringkasan</h2>
-        <PenandaDemo />
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <TombolTutorial kelompok="detail" jumlah={2} />
+          <PenandaDemo />
+        </div>
       </div>
 
-      {tipeKamar.length > 1 && (
-        <PilihKamar
-          tipeKamar={tipeKamar}
-          terpilihId={kamar?.id ?? null}
-          onPilih={onPilih}
-          dikonfirmasiPada={dikonfirmasiPada}
-          sekarang={sekarang}
-          label="Pilih tipe kamar"
-          className="mt-3"
-        />
-      )}
+      {/* Section tutorial, step 1 of 2 (step 2 is in the condition block). One for every kos page. */}
+      <TawaranTutorial kelompok="detail" jumlah={2} className="mt-3" />
+      <SlotTutorial kelompok="detail" langkah={0} judul="Cek kamar dan biaya" sasaran="detail-kamar-biaya" className="mt-3">
+        Pilih tipe kamar, lalu periksa total bulanan dan statusnya. Buka rincian untuk melihat estimasi dan biaya yang belum diketahui.
+      </SlotTutorial>
 
-      <dl className="mt-3 grid gap-x-6 sm:grid-cols-2">
-        <Baris label="Untuk">
-          {TIPE[tipe] ?? tipe}
-          {pasangan && <span className="block text-micro text-arang-500">{PASANGAN[pasangan] ?? pasangan}</span>}
-        </Baris>
-        <Baris label="Tipe kamar">
-          {kamar ? kamar.nama : "Belum ada data kamar"}
-          {kamar?.ukuran && <span className="block text-micro text-arang-500">{kamar.ukuran}</span>}
-        </Baris>
-        <Baris label={biaya ? labelTotal(biaya) : "Biaya bulanan"}>
-          {biaya ? (
-            <>
-              <span className="font-bold tabular-nums">{formatRupiah(biaya.total)}</span>
-              <span className="block text-micro text-arang-500">{teksKomponen(biaya)}</span>
-              {!biaya.lengkap && <span className="block text-micro font-bold text-merah-700">{biaya.belumDiketahui.join(" dan ")} belum diketahui, jadi total sebenarnya lebih besar</span>}
-              {biaya.estimasi && biaya.lengkap && <span className="block text-micro text-arang-500">Listrik: estimasi surveyor untuk pemakaian normal, bukan tarif tetap</span>}
-              <a
-                href="#rincian-biaya"
-                onClick={(e) => {
-                  e.preventDefault();
-                  lompatKe("rincian-biaya");
-                }}
-                className="sentuh relative mt-0.5 inline-block rounded-sm text-micro font-bold text-biru-600 hover:underline"
-              >
-                Lihat rincian biaya
-              </a>
-            </>
-          ) : (
-            "Belum dicatat"
-          )}
-        </Baris>
-        <Baris label="Uang masuk">
-          {masuk ? (
-            <>
-              <span className="font-bold tabular-nums">{masuk.lengkap ? "" : "min. "}{formatRupiah(masuk.total)}</span>
-              <span className="block text-micro text-arang-500">
-                {masuk.bulanDimuka ? `${masuk.bulanDimuka} bulan di muka` : "bulan di muka belum diketahui"}
-                {masuk.deposit > 0 ? " + deposit" : ""}
-                {masuk.sekali.length ? " + biaya sekali bayar" : ""}
-              </span>
-            </>
-          ) : (
-            "Belum dicatat"
-          )}
-        </Baris>
-        <Baris label="Ketersediaan tipe ini">
-          {status ? (
-            <>
-              <span className={cn("font-bold", status.status === "tersedia" ? "text-daun-700" : status.status === "penuh" ? "text-merah-700" : "text-arang-900")}>{status.label}</span>
-              <span className="block text-micro text-arang-500">{status.rincian}, {status.waktu}</span>
-            </>
-          ) : (
-            "Belum dicatat"
-          )}
-        </Baris>
-        <Baris label="Disurvei">
-          {disurveiPada ? formatTanggal(disurveiPada) : "Belum disurvei"}
-          {surveyor && <span className="block text-micro text-arang-500">oleh {surveyor}</span>}
-        </Baris>
-      </dl>
+      <div data-tutorial="detail-kamar-biaya">
+        {tipeKamar.length > 1 && (
+          <PilihKamar
+            tipeKamar={tipeKamar}
+            terpilihId={kamar?.id ?? null}
+            onPilih={onPilih}
+            dikonfirmasiPada={dikonfirmasiPada}
+            sekarang={sekarang}
+            label="Pilih tipe kamar"
+            className="mt-3"
+          />
+        )}
+
+        <dl className="mt-3 grid gap-x-6 sm:grid-cols-2">
+          <Baris label="Untuk">
+            {TIPE[tipe] ?? tipe}
+            {pasangan && <span className="block text-micro text-arang-500">{PASANGAN[pasangan] ?? pasangan}</span>}
+          </Baris>
+          <Baris label="Tipe kamar">
+            {kamar ? kamar.nama : "Belum ada data kamar"}
+            {kamar?.ukuran && <span className="block text-micro text-arang-500">{kamar.ukuran}</span>}
+          </Baris>
+          <Baris label={biaya ? labelTotal(biaya) : "Biaya bulanan"}>
+            {biaya ? (
+              <>
+                <span className="font-bold tabular-nums">{formatRupiah(biaya.total)}</span>
+                <span className="block text-micro text-arang-500">{teksKomponen(biaya)}</span>
+                {!biaya.lengkap && <span className="block text-micro font-bold text-merah-700">{biaya.belumDiketahui.join(" dan ")} belum diketahui, jadi total sebenarnya lebih besar</span>}
+                {biaya.estimasi && biaya.lengkap && <span className="block text-micro text-arang-500">Listrik: estimasi surveyor untuk pemakaian normal, bukan tarif tetap</span>}
+                <a
+                  href="#rincian-biaya"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    lompatKe("rincian-biaya");
+                  }}
+                  className="sentuh relative mt-0.5 inline-block rounded-sm text-micro font-bold text-biru-600 hover:underline"
+                >
+                  Lihat rincian biaya
+                </a>
+              </>
+            ) : (
+              "Belum dicatat"
+            )}
+          </Baris>
+          <Baris label="Uang masuk">
+            {masuk ? (
+              <>
+                <span className="font-bold tabular-nums">{masuk.lengkap ? "" : "min. "}{formatRupiah(masuk.total)}</span>
+                <span className="block text-micro text-arang-500">
+                  {masuk.bulanDimuka ? `${masuk.bulanDimuka} bulan di muka` : "bulan di muka belum diketahui"}
+                  {masuk.deposit > 0 ? " + deposit" : ""}
+                  {masuk.sekali.length ? " + biaya sekali bayar" : ""}
+                </span>
+              </>
+            ) : (
+              "Belum dicatat"
+            )}
+          </Baris>
+          <Baris label="Ketersediaan tipe ini">
+            {status ? (
+              <>
+                <span className={cn("font-bold", status.status === "tersedia" ? "text-daun-700" : status.status === "penuh" ? "text-merah-700" : "text-arang-900")}>{status.label}</span>
+                <span className="block text-micro text-arang-500">{status.rincian}, {status.waktu}</span>
+              </>
+            ) : (
+              "Belum dicatat"
+            )}
+          </Baris>
+          <Baris label="Disurvei">
+            {disurveiPada ? formatTanggal(disurveiPada) : "Belum disurvei"}
+            {surveyor && <span className="block text-micro text-arang-500">oleh {surveyor}</span>}
+          </Baris>
+        </dl>
+      </div>
 
       {(kelebihan.length > 0 || kekurangan.length > 0) && (
         <div className="mt-3 grid gap-3 border-t border-biru-100 pt-3 sm:grid-cols-2">

@@ -39,6 +39,13 @@ export default function CaraMenggunakan() {
         {MODE_DEMO && <p className="rounded-2xl border border-arang-500/30 bg-putih p-3 text-small text-arang-900">{TEKS_DEMO.penjelasan}</p>}
       </section>
 
+      <section aria-labelledby="petunjuk" className="flex flex-col gap-2">
+        <h2 id="petunjuk" className="text-h2 text-arang-900">Petunjuk di setiap bagian</h2>
+        <p className="text-small text-arang-900">
+          Pencarian, halaman kos, Simpanan, dan Bandingkan punya petunjuk singkat, satu atau dua langkah. Saat pertama kali membuka bagian itu ada tawaran kecil <b>Butuh petunjuk?</b>; setelahnya, buka lewat tombol <b>Petunjuk bagian ini</b> di bagian tersebut. Petunjuk bisa ditutup kapan saja dan tidak mengubah filter, simpanan, atau perbandingan.
+        </p>
+      </section>
+
       <div className="flex flex-wrap items-center gap-3">
         <Link href="/cari" className={buttonClasses({ variant: "primary" })}>Mulai cari kos</Link>
         <Link href="/cara-kami-menilai" className={buttonClasses({ variant: "secondary" })}>Cara kami menilai</Link>

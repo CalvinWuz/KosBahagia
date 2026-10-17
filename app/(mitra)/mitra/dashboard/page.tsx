@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { buttonClasses } from "@/components/ui/Button";
+import { SlotTutorial, TawaranTutorial, TombolTutorial } from "@/components/panduan/TutorialBagian";
 import { formatWaktuRelatif } from "@/lib/format";
 import { mitraServer } from "@/lib/supabase/mitra";
 import { dasarMitra } from "@/lib/mitra/dasar";
@@ -32,10 +33,24 @@ export default async function Ringkasan() {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-6 pb-16">
-      <div>
-        <h1 className="text-h1 text-arang-900">Ringkasan</h1>
-        <p className="text-small text-arang-500">Bulan ini, semua kos Bapak/Ibu.</p>
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <div>
+          <h1 className="text-h1 text-arang-900">Ringkasan</h1>
+          <p className="text-small text-arang-500">Bulan ini, semua kos Bapak/Ibu.</p>
+        </div>
+        {sesi.kos.length > 0 && <TombolTutorial kelompok="mitra-ringkasan" jumlah={2} />}
       </div>
+
+      {/* Section tutorial, 2 steps, on the first kos only. Without a linked
+          kos the page's own explanation and button are the help. */}
+      {sesi.kos.length > 0 && (
+        <>
+          <TawaranTutorial kelompok="mitra-ringkasan" jumlah={2} />
+          <SlotTutorial kelompok="mitra-ringkasan" langkah={0} judul="Pantau kos Bapak/Ibu" sasaran="mitra-kos" tingkatJudul={2}>
+            Ringkasan menampilkan kamar kosong, waktu konfirmasi, dan statistik bulan ini. Periksa kos yang ditandai Perlu dikonfirmasi.
+          </SlotTutorial>
+        </>
+      )}
 
       {sesi.kos.length === 0 ? (
         <div className="rounded-2xl border border-arang-500/20 bg-putih p-5">
@@ -45,12 +60,12 @@ export default async function Ringkasan() {
         </div>
       ) : (
         <ul className="flex flex-col gap-4">
-          {sesi.kos.map((k) => {
+          {sesi.kos.map((k, i) => {
             const kosong = k.tipe_kamar.reduce((a, t) => a + t.kamar_tersedia, 0);
             const basi = !k.ketersediaan_dikonfirmasi_pada || sekarang.getTime() - new Date(k.ketersediaan_dikonfirmasi_pada).getTime() > 30 * 86_400_000;
             const laporanKos = (laporan.data ?? []).filter((l) => l.kos_id === k.id);
             return (
-              <li key={k.id} className="rounded-2xl border border-arang-500/20 bg-putih p-4">
+              <li key={k.id} data-tutorial={i === 0 ? "mitra-kos" : undefined} className="rounded-2xl border border-arang-500/20 bg-putih p-4">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <h2 className="text-h2 text-arang-900">{k.nama}</h2>
@@ -79,7 +94,12 @@ export default async function Ringkasan() {
                   </div>
                 )}
 
-                <div className="mt-4 flex flex-wrap gap-2">
+                {i === 0 && (
+                  <SlotTutorial kelompok="mitra-ringkasan" langkah={1} judul="Perbarui informasi" sasaran="mitra-aksi" className="mt-4">
+                    Pakai Perbarui ketersediaan atau Ubah harga dan foto sesuai kebutuhan. Data penilaian survei dikelola terpisah oleh tim.
+                  </SlotTutorial>
+                )}
+                <div data-tutorial={i === 0 ? "mitra-aksi" : undefined} className="mt-4 flex flex-wrap gap-2">
                   <Link href={`${dasar}/dashboard/ketersediaan?kos=${k.id}`} className={buttonClasses({ variant: "primary" })}>Perbarui ketersediaan</Link>
                   <Link href={`${dasar}/dashboard/kos/${k.id}`} className={buttonClasses({ variant: "secondary" })}>Ubah harga dan foto</Link>
                 </div>

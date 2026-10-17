@@ -8,6 +8,7 @@ import { Button, buttonClasses } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
 import { IconPutar } from "@/components/ui/Icon";
 import { KosCard, KosCardSkeleton, type KosKartu } from "@/components/kos/KosCard";
+import { SlotTutorial, TawaranTutorial, TombolTutorial } from "@/components/panduan/TutorialBagian";
 import { restSelect } from "@/lib/supabase/rest";
 import type { TipeKamar } from "@/lib/biaya";
 import { formatRupiah } from "@/lib/format";
@@ -113,7 +114,8 @@ export function DaftarSimpanan({ dariTautan = [] }: { dariTautan?: KunciKos[] })
         <p className="text-small text-arang-500">
           {hanyaDiTab ? `${simpanan.length} kos tersimpan sementara di tab ini. ${HANYA_DI_TAB}` : `${simpanan.length} kos tersimpan di perangkat ini (tidak dikirim ke server).`}
         </p>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {!(data?.gagal && !memuat) && <TombolTutorial kelompok="simpanan" />}
           {simpanan.length >= 2 && (
             <Button variant="secondary" size="sm" onClick={bandingkan}>
               Bandingkan {Math.min(simpanan.length, 3)} teratas
@@ -122,6 +124,15 @@ export function DaftarSimpanan({ dariTautan = [] }: { dariTautan?: KunciKos[] })
           <Button variant="ghost" size="sm" onClick={bagikan}>{disalin ? "Tautan disalin" : "Bagikan daftar"}</Button>
         </div>
       </div>
+      {/* Section tutorial, one step; not over a failed load (that panel says what to do). */}
+      {!(data?.gagal && !memuat) && (
+        <>
+          <TawaranTutorial kelompok="simpanan" />
+          <SlotTutorial kelompok="simpanan" langkah={0} judul="Lanjutkan pilihanmu" sasaran="simpanan-kartu">
+            Kos yang kamu simpan ada di sini, di browser ini tanpa akun. Buka lagi detailnya atau masukkan kandidat ke perbandingan.
+          </SlotTutorial>
+        </>
+      )}
       {simpanan.length >= 2 && (
         <div className="flex gap-2" role="group" aria-label="Urutkan">
           <Chip selected={urut === "terbaru"} onClick={() => setUrut("terbaru")}>Terbaru disimpan</Chip>
@@ -150,12 +161,12 @@ export function DaftarSimpanan({ dariTautan = [] }: { dariTautan?: KunciKos[] })
         </GagalMuat>
       ) : (
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-busy={memuat}>
-        {terurut.map((s) => {
+        {terurut.map((s, i) => {
           const kos = kosDari(s);
           if (memuat) return <li key={s.id}><KosCardSkeleton /></li>;
           if (!kos) return <li key={s.id}><TidakTayang s={s} /></li>;
           return (
-            <li key={s.id} className="flex flex-col gap-2">
+            <li key={s.id} data-tutorial={i === 0 ? "simpanan-kartu" : undefined} className="flex flex-col gap-2">
               {s.kamarId && kos.kamar_id !== s.kamarId && (
                 <p className="text-micro text-arang-500">Tipe kamar yang kamu simpan sudah tidak ada; ini tipe yang tersedia sekarang.</p>
               )}

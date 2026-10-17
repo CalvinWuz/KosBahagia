@@ -10,6 +10,7 @@ import { Toaster } from "@/components/ui/Toast";
 import { TrayBanding } from "@/components/kos/TrayBanding";
 import { PelacakRiwayat } from "@/lib/navigasi";
 import { SKRIP_PANDUAN } from "@/lib/panduan";
+import { SKRIP_TUTORIAL } from "@/lib/tutorial-bagian";
 import { SKRIP_INTRO } from "@/lib/intro-logo";
 import { IntroLogo } from "@/components/layout/IntroLogo";
 import { TransisiHalaman } from "@/components/layout/TransisiHalaman";
@@ -33,11 +34,11 @@ export const metadata: Metadata = {
 // Root layout for the renter surface (kosbahagia.com): the bright shell.
 export default function UserLayout({ children }: { children: ReactNode }) {
   return (
-    // suppressHydrationWarning: the flags below set data-panduan / data-intro on <html> before React hydrates.
+    // suppressHydrationWarning: the flags below set data-panduan / data-tutorial / data-intro on <html> before React hydrates.
     <html lang="id" className={plusJakarta.variable} data-scroll-behavior="smooth" suppressHydrationWarning>
       <body className="flex min-h-dvh flex-col">
         {/* Runs before the first paint so the new-user guide never flashes for someone who closed it. */}
-        <Script id="penanda-panduan" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: SKRIP_PANDUAN }} />
+        <Script id="penanda-panduan" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: SKRIP_PANDUAN + SKRIP_TUTORIAL }} />
         {/* Same idea for the logo intro: only on a reload, decided before the first paint (lib/intro-logo.ts). */}
         <Script id="penanda-intro" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: SKRIP_INTRO }} />
         <a

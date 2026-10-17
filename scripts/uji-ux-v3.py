@@ -480,43 +480,50 @@ async def main():
 
         # 21 -----------------------------------------------------------------
         async def s21():
+            # Since 18 Oct the v3 three-step card is one homepage line plus a short
+            # tutorial per section (docs/hasil-tutorial-singkat-per-bagian.md); those
+            # are tested in depth by scripts/uji-tutorial.py. This keeps the v3 promise:
+            # shown once, skippable, no flash after reload, apart from saved kos,
+            # reopenable from the menu, and working without storage.
             c, pg = await baru()
             await buka(pg, BASE + "/")
-            kartu = pg.locator("[data-panduan-baru]").first
-            awal = await kartu.is_visible()
-            await kartu.scroll_into_view_if_needed()
+            baris = pg.locator('[data-tawaran="beranda"]')
+            awal = await baris.is_visible()
+            await baris.scroll_into_view_if_needed()
             await foto(pg, "15-panduan-beranda-hp.png")
-            await kartu.get_by_role("button", name="Mengerti").click()
-            hilang = await kartu.is_hidden()
-            await pg.wait_for_timeout(200)
-            fokus = await pg.evaluate("document.activeElement?.id || ''")
+            await baris.get_by_role("button", name="Tutup tawaran petunjuk").click()
+            await pg.wait_for_timeout(300)
+            hilang = await baris.is_hidden()
+            fokus = await pg.evaluate("document.activeElement !== document.body")
             await pg.goto(BASE + "/", wait_until="domcontentloaded")
-            tampil_awal = await pg.evaluate("getComputedStyle(document.querySelector('[data-panduan-baru]')).display")
-            simpan = await pg.evaluate("[localStorage.getItem('kb:panduan'), localStorage.getItem('kb:simpan')]")
+            tampil_awal = await pg.evaluate("getComputedStyle(document.querySelector('[data-tawaran=\"beranda\"]')).display")
+            simpan = await pg.evaluate("[localStorage.getItem('kb:tutorial-bagian:v1'), localStorage.getItem('kb:simpan')]")
             await buka(pg, BASE + "/cari?area=palmerah")
-            petunjuk_cari = await pg.locator("[data-panduan-baru]").first.is_visible()
+            tawaran_cari = await pg.locator('[data-tawaran="pencarian"]').is_visible()
             await pg.get_by_role("button", name="Menu").first.click()
             await pg.get_by_role("dialog").get_by_role("link", name=re.compile("^Cara menggunakan")).click()
             await pg.wait_for_url(re.compile("/cara-menggunakan"), timeout=15000)
-            await pg.get_by_role("button", name="Tampilkan lagi").click()
+            await pg.get_by_role("button", name="Tawarkan lagi").click()
             await pg.go_back()
             await pg.wait_for_url(re.compile("/cari"), timeout=15000)
             kembali_cari = "area=palmerah" in pg.url
             await buka(pg, BASE + "/")
-            lagi = await pg.locator("[data-panduan-baru]").first.is_visible()
+            lagi = await pg.locator('[data-tawaran="beranda"]').is_visible()
             await c.close()
-            # storage blocked: the site still works and the guide can be closed for the page
+            # storage blocked: the site still works and the line can be closed for this visit
             c, pg = await baru()
             await pg.add_init_script("Object.defineProperty(window, 'localStorage', { get() { throw new Error('diblokir'); } });")
             await buka(pg, BASE + "/")
-            k2 = pg.locator("[data-panduan-baru]").first
-            await k2.get_by_role("button", name="Mengerti").click()
+            k2 = pg.locator('[data-tawaran="beranda"]')
+            await k2.get_by_role("button", name="Tutup tawaran petunjuk").click()
+            await pg.wait_for_timeout(200)
             tanpa_storage = await k2.is_hidden() and not [g for g in pg.galat if "diblokir" in g]
             await buka(pg, BASE + "/cari?area=palmerah")
             cari_jalan = await jumlah_ui(pg) > 0
             await c.close()
-            ok = awal and hilang and fokus == "preset" and tampil_awal == "none" and simpan[0] == "v1" and simpan[1] is None and not petunjuk_cari and kembali_cari and lagi and tanpa_storage and cari_jalan
-            catat(21, "Panduan pertama kali, lewati, buka ulang", ok, f"kartu tampil lalu tertutup (fokus ke #{fokus}); setelah reload sudah display:none sebelum hidrasi; kunci kb:panduan terpisah dari kb:simpan; dibuka ulang dari menu; tanpa localStorage tetap jalan")
+            status = json.loads(simpan[0] or "{}")
+            ok = awal and hilang and fokus and tampil_awal == "none" and status.get("beranda") == "ditutup" and simpan[1] is None and tawaran_cari and kembali_cari and lagi and tanpa_storage and cari_jalan
+            catat(21, "Panduan pertama kali, lewati, buka ulang", ok, f"baris panduan beranda tampil lalu ditutup (fokus tidak jatuh ke body); setelah reload sudah display:none sebelum hidrasi; status {status} di kb:tutorial-bagian:v1, terpisah dari kb:simpan; Pencarian punya tawarannya sendiri; 'Tawarkan lagi' di Cara menggunakan mengembalikannya; tanpa localStorage tetap jalan")
 
         # 22 -----------------------------------------------------------------
         async def s22():

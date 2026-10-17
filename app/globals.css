@@ -272,10 +272,47 @@ html[data-intro="js"] [data-logo-header] {
   }
 }
 
-/* New-user guide: hidden once read on this device. The flag is set on <html>
-   before the first paint (app/(user)/layout.tsx, lib/panduan.ts). */
-html[data-panduan="v1"] [data-panduan-baru] {
+/* Section tutorials (lib/tutorial-bagian.ts, components/panduan/TutorialBagian.tsx).
+   Per group either the one-time offer [data-tawaran] or the quiet
+   "Petunjuk bagian ini" button [data-pemicu-ringkas] shows, decided before
+   the first paint from <html data-tutorial> (groups already offered) and
+   <html data-panduan> (closed the v1 guide: no automatic offers to renters).
+   Unlayered on purpose, so no utility class can override it. */
+[data-pemicu-ringkas] {
   display: none;
+}
+html[data-panduan] [data-tawaran]:not([data-tawaran="mitra-ringkasan"]),
+html[data-tutorial~="beranda"] [data-tawaran="beranda"],
+html[data-tutorial~="pencarian"] [data-tawaran="pencarian"],
+html[data-tutorial~="detail"] [data-tawaran="detail"],
+html[data-tutorial~="simpanan"] [data-tawaran="simpanan"],
+html[data-tutorial~="banding"] [data-tawaran="banding"],
+html[data-tutorial~="mitra-ringkasan"] [data-tawaran="mitra-ringkasan"] {
+  display: none;
+}
+html[data-panduan] [data-pemicu-ringkas]:not([data-pemicu-ringkas="mitra-ringkasan"]),
+html[data-tutorial~="pencarian"] [data-pemicu-ringkas="pencarian"],
+html[data-tutorial~="detail"] [data-pemicu-ringkas="detail"],
+html[data-tutorial~="simpanan"] [data-pemicu-ringkas="simpanan"],
+html[data-tutorial~="banding"] [data-pemicu-ringkas="banding"],
+html[data-tutorial~="mitra-ringkasan"] [data-pemicu-ringkas="mitra-ringkasan"] {
+  display: inline-flex;
+}
+/* What the open step explains: a soft ring, no overlay, no motion. */
+[data-tutorial-sorot] {
+  outline: 2px solid var(--color-biru-500);
+  outline-offset: 3px;
+}
+/* Full-width targets keep the ring inside the screen. */
+[data-tutorial="cari-kontrol"][data-tutorial-sorot] {
+  outline-offset: -3px;
+}
+/* Without JavaScript the tutorial buttons could do nothing; the static guide stays. */
+@media (scripting: none) {
+  [data-tawaran]:not([data-tawaran="beranda"]),
+  [data-pemicu-ringkas] {
+    display: none !important;
+  }
 }
 
 @layer base {

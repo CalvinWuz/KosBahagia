@@ -113,7 +113,7 @@ export function KosCard({
       onMouseLeave={onSorot ? () => onSorot(null) : undefined}
     >
       {/* Phones: a shorter photo so more than one card fits a screen. */}
-      <div className={cn("relative shrink-0 bg-biru-100", ringkas ? "w-24 self-stretch" : "aspect-[16/10] w-full sm:aspect-[4/3]")}>
+      <div className={cn("relative shrink-0 bg-biru-100", ringkas ? "w-20 self-stretch min-[380px]:w-24" : "aspect-[16/10] w-full sm:aspect-[4/3]")}>
         {kos.foto_url && (
           <FotoBlur
             src={kos.foto_url}
@@ -272,7 +272,7 @@ const KELAS_AKSI: Record<TampilanAksi, { wadah: string; tombol: string; ikon: st
   // Mobile detail header: icon over a short label.
   tumpuk: { wadah: "flex gap-1", tombol: "h-12 min-w-14 flex-col justify-center gap-0.5 rounded-xl px-1.5 text-micro", ikon: "size-5" },
   // Map mini card.
-  // Map mini card and promotion strip: both buttons fit one row next to the 96 px photo.
+  // Map mini card and promotion strip: both buttons fit one row next to the photo (80 px below 380 px wide, else 96 px).
   ringkas: { wadah: "flex flex-wrap gap-1.5", tombol: "sentuh h-9 gap-1 rounded-full px-2.5 text-micro", ikon: "size-4" },
 };
 

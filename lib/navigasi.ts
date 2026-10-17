@@ -160,6 +160,18 @@ let entriAktif: { panjang: number } | null = null;
 // immediately (React strict mode) can cancel it and reuse the entry.
 let tundaPop: number | null = null;
 
+// Inline helpers that are not layers themselves (the section tutorial)
+// step aside when a sheet, lightbox or 360° viewer opens.
+const pendengarLapis = new Set<() => void>();
+
+/** Calls `fn` whenever a layer opens; returns the unsubscribe. */
+export function saatLapisDibuka(fn: () => void): () => void {
+  pendengarLapis.add(fn);
+  return () => {
+    pendengarLapis.delete(fn);
+  };
+}
+
 /**
  * Called right before a layer navigates somewhere else (router.replace):
  * the layer's entry becomes that page, so closing must not pop it.
@@ -209,6 +221,7 @@ export function useLapisRiwayat({ open, onClose, hrefTerakhir, pertahankan }: La
       },
     };
     lapisAktif = lapis;
+    pendengarLapis.forEach((fn) => fn());
 
     const onPop = () => {
       diAtas = false;
