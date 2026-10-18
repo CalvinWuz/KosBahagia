@@ -72,6 +72,8 @@ SAMPEL_INTRO = """(ms) => new Promise((res) => {
     const mark = document.querySelector('[data-intro-gerak] svg');
     const senyum = document.querySelector('.intro-senyum');
     const hm = document.querySelector('[data-logo-header]');
+    const latar = document.querySelector('[data-intro-latar]');
+    const merek = document.querySelector('.intro-merek');
     out.push({
       t: Math.round(performance.now()),
       intro: document.documentElement.dataset.intro || '-',
@@ -83,6 +85,9 @@ SAMPEL_INTRO = """(ms) => new Promise((res) => {
       markKotak: kotak(mark),
       headerKotak: kotak(hm),
       headerOpacity: hm ? Number(getComputedStyle(hm).opacity) : null,
+      latar: latar && ov && getComputedStyle(ov).display !== 'none' ? Number(getComputedStyle(latar).opacity) : null,
+      latarWarna: latar ? getComputedStyle(latar).backgroundColor : null,
+      merek: merek ? merek.getClientRects().length > 0 && Number(getComputedStyle(merek).opacity) > 0.5 : false,
     });
     if (performance.now() - t0 < ms) requestAnimationFrame(tick); else res(out);
   };
@@ -117,6 +122,10 @@ def ringkas_intro(s: list[dict]) -> dict:
         "meleset_px": meleset,
         "pudar_ditempat": any((x["gerakOpacity"] or 1) < 0.5 for x in tampil) and not any("matrix(0.3" in x["gerak"] or "matrix(0.4" in x["gerak"] for x in tampil),
         "akhir": {k: s[-1][k] for k in ("intro", "overlay", "headerOpacity")},
+        # The opening screen: fully white at first (rgb 255), the wordmark shown, then faded.
+        "layar_putih": any(x["latar"] == 1 and x["latarWarna"] == "rgb(255, 255, 255)" for x in tampil[:10]),
+        "merek_tampil": any(x["merek"] for x in tampil),
+        "latar_memudar": any(x["latar"] is not None and x["latar"] < 0.5 for x in tampil),
     }
 
 
@@ -126,9 +135,11 @@ def tepat(r: dict) -> bool:
 
 
 async def buka(pg, url):
+    """Load, let the network settle, and let the opening screen (every full load) finish."""
     await pg.goto(url, wait_until="load", timeout=60000)
     try:
         await pg.wait_for_load_state("networkidle", timeout=8000)
+        await pg.wait_for_function("() => !document.documentElement.dataset.intro", timeout=5000)
     except Exception:  # noqa: BLE001
         pass
 
@@ -181,19 +192,21 @@ async def suite(p, jenis: str):
         if v:
             shutil.move(await v.path(), VIDEO / f"{nama}-{jenis}.webm")
 
-    # 5 + 6: reload intro on the homepage, phone and desktop, twice ---------------
+    # 5 + 6: opening screen on the homepage: first load and reload, phone and desktop
     async def s5_6():
         for label, opsi in (("HP", HP), ("PC", PC)):
             c, pg = await baru(opsi, video=True)
-            await buka(pg, BASE + "/")
-            pertama = await pg.evaluate("document.documentElement.dataset.intro || '-'")
+            await pg.goto(BASE + "/", wait_until="commit")
+            r0 = ringkas_intro(await pg.evaluate(SAMPEL_INTRO, 1700))
+            await pg.wait_for_timeout(300)
             r1 = ringkas_intro(await reload_amati(pg))
             await pg.wait_for_timeout(300)
             r2 = ringkas_intro(await reload_amati(pg))
             await pg.wait_for_timeout(300)
             await tutup_video(c, pg, f"intro-beranda-{label.lower()}")
-            ok5 = pertama == "-" and r1["main"] and r1["senyum_tergambar"] and r1["terbang"] and tepat(r1) and 800 <= r1["durasi_ms"] <= 1400 and r1["akhir"] == {"intro": "-", "overlay": "none", "headerOpacity": 1}
-            catat(5, f"Refresh beranda {label}", ok5, f"muat pertama tanpa intro; reload: senyum tergambar, terbang ke header, skala akhir {r1.get('skala_akhir')}, meleset {r1.get('meleset_px')} px, {r1.get('durasi_ms')} ms, akhir {r1.get('akhir')}", jenis)
+            utuh = lambda r: r["main"] and r["senyum_tergambar"] and r["terbang"] and tepat(r) and r["layar_putih"] and r["merek_tampil"] and r["latar_memudar"] and 900 <= r["durasi_ms"] <= 1500 and r["akhir"] == {"intro": "-", "overlay": "none", "headerOpacity": 1}  # noqa: E731
+            ok5 = utuh(r0) and utuh(r1)
+            catat(5, f"Layar pembuka beranda {label}", ok5, f"muat pertama dan reload: layar putih + 'Kos Bahagia' di bawah, senyum tergambar, ikon terbang ke header sambil layar memudar; skala akhir {r1.get('skala_akhir')}, meleset {r0.get('meleset_px')} / {r1.get('meleset_px')} px, {r0.get('durasi_ms')} / {r1.get('durasi_ms')} ms, akhir {r1.get('akhir')}", jenis)
             catat(6, f"Refresh ulang {label}", r2["main"] and r2["terbang"], f"intro berjalan lagi ({r2.get('durasi_ms')} ms); tidak ada penanda 'sudah dilihat'", jenis)
 
     # 7: pages whose phone header is their own bar --------------------------------
@@ -447,8 +460,9 @@ async def suite(p, jenis: str):
             await c.close()
             ok_strict = n == 1 and akhir == "-"
             strict = f"next dev (StrictMode): {n} animasi gerak untuk satu reload, intro selesai"
-        ok = h1 == h0 and not tampil and ok_strict
-        catat(11, "Back/forward cache, history, StrictMode", ok, f"history tetap {h0} → {h1}; kembali dari /mitra ({'bfcache' if dari_bfcache else 'dimuat ulang (back_forward)'}): intro tidak diputar; {strict}", jenis)
+        # Every full load plays it; a page restored from the back/forward cache is not a load.
+        ok = h1 == h0 and (tampil != dari_bfcache) and ok_strict
+        catat(11, "Back/forward cache, history, StrictMode", ok, f"history tetap {h0} → {h1}; kembali dari /mitra: {'dipulihkan dari bfcache, pembuka tidak diputar' if dari_bfcache else 'dimuat ulang penuh (back_forward), pembuka diputar' if tampil else 'pembuka TIDAK sesuai'}; {strict}", jenis)
 
     # 12–15: condition section --------------------------------------------------------
     async def s12_15():

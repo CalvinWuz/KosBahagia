@@ -6,6 +6,10 @@ versi 3; laporan versi 3 tetap di `docs/hasil-iterasi-v3.md` dan tidak diubah.
 **Status.** Diterapkan di repo dan diuji di lokal (build produksi + Supabase lokal, data contoh). **Belum** di-commit,
 di-push, atau di-deploy. Tidak ada migrasi, tidak ada perubahan skor, rubrik, biaya, atau data.
 
+> **Pembaruan 18 Oktober 2026.** Intro logo di bagian 3 sudah dikembangkan menjadi layar pembuka ala Outlook yang
+> diputar pada setiap muat penuh, bukan hanya reload. Lihat `docs/hasil-layar-pembuka.md`. Bagian lain dokumen ini
+> tetap berlaku.
+
 > **Bedakan dua jenis hasil.** Semua "lulus" di dokumen ini adalah pengujian internal otomatis (Playwright, Chromium dan
 > WebKit headless) terhadap data contoh. Update ini berasal dari permintaan Calvin, bukan temuan kuesioner baru, dan
 > belum diuji dengan responden.

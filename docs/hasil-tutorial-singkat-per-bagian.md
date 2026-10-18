@@ -191,7 +191,7 @@ git status
 ```
 
 ```bash
-git commit -m "Short section tutorials: offered once, opened on request" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "Short section tutorials: offered once, opened on request"
 ```
 
 ```bash

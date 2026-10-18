@@ -69,6 +69,8 @@ async def buka(pg, url):
     await pg.goto(url, wait_until="load", timeout=60000)
     try:
         await pg.wait_for_load_state("networkidle", timeout=6000)
+        # The opening screen plays on every full load; checks start after it.
+        await pg.wait_for_function("() => !document.documentElement.dataset.intro", timeout=5000)
     except Exception:  # noqa: BLE001
         pass
 

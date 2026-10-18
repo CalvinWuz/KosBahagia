@@ -201,10 +201,11 @@
   }
 }
 
-/* Logo intro on a full reload (components/layout/IntroLogo.tsx). Hidden
-   unless the pre-paint script set html[data-intro]; then: appear, draw the
-   smile, and (if JS never takes over) fade out and give the header mark back
-   by itself. With JS (data-intro="js") the component ends it. */
+/* Opening screen on a full load (components/layout/IntroLogo.tsx,
+   lib/intro-logo.ts). Hidden unless the pre-paint script set html[data-intro];
+   then: white screen, layered icon appears, smile draws, and (if JS never
+   takes over) everything fades out and the header mark comes back by itself.
+   With JS (data-intro="js") the component flies the icon to the header. */
 .intro-logo {
   display: none;
 }
@@ -216,6 +217,25 @@ html[data-intro] .intro-logo {
   place-items: center;
   pointer-events: none;
   animation: 200ms ease-in var(--jeda-intro-cadangan) forwards kb-intro-pudar;
+}
+html[data-intro] .intro-latar {
+  position: absolute;
+  inset: 0;
+  background: var(--color-putih);
+}
+/* The wordmark sits at the bottom, like the maker's name on an app's boot screen. */
+html[data-intro] .intro-merek {
+  position: absolute;
+  inset-inline: 0;
+  bottom: max(2.5rem, calc(env(safe-area-inset-bottom) + 1.5rem));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  animation: 300ms var(--ease-out) 120ms both kb-intro-merek;
+}
+html[data-intro] .intro-gerak {
+  position: relative;
 }
 html[data-intro] .intro-mark {
   filter: drop-shadow(0 8px 24px color-mix(in srgb, var(--color-biru-600) 25%, transparent));
@@ -238,6 +258,11 @@ html[data-intro="js"] [data-logo-header] {
   from {
     opacity: 0;
     transform: scale(0.86);
+  }
+}
+@keyframes kb-intro-merek {
+  from {
+    opacity: 0;
   }
 }
 @keyframes kb-intro-senyum {

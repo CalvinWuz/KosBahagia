@@ -51,6 +51,11 @@ def panel(pg):
 async def buka(pg, url, tunggu=1200):
     await pg.goto(url, wait_until="load", timeout=60000)
     await pg.wait_for_timeout(tunggu)
+    # The opening screen plays on every full load; checks start after it (owner pages have none).
+    try:
+        await pg.wait_for_function("() => !document.documentElement.dataset.intro", timeout=5000)
+    except Exception:  # noqa: BLE001
+        pass
 
 
 async def tunggu_diam(pg):

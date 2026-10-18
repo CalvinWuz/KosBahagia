@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { hitungGerak, targetLayak } from "./intro-logo.ts";
+import { SKRIP_INTRO, hitungGerak, targetLayak } from "./intro-logo.ts";
 
 describe("intro logo: target di header", () => {
   it("accepts a visible header mark and rejects hidden or off-screen ones", () => {
@@ -24,5 +24,35 @@ describe("intro logo: target di header", () => {
     assert.equal(tengahX, 32);
     assert.equal(tengahY, 86);
     assert.equal(96 * g.skala, 32);
+  });
+});
+
+describe("layar pembuka: kapan diputar", () => {
+  // Runs the real pre-paint script against a fake browser passed in as parameters.
+  function jalankan(o: { jenis?: string | null; prerender?: boolean; tersembunyi?: boolean; ua?: string; reduce?: boolean; animate?: boolean } = {}) {
+    const html = { dataset: {} as Record<string, string> };
+    const performance = { getEntriesByType: () => (o.jenis === null ? [] : [{ type: o.jenis ?? "navigate" }]) };
+    const document = { prerendering: o.prerender ?? false, visibilityState: o.tersembunyi ? "hidden" : "visible", documentElement: html };
+    const navigator = { userAgent: o.ua ?? "Mozilla/5.0 (iPhone) Safari/605.1" };
+    const matchMedia = () => ({ matches: o.reduce ?? false });
+    const Element = { prototype: o.animate === false ? {} : { animate() {} } };
+    new Function("performance", "document", "navigator", "matchMedia", "Element", SKRIP_INTRO)(performance, document, navigator, matchMedia, Element);
+    return html.dataset.intro ?? null;
+  }
+
+  it("plays on every full load: typed address or outside link, reload, back/forward that reloads", () => {
+    assert.equal(jalankan({ jenis: "navigate" }), "1");
+    assert.equal(jalankan({ jenis: "reload" }), "1");
+    assert.equal(jalankan({ jenis: "back_forward" }), "1");
+  });
+
+  it("not when nobody would see it, for crawlers, with reduced motion, or without Web Animations", () => {
+    assert.equal(jalankan({ jenis: "prerender" }), null);
+    assert.equal(jalankan({ prerender: true }), null);
+    assert.equal(jalankan({ tersembunyi: true }), null);
+    assert.equal(jalankan({ ua: "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" }), null);
+    assert.equal(jalankan({ reduce: true }), null);
+    assert.equal(jalankan({ animate: false }), null);
+    assert.equal(jalankan({ jenis: null }), null);
   });
 });
