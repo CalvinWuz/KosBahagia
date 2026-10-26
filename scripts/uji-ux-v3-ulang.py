@@ -224,7 +224,8 @@ async def suite(p, jenis):
         ukur = """() => { const promo = document.querySelector('#promosi-judul')?.closest('section'); const kartu = document.querySelector('ul.grid[aria-busy=false] > li > article');
           const isi = promo?.querySelector('ul'); const satu = promo?.querySelector('ul > li article');
           return { promo: promo ? Math.round(promo.getBoundingClientRect().height) : null, organik: kartu ? Math.round(kartu.getBoundingClientRect().top + scrollY) : null,
-                   lebarPromo: satu && isi ? Math.round(satu.getBoundingClientRect().width / isi.getBoundingClientRect().width * 100) : null } }"""
+                   lebarPromo: satu && isi ? Math.round(satu.getBoundingClientRect().width / isi.getBoundingClientRect().width * 100) : null,
+                   nPromo: promo ? promo.querySelectorAll('ul > li article').length : 0 } }"""
         c, pg = await baru()
         await buka(pg, BASE + "/cari?area=binus-kemanggisan")
         await expect(kartu_utama(pg).first).to_be_visible(timeout=15000)
@@ -243,8 +244,10 @@ async def suite(p, jenis):
         pc = await pg.evaluate(ukur)
         await pg.screenshot(path=str(OUT / f"31-cari-pc-{jenis}.png"))
         await c.close()
-        ok = hp["organik"] < 844 and hp["promo"] < 420 and pc["organik"] < 900 and pc["lebarPromo"] >= 95 and satu_filter == 0 and dua_filter == 1
-        catat(31, "Hasil utama di layar awal, promosi ringkas", ok, f"HP: promosi {hp['promo']} px, hasil biasa pertama mulai {hp['organik']} px (layar 844); PC: promosi {pc['promo']} px, satu kartu promosi {pc['lebarPromo']}% lebar blok, hasil biasa mulai {pc['organik']} px (layar 900); 'Hapus semua' {satu_filter} saat satu filter, {dua_filter} saat dua", jenis)
+        # One promoted kos spans the block; two share it (how many depends on the data).
+        lebar_ok = pc["lebarPromo"] >= 95 if pc["nPromo"] == 1 else 45 <= pc["lebarPromo"] <= 50
+        ok = hp["organik"] < 844 and hp["promo"] < 420 and pc["organik"] < 900 and lebar_ok and satu_filter == 0 and dua_filter == 1
+        catat(31, "Hasil utama di layar awal, promosi ringkas", ok, f"HP: promosi {hp['promo']} px, hasil biasa pertama mulai {hp['organik']} px (layar 844); PC: promosi {pc['promo']} px, {pc['nPromo']} kartu promosi, masing-masing {pc['lebarPromo']}% lebar blok, hasil biasa mulai {pc['organik']} px (layar 900); 'Hapus semua' {satu_filter} saat satu filter, {dua_filter} saat dua", jenis)
 
     # 32: the phone map fits the screen and ends above the tray ---------------------
     async def s32():

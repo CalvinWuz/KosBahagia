@@ -66,7 +66,7 @@ export function Ketersediaan({ kosId, data, terpilihId, sekarang }: { kosId: str
                   {k.nama}
                   {dipilih && <span className="ml-2 text-micro font-bold text-biru-600">pilihanmu</span>}
                 </span>
-                <span className="flex items-center gap-2">
+                <span className="flex flex-wrap items-center gap-2">
                   <Badge tone={s.status === "tersedia" ? "baik" : s.status === "penuh" ? "bahaya" : "peringatan"}>{s.label}</Badge>
                   <span className="text-arang-500 tabular-nums">{s.rincian}</span>
                 </span>

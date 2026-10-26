@@ -7,7 +7,18 @@ import { BelumDicatat, Blok } from "./bagian";
 // Block 10. Red flags come first, in a panel that cannot be collapsed and
 // looks the same for every tier. The rest is the surveyor's narrative from
 // the same visit: impressions, not measurements (those are in blocks 3–5).
-export function CatatanSurveyor({ catatan, surveyor, disurveiPada }: { catatan: Catatan | null; surveyor: string | null; disurveiPada: string | null }) {
+export function CatatanSurveyor({
+  catatan,
+  surveyor,
+  disurveiPada,
+  keteranganData,
+}: {
+  catatan: Catatan | null;
+  surveyor: string | null;
+  disurveiPada: string | null;
+  /** What on this page is real and what is still sample data (prototype). */
+  keteranganData?: string;
+}) {
   const redFlags = catatan?.red_flags ?? [];
   return (
     <Blok
@@ -16,6 +27,7 @@ export function CatatanSurveyor({ catatan, surveyor, disurveiPada }: { catatan: 
       keterangan={`${surveyor ? `Ditulis oleh ${surveyor}${disurveiPada ? ` saat survei ${formatTanggal(disurveiPada)}` : ""}. ` : ""}Kesan dan pengamatan saat kunjungan; angka hasil ukur ada di bagian Skor dan Kebersihan & suara.`}
     >
       <PenandaDemo className="-mt-1 mb-3" />
+      {keteranganData && <p className="mb-3 text-small text-arang-500">{keteranganData}</p>}
       {redFlags.length > 0 && (
         <div role="alert" className="mb-4 rounded-2xl border border-merah-700/30 bg-merah-100 p-4">
           <h3 className="text-body font-bold text-merah-700">Perlu kamu tahu sebelum memutuskan</h3>

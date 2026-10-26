@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Media, Sekitar } from "@/lib/kos/detail";
 import { formatJarak } from "@/lib/format";
@@ -34,14 +34,19 @@ export function CaraKeSini({
   nama: string;
 }) {
   const [petaAsli, setPetaAsli] = useState(false);
-  const rute = sekitar
-    ? bacaRute(sekitar.rute, { landmarkNama: sekitar.landmark_nama, totalMenit: sekitar.landmark_menit_jalan, akses: sekitar.akses })
-    : null;
-  // Recorded by the surveyor; the drawing below is an illustration of the
-  // landmarks on the way, not a computed walking route.
-  const keterangan = sekitar
-    ? `Dari ${sekitar.landmark_nama}: ${sekitar.landmark_menit_jalan != null ? `${sekitar.landmark_menit_jalan} menit jalan kaki, ` : ""}${formatJarak(sekitar.landmark_jarak_m)}, dicatat surveyor. Gambar di bawah ilustrasi patokan, bukan peta berskala.`
-    : undefined;
+  // Memoised: the real map redraws whenever the route object changes.
+  const rute = useMemo(
+    () => (sekitar ? bacaRute(sekitar.rute, { landmarkNama: sekitar.landmark_nama, totalMenit: sekitar.landmark_menit_jalan, akses: sekitar.akses }) : null),
+    [sekitar],
+  );
+  // Recorded by the surveyor. Without a street route the drawing is an
+  // illustration of the landmarks on the way, not a computed walking route.
+  const menit = sekitar?.landmark_menit_jalan != null ? `${sekitar.landmark_menit_jalan} menit jalan kaki, ` : "";
+  const keterangan = !sekitar
+    ? undefined
+    : rute?.jalur
+      ? `Dari ${sekitar.landmark_nama}: ${menit}${formatJarak(rute.jalur.jarak_m ?? sekitar.landmark_jarak_m)} lewat jalan, dicatat surveyor. Gambar di bawah mengikuti jalan sebenarnya.`
+      : `Dari ${sekitar.landmark_nama}: ${menit}${formatJarak(sekitar.landmark_jarak_m)}, dicatat surveyor. Gambar di bawah ilustrasi patokan, bukan peta berskala.`;
   const adaKoordinat = lat != null && lng != null;
 
   return (
@@ -70,7 +75,7 @@ export function CaraKeSini({
               Buka di OpenStreetMap
             </a>
           </div>
-          {petaAsli && <PetaInset kos={{ lat, lng }} landmark={landmark} namaLandmark={sekitar?.landmark_nama} />}
+          {petaAsli && <PetaInset kos={{ lat, lng }} landmark={landmark} namaLandmark={sekitar?.landmark_nama} jalur={rute?.jalur} />}
         </div>
       )}
     </Blok>

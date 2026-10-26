@@ -220,12 +220,12 @@ select is((select total_count from cari_kos_v3(-6.2019, 106.7818, 2500, p_harga_
   'literal: 9 of them have a room whose complete total is <= Rp1.200.000 (Om Deddy has no electricity estimate, so it does not count)');
 select is((select total_count from cari_kos_v3(-6.2019, 106.7818, 2500, p_tipe => 'putri', p_fasilitas => array['ac', 'kamar-mandi-dalam']) limit 1), 5::bigint,
   'literal: 5 kos putri with AC and kamar mandi dalam (Melati, Aisyah, Batusari Hijau, Anggrek Cakra, Griya Asri)');
-select is((select total_count from cari_kos_v3(-6.2019, 106.7818, 2500, p_min_kebersihan => 4, p_min_kedap => 4) limit 1), 5::bigint,
-  'literal: 5 kos score >= 4 on both kebersihan and kedap (Suites, Batusari Hijau, Pak Ridwan, Melati, Bunda Ratna)');
+select is((select total_count from cari_kos_v3(-6.2019, 106.7818, 2500, p_min_kebersihan => 4, p_min_kedap => 4) limit 1), 6::bigint,
+  'literal: 6 kos score >= 4 on both kebersihan and kedap (Suites, Batusari Hijau, Pak Ridwan, Melati, Bunda Ratna, Sandang Mulia)');
 select is((select total_count from cari_kos_v3(-6.2019, 106.7818, 2500, p_harga_min => 1000000, p_aturan => '{"pasangan":"boleh"}') limit 1), 3::bigint,
   'literal: 3 kos allow pasangan and have a room >= Rp1.000.000 (D''Kost Syahdan, Griya Kemanggisan, Slipi Residence)');
-select is((select total_count from cari_kos_v3(-6.2019, 106.7818, 500) limit 1), 2::bigint,
-  'literal: 2 kos within 500 m of the campus gate');
+select is((select total_count from cari_kos_v3(-6.2019, 106.7818, 500) limit 1), 3::bigint,
+  'literal: 3 kos within 500 m of the campus gate (Wisma Anggrek Dua, Kemanggisan Ilir 21, Sandang Mulia)');
 
 -- 11. RLS -----------------------------------------------------------------------
 set local role anon;

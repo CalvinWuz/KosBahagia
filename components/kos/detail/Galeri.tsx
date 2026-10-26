@@ -14,8 +14,10 @@ const Lightbox = dynamic(() => import("@/components/ui/Lightbox").then((m) => m.
 // the arrows exist for keyboards and pointers). Desktop: one big photo and
 // four small ones at a fixed height, so the name and the price are still on
 // the first screen. Tapping any photo opens the full-screen lightbox.
-// `aksi` is the slot for the 360° trigger; nothing 360-related loads here.
-export function Galeri({ foto, nama, aksi }: { foto: Media[]; nama: string; aksi?: ReactNode }) {
+// `aksi` is the slot for the 360° and video triggers; nothing of theirs loads
+// here. `label` names what the photos are when that is not obvious (real
+// media on the prototype); it takes no room in the layout.
+export function Galeri({ foto, nama, aksi, label }: { foto: Media[]; nama: string; aksi?: ReactNode; label?: string }) {
   const rel = useRef<HTMLUListElement>(null);
   const [aktif, setAktif] = useState(0);
   const [buka, setBuka] = useState<number | null>(null);
@@ -105,9 +107,9 @@ export function Galeri({ foto, nama, aksi }: { foto: Media[]; nama: string; aksi
         )}
       </div>
 
-      {ilustrasi && (
+      {(ilustrasi || label) && (
         <p className="pointer-events-none absolute top-3 left-3 rounded-full bg-arang-900/75 px-2.5 py-1 text-micro font-bold text-putih">
-          Ilustrasi contoh, bukan foto kondisi kos
+          {ilustrasi ? "Ilustrasi contoh, bukan foto kondisi kos" : label}
         </p>
       )}
       <div className="pointer-events-none absolute inset-x-3 bottom-3 flex items-end justify-between gap-2">

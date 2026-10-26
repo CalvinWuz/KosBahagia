@@ -9,6 +9,8 @@ import { formatJarak, formatTanggal } from "@/lib/format";
 import { kamarAcuan, kamarDariUrl, statusKamar } from "@/lib/kamar";
 import { kelebihanKekurangan } from "@/lib/kos/ringkasan";
 import { PenandaDemo } from "@/components/ui/PenandaDemo";
+import { MODE_DEMO, TEKS_DEMO } from "@/lib/demo";
+import { adalahIlustrasi } from "@/lib/media";
 import { queryHalaman, useKembali } from "@/lib/navigasi";
 import { hrefCari } from "@/lib/cari-params";
 import type { DetailKosData } from "@/lib/kos/detail";
@@ -30,6 +32,7 @@ import { RingkasanKeputusan } from "./detail/RingkasanKeputusan";
 import { Blok } from "./detail/bagian";
 import { NavBagian, type Bagian } from "./detail/NavBagian";
 import { Tur360Pemicu } from "./tur360/Tur360Pemicu";
+import { bacaVideo, VideoPemicu } from "./detail/VideoTur";
 import { BantuanJarak } from "./BantuanJarak";
 import { TombolMenu } from "@/components/layout/Navigasi";
 import { bacaTitik, type TitikTur } from "./tur360/jenis";
@@ -98,6 +101,9 @@ export function DetailKos({ data, sekarang }: { data: DetailKosData; sekarang: s
   const foto = media.filter((m) => m.jenis === "foto");
   const patokan = media.filter((m) => m.jenis === "patokan");
   const titikTur = media.filter((m) => m.jenis === "foto360").map(bacaTitik).filter((t): t is TitikTur => t !== null);
+  const video = media.map(bacaVideo).find((v) => v !== null) ?? null;
+  // Real photos on a prototype: say what is real and what is still sample data.
+  const mediaAsli = MODE_DEMO && foto.some((f) => !adalahIlustrasi(f.url));
   const nFasilitas = semuaFasilitas.filter((f) => f.bisa_difilter && fasilitasKos.includes(f.slug)).length;
   const kekuatan = kekuatanKos({ skor, sekitar });
   const ringkasan = {
@@ -167,7 +173,15 @@ export function DetailKos({ data, sekarang }: { data: DetailKosData; sekarang: s
             <Galeri
               foto={foto}
               nama={kos.nama}
-              aksi={titikTur.length > 0 ? <Tur360Pemicu titik={titikTur} fotoCadangan={foto.map((f) => ({ url: f.url, keterangan: f.keterangan }))} /> : undefined}
+              label={mediaAsli ? (video ? "Foto dan video asli" : "Foto asli") : undefined}
+              aksi={
+                video || titikTur.length > 0 ? (
+                  <div className="flex flex-wrap justify-end gap-2">
+                    {video && <VideoPemicu video={video} />}
+                    {titikTur.length > 0 && <Tur360Pemicu titik={titikTur} fotoCadangan={foto.map((f) => ({ url: f.url, keterangan: f.keterangan }))} />}
+                  </div>
+                ) : undefined
+              }
             />
           </div>
 
@@ -259,7 +273,12 @@ export function DetailKos({ data, sekarang }: { data: DetailKosData; sekarang: s
             {/* 9 */}
             <SekitarKos sekitar={sekitar} kamar={kamar} disurveiPada={kos.disurvei_pada} />
             {/* 10 */}
-            <CatatanSurveyor catatan={catatan} surveyor={kos.surveyor} disurveiPada={kos.disurvei_pada} />
+            <CatatanSurveyor
+              catatan={catatan}
+              surveyor={kos.surveyor}
+              disurveiPada={kos.disurvei_pada}
+              keteranganData={mediaAsli ? TEKS_DEMO.mediaAsli(formatTanggal(kos.disurvei_pada)) : undefined}
+            />
             {/* 11 */}
             <Ketersediaan kosId={kos.id} data={ketersediaan} terpilihId={kamar?.id ?? null} sekarang={sekarangDate} />
             {/* 12 */}

@@ -281,6 +281,14 @@ export function IconFilter(props: IconProps) {
   );
 }
 
+export function IconMainkan(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M8 5.5v13l10.5-6.5z" fill="currentColor" />
+    </Svg>
+  );
+}
+
 export function IconPutar(props: IconProps) {
   return (
     <Svg {...props}>

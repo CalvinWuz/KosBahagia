@@ -41,6 +41,17 @@ function fotoDummy(kategori: string, kunci: string): FotoDummy | null {
 }
 const KATEGORI_FOTO = ["tampak-depan", "kamar", "kamar-mandi", "koridor", "dapur", "parkir", "ruang-tamu", "jemuran"];
 
+// public/media/sandang/media.json is written by scripts/proses-media-sandang.py
+// from Calvin's shoot of the real kos (see NYATA below).
+type MediaNyata = {
+  id: string; jenis: "foto" | "patokan" | "video"; url: string; keterangan: string;
+  lebar: number; tinggi: number; blurhash: string; bytes: number; poster_url?: string; durasi_detik?: number;
+};
+const MEDIA_NYATA: MediaNyata[] = (() => {
+  const f = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "public", "media", "sandang", "media.json");
+  return existsSync(f) ? (JSON.parse(readFileSync(f, "utf8")) as MediaNyata[]) : [];
+})();
+
 // ---------------------------------------------------------------- utils
 function mulberry32(seed: number) {
   let a = seed >>> 0;
@@ -70,6 +81,12 @@ const bulatkan = (n: number, ke: number) => Math.round(n / ke) * ke;
 function uuid(): string {
   const hex = () => Math.floor(rand() * 16).toString(16);
   const s = Array.from({ length: 32 }, hex).join("");
+  return `${s.slice(0, 8)}-${s.slice(8, 12)}-4${s.slice(13, 16)}-a${s.slice(17, 20)}-${s.slice(20)}`;
+}
+/** A stable uuid from a key, without touching the PRNG streams. */
+function uuidDari(kunci: string): string {
+  const r = mulberry32(hashKecil(kunci));
+  const s = Array.from({ length: 32 }, () => Math.floor(r() * 16).toString(16)).join("");
   return `${s.slice(0, 8)}-${s.slice(8, 12)}-4${s.slice(13, 16)}-a${s.slice(17, 20)}-${s.slice(20)}`;
 }
 const q = (s: string | null | undefined) => (s == null ? "null" : `'${s.replace(/'/g, "''")}'`);
@@ -358,6 +375,91 @@ const PROFIL: Profil[] = [
   { nama: "Kost Bu Endah Kertosentono", jalan: "Jl. Kertosentono", kel: "Ketawanggede", tipe: "campur", sewa: 1000000, listrik: "flat", ac: true, dapur: true },
 ];
 
+// ---------------------------------------------------------------- the real kos
+// One slot carries a real kos: Calvin's shoot on Jl. Sandang (13 Sep 2026),
+// 600 m from the BINUS Anggrek gate. What the shoot shows is real: photos,
+// the room video, location, the route from campus, floors, the room type,
+// the facilities you can see and the surveyor's notes. Prices, fees,
+// scores, rules, contact and the nearby list stay sample data like every
+// other kos. The slot's rows are still generated, so the PRNG streams (and
+// every later kos and pgTAP literal) stay put; only what is written changes.
+const SLOT_NYATA = "Kost Sandang Mulia";
+
+// Route from the campus gate to the kos: the fastest motorbike route on
+// Google Maps (600 m; 3 min by motorbike, 4 by car, 7 on foot), traced on
+// OpenStreetMap street geometry. [lng, lat]
+const JALUR_NYATA: Array<[number, number]> = [
+  [106.78248, -6.20163], // BINUS Anggrek gate
+  [106.782645, -6.201646], // Jl. Rawa Belong
+  [106.782636, -6.20158],
+  [106.782604, -6.201319],
+  [106.782559, -6.200923], // Jl. KH Syahdan
+  [106.782846, -6.200894],
+  [106.783494, -6.200833],
+  [106.78389, -6.200797],
+  [106.784341, -6.200747],
+  [106.784708, -6.200719],
+  [106.784933, -6.200697],
+  [106.785007, -6.200691], // Jl. U
+  [106.785009, -6.2013],
+  [106.785036, -6.201656],
+  [106.785066, -6.202029], // Jl. Sandang
+  [106.785159, -6.202017],
+  [106.785339, -6.201995],
+  [106.785431, -6.201983],
+  [106.78556, -6.201971], // in front of the gate
+];
+
+const NYATA = {
+  alamat: "Jl. Sandang, Palmerah, Palmerah, Jakarta Barat",
+  lat: -6.20204,
+  lng: 106.7856,
+  jumlahLantai: 3,
+  tier: "premium" as const,
+  disurvei: "2026-09-13",
+  kamar: "AC + kamar mandi dalam",
+  // Estimated from the video (single bed, desk and rack along the walls).
+  ukuranKamar: "3×3 m",
+  kamarDiukur: "Tipe AC + kamar mandi dalam, lantai 2",
+  // Facilities the photos and video can confirm or rule out; the rest
+  // (WiFi, water heater, washing machine, ...) stay sample data.
+  teramati: ["ac", "kamar-mandi-dalam", "kasur", "lemari", "meja-belajar", "jendela-luar", "parkir-motor", "parkir-mobil", "cctv", "ruang-tamu", "jemuran", "lift"],
+  fasilitas: ["ac", "kamar-mandi-dalam", "kasur", "lemari", "meja-belajar", "parkir-motor", "cctv", "ruang-tamu", "jemuran"],
+  halBaik: [
+    "Kamar mandi dalam berkeramik sampai plafon, dengan kloset duduk dan shower.",
+    "Ruang bersama di lantai atas berjendela besar dan bersofa; di ujung koridor ada kursi tunggu.",
+    "Rooftop terbuka dengan meja kayu dan area jemuran.",
+  ],
+  perluDiketahui: [
+    "Tidak ada lift; kamar lantai 2 dan 3 lewat tangga.",
+    "Kamar sisi dalam berjendela ke koridor, bukan ke luar; bila butuh cahaya matahari, tanyakan kamar yang menghadap jalan.",
+    "Jalan depan kos dipakai parkir motor dan deretan galon, jadi menyempit saat ramai.",
+  ],
+  landmark: { nama: "BINUS University Kampus Anggrek", jarak: 600, menit: 7 },
+  rute: (fotoGerbang: string | undefined) => ({
+    landmark: { nama: "BINUS University Kampus Anggrek", ikon: "kampus" },
+    langkah: [
+      { teks: "Dari gerbang BINUS Anggrek, keluar ke Jl. Rawa Belong lalu ke kiri (utara) ±80 m", ikon: "belok-kiri", titik: 1 },
+      { teks: "Belok kanan ke Jl. KH Syahdan, lurus ±270 m", ikon: "belok-kanan", titik: 4 },
+      { teks: "Belok kanan ke Jl. U, tepat di depan kampus BINUS Syahdan, lurus ±150 m sampai ujung", ikon: "belok-kanan", titik: 11 },
+      { teks: "Belok kiri ke Jl. Sandang; kos ±50 m di kanan jalan, gerbang hitam nomor 6", ikon: "tujuan", titik: JALUR_NYATA.length - 1, ...(fotoGerbang ? { foto_id: fotoGerbang } : {}) },
+    ],
+    total_menit: 7,
+    akses: "mobil",
+    jalur: {
+      titik: JALUR_NYATA,
+      jarak_m: 600,
+      menit: { jalan_kaki: 7, motor: 3, mobil: 4 },
+      jalan: [
+        { nama: "Jl. Rawa Belong", dari: 1, ke: 4 },
+        { nama: "Jl. KH Syahdan", dari: 4, ke: 11 },
+        { nama: "Jl. U", dari: 11, ke: 14 },
+        { nama: "Jl. Sandang", dari: 14, ke: JALUR_NYATA.length - 1 },
+      ],
+    },
+  }),
+};
+
 // ---------------------------------------------------------------- build rows
 const out: string[] = [];
 const emit = (s: string) => out.push(s);
@@ -394,13 +496,19 @@ for (const p of PROFIL) {
   let slug = slugify(p.nama);
   if (slugTerpakai.has(slug)) slug += `-${p.kel.split(" ")[0].toLowerCase()}`;
   slugTerpakai.add(slug);
+  const nyata = p.nama === SLOT_NYATA;
 
-  // Position: within ~600 m of the kelurahan centre.
-  const lat = kel.lat + (rand() - 0.5) * 0.011;
-  const lng = kel.lng + (rand() - 0.5) * 0.011;
+  // Position: within ~600 m of the kelurahan centre (drawn for the real
+  // kos too, so the streams stay aligned).
+  const latAcak = kel.lat + (rand() - 0.5) * 0.011;
+  const lngAcak = kel.lng + (rand() - 0.5) * 0.011;
+  const lat = nyata ? NYATA.lat : latAcak;
+  const lng = nyata ? NYATA.lng : lngAcak;
 
   const status = p.status ?? "tayang";
+  // `tier` drives the draws below; the real kos is listed as premium.
   const tier = p.tier ?? "free";
+  const tierTampil = nyata ? NYATA.tier : tier;
   const surveyor = pilih(SURVEYOR);
   const basi = p.basiHari ?? antara(0, 21);
   // The survey always precedes the latest availability confirmation.
@@ -418,7 +526,10 @@ for (const p of PROFIL) {
   // Red flag 3 says there is no guard; the record must agree.
   const penjaga = p.redFlags?.includes(3) ? "tidak_ada" : penjagaAcak;
 
-  kosRows.push(`  (${q(id)}, ${q(slug)}, ${q(p.nama)}, ${q(`${p.jalan}, ${p.kel}, ${jakarta ? "Palmerah, Jakarta Barat" : "Lowokwaru, Malang"}`)}, ${q(`RT ${rt}/RW ${rw}`)}, ${titik(lat, lng)}, ${q(areaId(jakarta ? "palmerah" : "lowokwaru"))}, ${q(p.tipe)}, ${totalKamar}, ${jumlahLantai}, ${b(!!p.lift)}, ${tahunBangunan}, ${q(namaKontak)}, ${q(whatsapp)}, ${q(penjaga)}, ${q(status)}, ${q(tier)}, null, (now() - interval '${disurveiHari} days')::date, ${q(surveyor)}, now() - interval '${basi} days')`);
+  // The real kos was surveyed on the day of the shoot.
+  const waktuSurvei = nyata ? `'${NYATA.disurvei} 10:00+07'::timestamptz` : `now() - interval '${disurveiHari} days'`;
+  const alamat = nyata ? NYATA.alamat : `${p.jalan}, ${p.kel}, ${jakarta ? "Palmerah, Jakarta Barat" : "Lowokwaru, Malang"}`;
+  kosRows.push(`  (${q(id)}, ${q(slug)}, ${q(p.nama)}, ${q(alamat)}, ${q(`RT ${rt}/RW ${rw}`)}, ${titik(lat, lng)}, ${q(areaId(jakarta ? "palmerah" : "lowokwaru"))}, ${q(p.tipe)}, ${totalKamar}, ${nyata ? NYATA.jumlahLantai : jumlahLantai}, ${b(!!p.lift)}, ${tahunBangunan}, ${q(namaKontak)}, ${q(whatsapp)}, ${q(penjaga)}, ${q(status)}, ${q(tierTampil)}, null, (${waktuSurvei})::date, ${q(surveyor)}, now() - interval '${basi} days')`);
 
   // ---- room types
   const kamar: Array<{ id: string; nama: string; harga: number; ac: boolean; kmDalam: boolean; tersedia: number; total: number; ukuran?: string; durasi?: number }> = [];
@@ -484,9 +595,20 @@ for (const p of PROFIL) {
     k.durasi = durasi;
     // Nobody pays more months up front than the minimum stay of that room.
     const bayarDimukaKamar = bayarDimuka == null ? null : Math.min(bayarDimuka, durasi);
-    kamarRows.push(`  (${q(k.id)}, ${q(id)}, ${q(k.nama)}, ${q(ukuran)}, ${k.harga}, ${n(tahunan)}, ${durasi}, ${deposit}, ${q(depositKembali)}, ${q(p.listrik)}, ${n(estimasi)}, ${b(k.ac)}, ${n(biayaAc)}, ${n(biayaAir)}, ${q(laundry)}, ${n(biayaLaundry)}, ${b(parkirMotor)}, ${n(biayaParkirMotor)}, ${b(parkirMobil)}, ${n(biayaParkirMobil)}, ${js(biayaLain)}, ${k.tersedia}, ${k.total}, ${b(k.kmDalam)}, ${n(bayarDimukaKamar)}, ${js(biayaSekali)}, ${q(ketentuan)}, now() - interval '${hargaDicekHari} days')`);
-    logRows.push(`  (${q(id)}, ${q(k.id)}, ${k.tersedia}, 'survei', now() - interval '${disurveiHari} days')`);
-    if (disurveiHari > basi) logRows.push(`  (${q(id)}, ${q(k.id)}, ${k.tersedia}, ${q(pilih(["pemilik", "bot_wa"]))}, now() - interval '${basi} days')`);
+    // The real kos lists the one room type that was filmed (AC, bathroom
+    // inside); every room in the building is counted under it. Motorbikes
+    // park inside, cars do not. The confirmation source is drawn first so
+    // the skipped room still consumes it.
+    const sumberKonfirmasi = disurveiHari > basi ? pilih(["pemilik", "bot_wa"]) : null;
+    if (nyata && !k.ac) continue;
+    const nama = nyata ? NYATA.kamar : k.nama;
+    const total = nyata ? totalKamar : k.total;
+    // Availability is sample data; the showcase kos keeps two rooms open.
+    const tersedia = nyata ? 2 : k.tersedia;
+    const hargaDicek = hargaDicekHari === disurveiHari ? waktuSurvei : `now() - interval '${hargaDicekHari} days'`;
+    kamarRows.push(`  (${q(k.id)}, ${q(id)}, ${q(nama)}, ${q(nyata ? NYATA.ukuranKamar : ukuran)}, ${k.harga}, ${n(tahunan)}, ${durasi}, ${deposit}, ${q(depositKembali)}, ${q(p.listrik)}, ${n(estimasi)}, ${b(k.ac)}, ${n(biayaAc)}, ${n(biayaAir)}, ${q(laundry)}, ${n(biayaLaundry)}, ${b(nyata || parkirMotor)}, ${n(biayaParkirMotor)}, ${b(!nyata && parkirMobil)}, ${n(nyata ? null : biayaParkirMobil)}, ${js(biayaLain)}, ${tersedia}, ${total}, ${b(nyata || k.kmDalam)}, ${n(bayarDimukaKamar)}, ${js(biayaSekali)}, ${q(ketentuan)}, ${hargaDicek})`);
+    logRows.push(`  (${q(id)}, ${q(k.id)}, ${tersedia}, 'survei', ${waktuSurvei})`);
+    if (sumberKonfirmasi) logRows.push(`  (${q(id)}, ${q(k.id)}, ${tersedia}, ${q(sumberKonfirmasi)}, now() - interval '${basi} days')`);
   }
 
   // ---- rubric scores (nullable, never defaulted)
@@ -518,7 +640,12 @@ for (const p of PROFIL) {
     const dbTes = skorKedap == null ? null : dbAmbient + (6 - kedapDasar) * 6 + antara(0, 4);
     const kamarDiukur = skorKedap == null ? null : `Tipe ${kamar[0].nama}, lantai ${1 + Math.floor(rand3() * jumlahLantai)}`;
     Object.assign(ukur, { tembok, kedap: skorKedap, skorKamarMandi, skorKoridor, pembersih, frekuensiBersih, frekuensiSampah, bising, hadapJalan });
-    penilaianRows.push(`  (${q(id)}, ${n(skorKamarMandi)}, ${n(skorDapur)}, ${n(skorKoridor)}, ${q(pembersih)}, ${q(frekuensiBersih)}, ${q(frekuensiSampah)}, ${q(tembok)}, ${dbAmbient}, ${n(dbTes)}, ${n(skorKedap)}, ${b(hadapJalan)}, ${arr(bising)}, ${q(kamarDiukur)})`);
+    // The real kos sits on a residential side street, not a main road; its
+    // sample measurements follow that instead of the slot's draw.
+    const t = nyata
+      ? { tembok: "bata", dbAmbient: 44, dbTes: 44 + (6 - 4) * 6 + 2, skorKedap: 4, hadapJalan: false, bising: [] as string[], kamarDiukur: NYATA.kamarDiukur }
+      : { tembok, dbAmbient, dbTes, skorKedap, hadapJalan, bising, kamarDiukur };
+    penilaianRows.push(`  (${q(id)}, ${n(skorKamarMandi)}, ${n(skorDapur)}, ${n(skorKoridor)}, ${q(pembersih)}, ${q(frekuensiBersih)}, ${q(frekuensiSampah)}, ${q(t.tembok)}, ${t.dbAmbient}, ${n(t.dbTes)}, ${n(t.skorKedap)}, ${b(t.hadapJalan)}, ${arr(t.bising)}, ${q(t.kamarDiukur)})`);
   }
 
   // ---- facilities
@@ -542,7 +669,9 @@ for (const p of PROFIL) {
   if (p.sewa >= 1500000 && peluang(0.5)) fas.add("tv");
   if (p.redFlags?.includes(4)) fas.delete("jendela-luar");
   if (p.redFlags?.includes(3)) fas.delete("penjaga-24-jam");
-  for (const s of fas) kosFasRows.push(`  (${q(id)}, ${q(fasId(s))})`);
+  // The real kos: what the shoot shows decides; the rest stays sample data.
+  const fasTampil = nyata ? new Set([...NYATA.fasilitas, ...[...fas].filter((s) => !NYATA.teramati.includes(s))]) : fas;
+  for (const s of fasTampil) kosFasRows.push(`  (${q(id)}, ${q(fasId(s))})`);
 
   // ---- rules
   const jamMalamAcak = p.lift ? null : pilih([null, null, "22:00", "23:00", "23:00", "00:00"]);
@@ -568,9 +697,18 @@ for (const p of PROFIL) {
     const mid = uuid();
     const bh = pilih(BLURHASH);
     const d = fotoDummy(KATEGORI_FOTO[i] ?? "kamar", `${slug}-${i}`);
+    if (nyata && MEDIA_NYATA.length) continue;
     mediaRows.push(`  (${q(mid)}, ${q(id)}, 'foto', ${q(d?.url ?? `https://picsum.photos/seed/${slug}-${i + 1}/1600/1200`)}, ${q(keterangan[i] ?? `Foto ${i + 1}`)}, ${i}, ${d?.lebar ?? 1600}, ${d?.tinggi ?? 1200}, ${q(d?.blurhash ?? bh)}, null)`);
   }
   const patokanId: string[] = [];
+  // The real kos: Calvin's photos, the room video, and the street photo for
+  // the last route step. Ids come from the file names, not the PRNG.
+  const mediaNyata = nyata ? MEDIA_NYATA : [];
+  mediaNyata.forEach((m, i) => {
+    const meta = m.jenis === "video" ? { poster_url: m.poster_url, durasi_detik: m.durasi_detik, ukuran_bytes: m.bytes } : null;
+    mediaRows.push(`  (${q(uuidDari(`nyata-${m.id}`))}, ${q(id)}, ${q(m.jenis)}, ${q(m.url)}, ${q(m.keterangan)}, ${i}, ${m.lebar}, ${m.tinggi}, ${q(m.blurhash)}, ${js(meta)})`);
+  });
+  const patokanNyata = mediaNyata.find((m) => m.jenis === "patokan");
   if (tier !== "free") {
     // 360° points: one for premium, three linked by hotspots for spotlight.
     const titik = tier === "spotlight" ? ["kamar", "koridor", "dapur"] : ["kamar"];
@@ -632,7 +770,11 @@ for (const p of PROFIL) {
       : (peluang(0.6) ? { jenis: "Angkot", nama: pilih(["ADL", "AL", "GML"]), jarak_m: bulatkan(antara(50, 400), 10) } : null);
     aksesKos = rute.akses;
     adaWarung = warung !== null;
-    sekitarRows.push(`  (${q(id)}, ${q(landmark.nama)}, ${landmark.jarak}, ${menit}, ${js(rute)}, ${js(minimarket)}, ${js(warung)}, ${js(laundryDekat)}, ${js(transit)}, ${q(rute.akses)}, ${p.peneranganNull ? "null" : String(antara(2, 5))}, ${b(p.redFlags?.includes(1) ? true : peluang(0.15))})`);
+    // The real kos: the recorded route (distance along the streets, not a
+    // straight line) and the street width seen on the shoot.
+    const lm = nyata ? NYATA.landmark : { nama: landmark.nama, jarak: landmark.jarak, menit };
+    const ruteTampil = nyata ? NYATA.rute(patokanNyata && uuidDari(`nyata-${patokanNyata.id}`)) : rute;
+    sekitarRows.push(`  (${q(id)}, ${q(lm.nama)}, ${lm.jarak}, ${lm.menit}, ${js(ruteTampil)}, ${js(minimarket)}, ${js(warung)}, ${js(laundryDekat)}, ${js(transit)}, ${q(ruteTampil.akses)}, ${p.peneranganNull ? "null" : String(antara(2, 5))}, ${b(p.redFlags?.includes(1) ? true : peluang(0.15))})`);
   }
 
   // ---- surveyor notes
@@ -669,20 +811,56 @@ for (const p of PROFIL) {
   const halBaik = pilihCatatan(HAL_BAIK, fakta, wajib.baik, 3);
   const perlu = pilihCatatan(PERLU_DIKETAHUI, fakta, wajib.perlu, 3);
   const kesan = pilihCatatan(KESAN_PEMILIK, fakta, [], 1)[0] ?? null;
-  catatanRows.push(`  (${q(id)}, ${arr(halBaik)}, ${arr(perlu)}, ${q(kesan)}, ${arr((p.redFlags ?? []).map((i) => RED_FLAG[i]))})`);
+  catatanRows.push(`  (${q(id)}, ${arr(nyata ? NYATA.halBaik : halBaik)}, ${arr(nyata ? NYATA.perluDiketahui : perlu)}, ${q(kesan)}, ${arr((p.redFlags ?? []).map((i) => RED_FLAG[i]))})`);
 }
 
-emit(`insert into kos (id, slug, nama, alamat, rt_rw, lokasi, area_id, tipe, jumlah_kamar, jumlah_lantai, ada_lift, tahun_bangunan, kontak_nama, whatsapp, penjaga, status, tier, owner_id, disurvei_pada, surveyor, ketersediaan_dikonfirmasi_pada) values\n${kosRows.join(",\n")};\n`);
-emit(`insert into tipe_kamar (id, kos_id, nama, ukuran, harga_bulanan, harga_tahunan, durasi_minimal, deposit, deposit_kembali, model_listrik, estimasi_listrik, boleh_ac, biaya_ac, biaya_air, laundry, biaya_laundry, parkir_motor, biaya_parkir_motor, parkir_mobil, biaya_parkir_mobil, biaya_lain, kamar_tersedia, total_kamar, kamar_mandi_dalam, bayar_dimuka_bulan, biaya_sekali, ketentuan_deposit, harga_dikonfirmasi_pada) values\n${kamarRows.join(",\n")};\n`);
-emit(`insert into kos_penilaian (kos_id, skor_kamar_mandi, skor_dapur, skor_koridor, pembersih, frekuensi_bersih, frekuensi_sampah, material_tembok, db_ambient, db_tes, skor_kedap, hadap_jalan_raya, sumber_bising, kamar_diukur) values\n${penilaianRows.join(",\n")};\n`);
-emit(`insert into kos_fasilitas (kos_id, fasilitas_id) values\n${kosFasRows.join(",\n")};\n`);
-emit(`insert into kos_aturan (kos_id, jam_malam, tamu, lawan_jenis, pasangan, anak, hewan, masak_di_kamar, merokok, mayoritas_penghuni, suasana) values\n${aturanRows.join(",\n")};\n`);
-emit(`insert into kos_sekitar (kos_id, landmark_nama, landmark_jarak_m, landmark_menit_jalan, rute, minimarket, warung, laundry, transit, akses, penerangan, rawan_banjir) values\n${sekitarRows.join(",\n")};\n`);
-emit(`insert into kos_media (id, kos_id, jenis, url, keterangan, urutan, lebar, tinggi, blurhash, tur) values\n${mediaRows.join(",\n")};\n`);
-emit(`insert into catatan_surveyor (kos_id, hal_baik, perlu_diketahui, kesan_pemilik, red_flags) values\n${catatanRows.join(",\n")};\n`);
-emit(`insert into log_ketersediaan (kos_id, tipe_kamar_id, kamar_tersedia, sumber, dibuat_pada) values\n${logRows.join(",\n")};\n`);
+// Table, columns, rows, and the key a patch upserts on (null: delete + insert).
+const TABEL: Array<[string, string, string[], string | null]> = [
+  ["kos", "id, slug, nama, alamat, rt_rw, lokasi, area_id, tipe, jumlah_kamar, jumlah_lantai, ada_lift, tahun_bangunan, kontak_nama, whatsapp, penjaga, status, tier, owner_id, disurvei_pada, surveyor, ketersediaan_dikonfirmasi_pada", kosRows, "id"],
+  ["tipe_kamar", "id, kos_id, nama, ukuran, harga_bulanan, harga_tahunan, durasi_minimal, deposit, deposit_kembali, model_listrik, estimasi_listrik, boleh_ac, biaya_ac, biaya_air, laundry, biaya_laundry, parkir_motor, biaya_parkir_motor, parkir_mobil, biaya_parkir_mobil, biaya_lain, kamar_tersedia, total_kamar, kamar_mandi_dalam, bayar_dimuka_bulan, biaya_sekali, ketentuan_deposit, harga_dikonfirmasi_pada", kamarRows, "id"],
+  ["kos_penilaian", "kos_id, skor_kamar_mandi, skor_dapur, skor_koridor, pembersih, frekuensi_bersih, frekuensi_sampah, material_tembok, db_ambient, db_tes, skor_kedap, hadap_jalan_raya, sumber_bising, kamar_diukur", penilaianRows, "kos_id"],
+  ["kos_fasilitas", "kos_id, fasilitas_id", kosFasRows, null],
+  ["kos_aturan", "kos_id, jam_malam, tamu, lawan_jenis, pasangan, anak, hewan, masak_di_kamar, merokok, mayoritas_penghuni, suasana", aturanRows, "kos_id"],
+  ["kos_sekitar", "kos_id, landmark_nama, landmark_jarak_m, landmark_menit_jalan, rute, minimarket, warung, laundry, transit, akses, penerangan, rawan_banjir", sekitarRows, "kos_id"],
+  ["kos_media", "id, kos_id, jenis, url, keterangan, urutan, lebar, tinggi, blurhash, tur", mediaRows, null],
+  ["catatan_surveyor", "kos_id, hal_baik, perlu_diketahui, kesan_pemilik, red_flags", catatanRows, "kos_id"],
+  ["log_ketersediaan", "kos_id, tipe_kamar_id, kamar_tersedia, sumber, dibuat_pada", logRows, null],
+];
+for (const [tabel, kolom, rows] of TABEL) emit(`insert into ${tabel} (${kolom}) values\n${rows.join(",\n")};\n`);
 emit(`commit;\n`);
 
 const tujuan = join(dirname(fileURLToPath(import.meta.url)), "01_seed.sql");
 writeFileSync(tujuan, out.join("\n"));
 console.log(`Wrote ${tujuan}: ${PROFIL.length} kos, ${kamarRows.length} room types, ${mediaRows.length} media rows.`);
+
+// The real kos as a patch for a database that already holds the seed: the
+// kos row is updated in place (leads and visits point at it), its child
+// rows are replaced. Needs migration 20261026000100 (jenis_media 'video').
+const idNyata = kosRows.find((r) => r.includes(`'${slugify(SLOT_NYATA)}'`))?.slice(4, 40);
+if (idNyata) {
+  const milik = (r: string) => r.includes(`'${idNyata}'`);
+  const kamarBaru = kamarRows.filter(milik).map((r) => r.slice(4, 40));
+  const patch = [
+    `-- GENERATED by supabase/seed/generate.ts — do not edit by hand.
+-- Replaces "${SLOT_NYATA}" with the real kos on Jl. Sandang in a database that
+-- already holds 01_seed.sql. Run after migration 20261026000100_media_video.sql.
+
+begin;
+delete from kos_fasilitas where kos_id = '${idNyata}';
+delete from kos_media where kos_id = '${idNyata}';
+delete from log_ketersediaan where kos_id = '${idNyata}';
+delete from tipe_kamar where kos_id = '${idNyata}' and id not in (${kamarBaru.map((k) => `'${k}'`).join(", ")});
+`,
+  ];
+  for (const [tabel, kolom, rows, kunci] of TABEL) {
+    const nilai = rows.filter(milik);
+    if (!nilai.length) continue;
+    const ubah = kolom.split(", ").filter((k) => k !== kunci);
+    const konflik = kunci ? ` on conflict (${kunci}) do update set (${ubah.join(", ")}) = (${ubah.map((k) => `excluded.${k}`).join(", ")})` : "";
+    patch.push(`insert into ${tabel} (${kolom}) values\n${nilai.join(",\n")}${konflik};\n`);
+  }
+  patch.push(`commit;\n`);
+  const tujuanPatch = join(dirname(fileURLToPath(import.meta.url)), "..", "patch", "kos-nyata-sandang.sql");
+  writeFileSync(tujuanPatch, patch.join("\n"));
+  console.log(`Wrote ${tujuanPatch}.`);
+}

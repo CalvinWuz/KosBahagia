@@ -27,6 +27,7 @@ export function TombolChat({
   variant = "primary",
   size = "lg",
   sumber = "detail" as SumberKlik,
+  bungkus = false,
 }: {
   kosId: string;
   namaKos: string;
@@ -39,6 +40,8 @@ export function TombolChat({
   variant?: "primary" | "secondary";
   size?: "sm" | "md" | "lg";
   sumber?: SumberKlik;
+  /** Let the label wrap (the phone bar at large text sizes). */
+  bungkus?: boolean;
 }) {
   const [buka, setBuka] = useState(false);
   const [disalin, setDisalin] = useState(false);
@@ -56,7 +59,7 @@ export function TombolChat({
 
   if (!MODE_DEMO) {
     return (
-      <a href={linkWa(whatsapp, pesan)} target="_blank" rel="noopener noreferrer" onClick={() => catatKlikWa(kosId, sumber)} aria-label={`${aria} (WhatsApp, tab baru)`} className={buttonClasses({ variant, size, className })}>
+      <a href={linkWa(whatsapp, pesan)} target="_blank" rel="noopener noreferrer" onClick={() => catatKlikWa(kosId, sumber)} aria-label={`${aria} (WhatsApp, tab baru)`} className={buttonClasses({ variant, size, bungkus, className })}>
         {label}
       </a>
     );
@@ -82,7 +85,7 @@ export function TombolChat({
         }}
         aria-label={aria}
         aria-haspopup="dialog"
-        className={buttonClasses({ variant, size, className })}
+        className={buttonClasses({ variant, size, bungkus, className })}
       >
         {label}
       </button>
@@ -137,8 +140,9 @@ export function BarAksi({
           : "fixed inset-x-0 bottom-0 z-40 border-t border-biru-100 bg-putih px-[max(1rem,env(safe-area-inset-left))] pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden",
       )}
     >
-      <div className={cn("flex items-center gap-3", desktop && "flex-col items-stretch")}>
-        <div className="min-w-0 flex-1">
+      {/* On phones with enlarged text the button drops under the price instead of widening the page. */}
+      <div className={cn("flex items-center gap-3", desktop ? "flex-col items-stretch" : "flex-wrap gap-y-2")}>
+        <div className="min-w-0 flex-[1_1_7rem]">
           <p className={cn("text-arang-900 tabular-nums", desktop ? "text-h2" : "text-body font-bold min-[380px]:text-h2")}>
             {formatRupiah(total)}
             <span className="ml-0.5 text-micro font-normal text-arang-500">/bln</span>
@@ -154,7 +158,7 @@ export function BarAksi({
             </p>
           )}
         </div>
-        <TombolChat kosId={kosId} namaKos={namaKos} whatsapp={whatsapp} kamar={kamar} status={status ?? undefined} size={desktop ? "lg" : "md"} className="shrink-0" />
+        <TombolChat kosId={kosId} namaKos={namaKos} whatsapp={whatsapp} kamar={kamar} status={status ?? undefined} size={desktop ? "lg" : "md"} bungkus={!desktop} className={desktop ? "shrink-0" : "max-w-full shrink-0"} />
       </div>
     </div>
   );

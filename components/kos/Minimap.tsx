@@ -3,7 +3,8 @@
 import { useEffect, useId, useRef, useState } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { teksRute, type IkonLandmark, type IkonLangkah, type Langkah, type Rute } from "@/lib/kos/rute";
+import { teksRute, type IkonLandmark, type IkonLangkah, type Jalur, type Langkah, type Rute } from "@/lib/kos/rute";
+import { formatJarak } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
 const Lightbox = dynamic(() => import("@/components/ui/Lightbox").then((m) => m.Lightbox));
@@ -16,6 +17,8 @@ const Lightbox = dynamic(() => import("@/components/ui/Lightbox").then((m) => m.
 // warung, zebra cross, ...). Labels are HTML on top of the SVG so they stay
 // readable at phone width. The ordered list underneath is the accessible
 // form of the same route; hovering a step lights up its point on the map.
+// When the surveyor recorded the route along real streets (rute.jalur), the
+// drawing follows those streets to scale instead of the fixed layout.
 
 type Titik = { x: number; y: number };
 type Foto = { id: string; url: string; keterangan: string | null };
@@ -38,7 +41,7 @@ function bulat(n: number) {
   return Math.round(n * 10) / 10;
 }
 
-/** Rounded-corner path through the street points. */
+/** Rounded-corner path through the street points (corners never wider than half a segment). */
 function jalurJalan(p: Titik[], r = 22): string {
   let d = `M${p[0].x} ${p[0].y}`;
   for (let i = 1; i < p.length - 1; i++) {
@@ -47,8 +50,9 @@ function jalurJalan(p: Titik[], r = 22): string {
     const c = p[i + 1];
     const masuk = arah(a, b);
     const keluar = arah(b, c);
-    d += ` L${bulat(b.x - masuk.x * r)} ${bulat(b.y - masuk.y * r)}`;
-    d += ` Q${b.x} ${b.y} ${bulat(b.x + keluar.x * r)} ${bulat(b.y + keluar.y * r)}`;
+    const rr = Math.min(r, Math.hypot(b.x - a.x, b.y - a.y) / 2, Math.hypot(c.x - b.x, c.y - b.y) / 2);
+    d += ` L${bulat(b.x - masuk.x * rr)} ${bulat(b.y - masuk.y * rr)}`;
+    d += ` Q${b.x} ${b.y} ${bulat(b.x + keluar.x * rr)} ${bulat(b.y + keluar.y * rr)}`;
   }
   const t = p[p.length - 1];
   d += ` L${t.x} ${t.y}`;
@@ -76,12 +80,63 @@ function titikPada(p: Titik[], t: number): Titik {
   return p[p.length - 1];
 }
 
-/** Where each step sits: intermediate steps spread along the road, the last one at the gate. */
-function titikLangkah(n: number): Titik[] {
-  if (n <= 1) return [AKHIR];
-  const tengah = Array.from({ length: n - 1 }, (_, i) => titikPada(JALAN, (i + 1) / n));
-  return [...tengah, AKHIR];
+/** Where each step sits: on its recorded point, else spread along the road; the last one at the gate. */
+function titikLangkah(langkah: Langkah[], jalan: Titik[]): Titik[] {
+  const akhir = jalan[jalan.length - 1];
+  const n = langkah.length;
+  if (n <= 1) return [akhir];
+  const tengah = langkah.slice(0, -1).map((l, i) => (l.titik != null && jalan[l.titik] ? jalan[l.titik] : titikPada(jalan, (i + 1) / n)));
+  return [...tengah, akhir];
 }
+
+// ---- the route along real streets, to scale
+type Geo = {
+  jalan: Titik[];
+  /** The landmark icon sits just before the route's first point. */
+  landmark: Titik;
+  /** Street names: anchor point and the CSS transform that puts the text beside it. */
+  label: Array<{ nama: string; x: number; y: number; geser: string }>;
+  skala: { meter: number; px: number };
+};
+const TEPI = { kiri: 84, kanan: 64, atas: 78, bawah: 84 };
+
+/** [lng, lat] to SVG units, north up, one scale for both axes. */
+function proyeksi(j: Jalur): Geo {
+  const lat0 = j.titik.reduce((a, p) => a + p[1], 0) / j.titik.length;
+  const k = Math.cos((lat0 * Math.PI) / 180);
+  const xy = j.titik.map(([lng, lat]) => ({ x: lng * k, y: -lat }));
+  const xs = xy.map((p) => p.x);
+  const ys = xy.map((p) => p.y);
+  const [minX, maxX, minY, maxY] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  const w = LEBAR - TEPI.kiri - TEPI.kanan;
+  const h = TINGGI - TEPI.atas - TEPI.bawah;
+  const s = Math.min(w / Math.max(maxX - minX, 1e-9), h / Math.max(maxY - minY, 1e-9));
+  const ox = TEPI.kiri + (w - (maxX - minX) * s) / 2;
+  const oy = TEPI.atas + (h - (maxY - minY) * s) / 2;
+  const jalan = xy.map((p) => ({ x: bulat(ox + (p.x - minX) * s), y: bulat(oy + (p.y - minY) * s) }));
+
+  const awal = arah(jalan[0], jalan[1]);
+  const landmark = { x: bulat(jalan[0].x - awal.x * 34), y: bulat(jalan[0].y - awal.y * 34) };
+  // Street names sit on the side facing the middle of the route; the last
+  // street, when it runs across, goes below and from its start, clear of
+  // the house pin standing on its end.
+  const tengah = { x: jalan.reduce((a, p) => a + p.x, 0) / jalan.length, y: jalan.reduce((a, p) => a + p.y, 0) / jalan.length };
+  const label = j.jalan.map((r) => {
+    const ruas = jalan.slice(r.dari, r.ke + 1);
+    const m = titikPada(ruas, 0.5);
+    const d = arah(ruas[0], ruas[ruas.length - 1]);
+    const melintang = Math.abs(d.x) >= Math.abs(d.y);
+    if (melintang && r.ke === jalan.length - 1) return { nama: r.nama, x: Math.min(...ruas.map((p) => p.x)) - 6, y: m.y + 26, geser: "none" };
+    if (melintang) return tengah.y < m.y ? { nama: r.nama, x: m.x, y: m.y - 16, geser: "translate(-50%, -100%)" } : { nama: r.nama, x: m.x, y: m.y + 16, geser: "translate(-50%, 0)" };
+    return tengah.x < m.x ? { nama: r.nama, x: m.x - 16, y: m.y, geser: "translate(-100%, -50%)" } : { nama: r.nama, x: m.x + 16, y: m.y, geser: "translate(0, -50%)" };
+  });
+  // A round scale bar of at most ~150 units.
+  const pxPerMeter = s / 111_320;
+  const meter = [500, 200, 100, 50, 20].find((m) => m * pxPerMeter <= 150) ?? 20;
+  return { jalan, landmark, label, skala: { meter, px: bulat(meter * pxPerMeter) } };
+}
+
+const persen = (v: number, dari: number) => `${bulat((v / dari) * 100)}%`;
 
 type Piktogram = "masjid" | "warung" | "minimarket" | "ojek" | "pohon" | "zebra" | "jembatan" | "lampu" | "gang";
 const KATA: Array<[RegExp, Piktogram]> = [
@@ -118,9 +173,19 @@ export function Minimap({
   const daftar = useRef<HTMLOListElement>(null);
 
   const langkah = rute.langkah;
-  const titik = titikLangkah(langkah.length);
+  const geo = rute.jalur ? proyeksi(rute.jalur) : null;
+  const jalan = geo?.jalan ?? JALAN;
+  const akhir = jalan[jalan.length - 1];
+  const awalIkon = geo?.landmark ?? AWAL;
+  const titik = titikLangkah(langkah, jalan);
   const fotoDari = (fid?: string) => (fid ? foto.find((f) => f.id === fid) : undefined);
-  const jalurD = jalurJalan(JALAN);
+  const jalurD = jalurJalan(jalan, geo ? 12 : 22);
+  const menit = rute.jalur?.menit;
+  const waktu = [
+    menit?.jalan_kaki != null && `Jalan kaki ${menit.jalan_kaki} mnt`,
+    menit?.motor != null && `Motor ${menit.motor} mnt`,
+    menit?.mobil != null && `Mobil ${menit.mobil} mnt`,
+  ].filter((w): w is string => Boolean(w));
 
   // Draw the route once the map is on screen; the walker only when motion is welcome.
   useEffect(() => {
@@ -177,46 +242,60 @@ export function Minimap({
             <path id={`${id}-jalur`} d={jalurD} />
           </defs>
 
-          {/* Blocks: what the roads leave behind. */}
-          <g className="fill-putih/45">
-            <rect x="0" y="0" width="150" height="120" />
-            <rect x="180" y="0" width="190" height="60" />
-            <rect x="400" y="0" width="240" height="56" />
-            <rect x="24" y="150" width="182" height="64" />
-            <rect x="270" y="90" width="98" height="36" />
-            <rect x="430" y="120" width="210" height="90" />
-            <rect x="0" y="274" width="200" height="66" />
-            <rect x="270" y="190" width="100" height="150" />
-            <rect x="430" y="244" width="210" height="96" />
-          </g>
-
-          {/* Side streets */}
-          <g className="stroke-putih" strokeWidth={12}>
-            <path d="M160 0v120M380 0v88M380 190v150M236 244v96M470 120v124M62 130h96M206 244H0M556 88v250M640 210H430M0 150h30" />
-          </g>
-
-          {/* The route's own road: wide for the main road, narrow for the alley at the end. */}
-          <path d={jalurJalan(JALAN.slice(0, 5))} className="stroke-putih" strokeWidth={28} />
-          <path d={`M${JALAN[4].x} ${JALAN[4].y} L${AKHIR.x} ${AKHIR.y}`} className="stroke-putih" strokeWidth={16} />
-          <path d={`M${JALAN[4].x} ${JALAN[4].y} L${AKHIR.x} ${AKHIR.y}`} className="stroke-biru-500/25" strokeWidth={1} strokeDasharray="3 5" />
-
-          {/* Trees, off the roads. */}
-          <g>
-            {[
-              [118, 196],
-              [318, 216],
-              [500, 262],
-              [590, 292],
-              [70, 96],
-              [470, 176],
-              [606, 168],
-            ].map(([x, y]) => (
-              <g key={`${x}-${y}`} transform={`translate(${x} ${y})`}>
-                <circle r="9" className="fill-daun-100 stroke-daun-500" strokeWidth={1.5} />
-                <circle r="3" className="fill-daun-500" />
+          {!geo && (
+            <>
+              {/* Blocks: what the roads leave behind. */}
+              <g className="fill-putih/45">
+                <rect x="0" y="0" width="150" height="120" />
+                <rect x="180" y="0" width="190" height="60" />
+                <rect x="400" y="0" width="240" height="56" />
+                <rect x="24" y="150" width="182" height="64" />
+                <rect x="270" y="90" width="98" height="36" />
+                <rect x="430" y="120" width="210" height="90" />
+                <rect x="0" y="274" width="200" height="66" />
+                <rect x="270" y="190" width="100" height="150" />
+                <rect x="430" y="244" width="210" height="96" />
               </g>
-            ))}
-          </g>
+
+              {/* Side streets */}
+              <g className="stroke-putih" strokeWidth={12}>
+                <path d="M160 0v120M380 0v88M380 190v150M236 244v96M470 120v124M62 130h96M206 244H0M556 88v250M640 210H430M0 150h30" />
+              </g>
+
+              {/* The route's own road: wide for the main road, narrow for the alley at the end. */}
+              <path d={jalurJalan(JALAN.slice(0, 5))} className="stroke-putih" strokeWidth={28} />
+              <path d={`M${JALAN[4].x} ${JALAN[4].y} L${AKHIR.x} ${AKHIR.y}`} className="stroke-putih" strokeWidth={16} />
+              <path d={`M${JALAN[4].x} ${JALAN[4].y} L${AKHIR.x} ${AKHIR.y}`} className="stroke-biru-500/25" strokeWidth={1} strokeDasharray="3 5" />
+
+              {/* Trees, off the roads. */}
+              <g>
+                {[
+                  [118, 196],
+                  [318, 216],
+                  [500, 262],
+                  [590, 292],
+                  [70, 96],
+                  [470, 176],
+                  [606, 168],
+                ].map(([x, y]) => (
+                  <g key={`${x}-${y}`} transform={`translate(${x} ${y})`}>
+                    <circle r="9" className="fill-daun-100 stroke-daun-500" strokeWidth={1.5} />
+                    <circle r="3" className="fill-daun-500" />
+                  </g>
+                ))}
+              </g>
+            </>
+          )}
+
+          {/* Real streets: the route's own roads, from the landmark's door. */}
+          {geo && (
+            <g className="stroke-putih">
+              <path d={`M${awalIkon.x} ${awalIkon.y} L${jalan[0].x} ${jalan[0].y}`} strokeWidth={12} />
+              <path d={jalurD} strokeWidth={22} />
+              {/* Scale bar (from sm up; on phones the labels need the room, the chip has the distance) */}
+              <path className="stroke-arang-900/70 max-sm:hidden" d={`M${LEBAR - 20 - geo.skala.px} ${TINGGI - 22} h${geo.skala.px} M${LEBAR - 20 - geo.skala.px} ${TINGGI - 27} v10 M${LEBAR - 20} ${TINGGI - 27} v10`} strokeWidth={2} />
+            </g>
+          )}
 
           {/* Route, revealed as it draws. */}
           <path d={jalurD} mask={`url(#${id}-gambar)`} className="stroke-biru-600" strokeWidth={4} strokeDasharray="10 8" />
@@ -233,7 +312,7 @@ export function Minimap({
           )}
 
           {/* Landmark */}
-          <g transform={`translate(${AWAL.x} ${AWAL.y})`}>
+          <g transform={`translate(${awalIkon.x} ${awalIkon.y})`}>
             <circle r="26" className="fill-putih" />
             <IkonLandmarkSvg ikon={rute.landmark.ikon} />
           </g>
@@ -267,7 +346,7 @@ export function Minimap({
 
           {/* Destination: the house pin with the last step number. */}
           <g
-            transform={`translate(${AKHIR.x} ${AKHIR.y})`}
+            transform={`translate(${akhir.x} ${akhir.y})`}
             className="cursor-pointer"
             onClick={() => keDaftar(langkah.length - 1)}
             onMouseEnter={() => setAktif(langkah.length - 1)}
@@ -289,18 +368,64 @@ export function Minimap({
         {/* HTML labels: fixed-size text over the drawing. */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0">
           <span className="absolute top-2 left-1/2 -translate-x-1/2 rounded-full border border-biru-100 bg-putih px-3 py-1 text-micro font-bold text-arang-900 shadow-sm tabular-nums whitespace-nowrap">
+            {rute.jalur?.jarak_m != null && `${formatJarak(rute.jalur.jarak_m)} lewat jalan, `}
             {rute.total_menit != null ? `${rute.total_menit} mnt jalan kaki` : "Rute jalan kaki"}
             {rute.akses && rute.akses !== "jalan_kaki" && <span className="hidden font-medium text-arang-500 sm:inline"> · {rute.akses === "mobil" ? "mobil bisa masuk" : "motor bisa masuk"}</span>}
           </span>
-          <span className="absolute bottom-[6%] left-[3%] max-w-[40%] text-micro leading-tight font-bold text-arang-900 italic">{rute.landmark.nama.split(" (")[0]}</span>
-          <span className="absolute top-[3%] left-[87%] -translate-x-1/2 text-small font-bold text-arang-900">sampai!</span>
+          {geo ? (
+            <>
+              <span
+                className="absolute max-w-[32%] text-micro leading-tight font-bold text-arang-900 italic"
+                style={{ left: persen(Math.max(8, awalIkon.x - 28), LEBAR), top: persen(awalIkon.y + 30, TINGGI) }}
+              >
+                {rute.landmark.nama.split(" (")[0]}
+              </span>
+              <span className="absolute text-small font-bold text-arang-900" style={{ left: persen(akhir.x, LEBAR), top: persen(akhir.y - 52, TINGGI), transform: "translate(-50%, -100%)" }}>
+                sampai!
+              </span>
+              {geo.label.map((l) => (
+                <span
+                  key={l.nama}
+                  className="absolute rounded bg-putih/85 px-1 text-micro font-bold whitespace-nowrap text-arang-500"
+                  style={{ left: persen(l.x, LEBAR), top: persen(l.y, TINGGI), transform: l.geser }}
+                >
+                  {l.nama}
+                </span>
+              ))}
+              <span
+                className="absolute text-micro font-bold text-arang-900 tabular-nums max-sm:hidden"
+                style={{ left: persen(LEBAR - 20 - geo.skala.px / 2, LEBAR), top: persen(TINGGI - 30, TINGGI), transform: "translate(-50%, -100%)" }}
+              >
+                {formatJarak(geo.skala.meter)}
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="absolute bottom-[6%] left-[3%] max-w-[40%] text-micro leading-tight font-bold text-arang-900 italic">{rute.landmark.nama.split(" (")[0]}</span>
+              <span className="absolute top-[3%] left-[87%] -translate-x-1/2 text-small font-bold text-arang-900">sampai!</span>
+            </>
+          )}
           <span className="absolute top-2 left-2 inline-flex items-center gap-0.5 rounded-full bg-putih/80 py-0.5 pr-2 pl-1.5 text-micro font-bold text-biru-600">
             <svg viewBox="0 0 12 12" className="size-3" aria-hidden="true"><path d="M6 1l3.5 9L6 8 2.5 10z" fill="currentColor" /></svg>
             U
           </span>
-          <span className="absolute right-2 bottom-1 text-micro text-arang-500/80">ilustrasi, bukan skala</span>
+          {geo ? (
+            <span className="absolute bottom-1 left-2 text-micro text-arang-500/80">Peta jalan © OpenStreetMap</span>
+          ) : (
+            <span className="absolute right-2 bottom-1 text-micro text-arang-500/80">ilustrasi, bukan skala</span>
+          )}
         </div>
       </div>
+
+      {waktu.length > 0 && (
+        <ul className="mt-3 flex flex-wrap gap-2" aria-label="Waktu tempuh">
+          {waktu.map((w) => (
+            <li key={w} className="rounded-full bg-biru-100 px-3 py-1 text-small font-bold text-biru-600 tabular-nums">
+              {w}
+            </li>
+          ))}
+        </ul>
+      )}
 
       <ol ref={daftar} className="mt-3 flex flex-col gap-2" aria-label="Langkah rute">
         {langkah.map((l, i) => {

@@ -1,0 +1,114 @@
+[
+  {
+    "id": "tampak-depan",
+    "jenis": "foto",
+    "url": "/media/sandang/tampak-depan.webp",
+    "keterangan": "Tampak depan, gerbang nomor 6",
+    "lebar": 1600,
+    "tinggi": 1201,
+    "blurhash": "LLCi]tD%ofV@_4Rj%MM{~qM{ofV@",
+    "bytes": 172342
+  },
+  {
+    "id": "kamar",
+    "jenis": "foto",
+    "url": "/media/sandang/kamar.webp",
+    "keterangan": "Kamar: kasur, meja belajar, dan gantungan baju",
+    "lebar": 1600,
+    "tinggi": 1230,
+    "blurhash": "L+L#2z-;ozt7~qj?RjfQozRjaej[",
+    "bytes": 68668
+  },
+  {
+    "id": "kamar-pintu",
+    "jenis": "foto",
+    "url": "/media/sandang/kamar-pintu.webp",
+    "keterangan": "Kamar: AC di atas pintu dan ruang simpan",
+    "lebar": 1200,
+    "tinggi": 1600,
+    "blurhash": "TTI=77~ptR~pWrM{9EMxWB4oRjoz",
+    "bytes": 67538
+  },
+  {
+    "id": "kamar-mandi",
+    "jenis": "foto",
+    "url": "/media/sandang/kamar-mandi.webp",
+    "keterangan": "Kamar mandi dalam: kloset duduk dan shower",
+    "lebar": 900,
+    "tinggi": 1600,
+    "blurhash": "TpKUf%tRRj_NRjR%kDozWCMxRjof",
+    "bytes": 30824
+  },
+  {
+    "id": "ruang-bersama",
+    "jenis": "foto",
+    "url": "/media/sandang/ruang-bersama.webp",
+    "keterangan": "Ruang bersama di lantai atas",
+    "lebar": 1600,
+    "tinggi": 1201,
+    "blurhash": "LEDvcjtRD*ni~qM}ozt7ayxuIURj",
+    "bytes": 72558
+  },
+  {
+    "id": "koridor",
+    "jenis": "foto",
+    "url": "/media/sandang/koridor.webp",
+    "keterangan": "Koridor kamar",
+    "lebar": 1201,
+    "tinggi": 1600,
+    "blurhash": "TDJH{+4T%%--01Ri?vNH4mxv-;xv",
+    "bytes": 72672
+  },
+  {
+    "id": "ruang-duduk",
+    "jenis": "foto",
+    "url": "/media/sandang/ruang-duduk.webp",
+    "keterangan": "Ruang duduk di ujung koridor",
+    "lebar": 1600,
+    "tinggi": 1201,
+    "blurhash": "LXKBO14n00s:~pM{Iot8E2%L%MRk",
+    "bytes": 68066
+  },
+  {
+    "id": "parkir",
+    "jenis": "foto",
+    "url": "/media/sandang/parkir.webp",
+    "keterangan": "Parkir motor beratap di lantai dasar",
+    "lebar": 1335,
+    "tinggi": 1600,
+    "blurhash": "THEyMR00%NnfWYxuM|x[M{4n%MRP",
+    "bytes": 154918
+  },
+  {
+    "id": "rooftop",
+    "jenis": "foto",
+    "url": "/media/sandang/rooftop.webp",
+    "keterangan": "Rooftop dengan meja dan jemuran",
+    "lebar": 1600,
+    "tinggi": 1201,
+    "blurhash": "L$He|XWBIUoz?waej[j[%ht7WCWC",
+    "bytes": 106914
+  },
+  {
+    "id": "jalan-depan",
+    "jenis": "patokan",
+    "url": "/media/sandang/jalan-depan.webp",
+    "keterangan": "Jl. Sandang di depan kos",
+    "lebar": 1024,
+    "tinggi": 1200,
+    "blurhash": "TdIY5[t74U_Nj?D%-=oIRjWCofog",
+    "bytes": 161218
+  },
+  {
+    "id": "tur-kamar",
+    "jenis": "video",
+    "url": "/media/sandang/tur-kamar.mp4",
+    "keterangan": "Video tur kamar: kasur, meja belajar, kamar mandi dalam, dan AC",
+    "lebar": 720,
+    "tinggi": 1280,
+    "blurhash": "TRK_I4%gM{~WaxkC00Rjof8_x]j]",
+    "bytes": 1722282,
+    "poster_url": "/media/sandang/tur-kamar-poster.webp",
+    "durasi_detik": 21
+  }
+]

@@ -1604,7 +1604,7 @@ export type Database = {
     Enums: {
       akses_jalan: "motor" | "mobil" | "jalan_kaki"
       jenis_laporan: "penuh" | "harga_beda" | "tutup" | "lainnya"
-      jenis_media: "foto" | "foto360" | "patokan"
+      jenis_media: "foto" | "foto360" | "patokan" | "video"
       jenis_penjaga: "pemilik" | "harian" | "tidak_tetap" | "tidak_ada"
       kategori_fasilitas: "kamar" | "bersama"
       model_listrik: "termasuk" | "token" | "flat" | "meteran"
@@ -1748,7 +1748,7 @@ export const Constants = {
     Enums: {
       akses_jalan: ["motor", "mobil", "jalan_kaki"],
       jenis_laporan: ["penuh", "harga_beda", "tutup", "lainnya"],
-      jenis_media: ["foto", "foto360", "patokan"],
+      jenis_media: ["foto", "foto360", "patokan", "video"],
       jenis_penjaga: ["pemilik", "harian", "tidak_tetap", "tidak_ada"],
       kategori_fasilitas: ["kamar", "bersama"],
       model_listrik: ["termasuk", "token", "flat", "meteran"],

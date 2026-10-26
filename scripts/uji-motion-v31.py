@@ -531,8 +531,10 @@ async def suite(p, jenis: str):
           const tunggu = (ms) => new Promise((r) => setTimeout(r, ms));
           window.scrollTo({ top: 0, behavior: 'instant' }); await tunggu(200);
           const r = document.querySelector('h1').getBoundingClientRect(); const out = [];
+          // Page coordinates, taken once: inside the loop scrollY moves with y.
+          const atas = Math.round(r.top + scrollY), bawah = Math.round(r.bottom + scrollY);
           // each position is reached in one jump from the top, like a fling or an anchor jump
-          for (let y = Math.round(r.top + scrollY) - 20; y <= Math.round(r.bottom + scrollY) + 60; y += 5) {
+          for (let y = atas - 20; y <= bawah + 60; y += 5) {
             window.scrollTo({ top: 0, behavior: 'instant' }); await tunggu(120);
             window.scrollTo({ top: y, behavior: 'instant' }); await tunggu(150);
             const lihat = new Set();
